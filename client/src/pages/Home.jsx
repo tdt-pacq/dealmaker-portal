@@ -61,33 +61,8 @@ export default function Home() {
     <div style={{ padding: '40px 40px', maxWidth: 1200, margin: '0 auto' }}>
 
       {/* Header with logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 44 }}>
-        <img src={LOGO_SRC} alt="Peterson Acquisitions" style={{ height: 52, width: 'auto' }} />
-        <div>
-          <div style={{
-            fontFamily: 'Oswald, sans-serif',
-            fontWeight: 700,
-            fontSize: 13,
-            color: '#e2e8f0',
-            letterSpacing: 3,
-            textTransform: 'uppercase',
-            lineHeight: 1.2,
-          }}>
-            Peterson Acquisitions
-          </div>
-          <div style={{
-            fontFamily: 'Oswald, sans-serif',
-            fontWeight: 600,
-            fontSize: 11,
-            color: '#C1622F',
-            letterSpacing: 3,
-            textTransform: 'uppercase',
-            lineHeight: 1.2,
-            marginTop: 2,
-          }}>
-            The Deal Team
-          </div>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 44 }}>
+        <img src={LOGO_SRC} alt="Peterson Acquisitions" style={{ height: 80, width: 'auto' }} />
       </div>
 
       {/* Section label */}
