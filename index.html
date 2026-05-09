@@ -595,7 +595,7 @@ async function getOrCreatePacqFolder() {
   // not a newly-created empty duplicate. Include all drives in case it's shared.
   const q = encodeURIComponent(`name='${PACQ_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
   const data = await driveReq('GET',
-    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,createdTime)&pageSize=10&orderBy=createdTime&includeItemsFromAllDrives=true&supportsAllDrives=true`
+    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,createdTime)&pageSize=10&orderBy=createdTime&corpora=allDrives&includeItemsFromAllDrives=true&supportsAllDrives=true`
   );
   if (data.files?.[0]?.id) {
     // files are sorted oldest-first — pick the first (original) folder
@@ -649,7 +649,7 @@ async function driveReq(method, url, body, contentType) {
 
 async function findFile(name, parentId) {
   const q = encodeURIComponent(`name='${name.replace(/'/g,"\\'")}' and '${parentId}' in parents and trashed=false`);
-  const data = await driveReq('GET', `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&pageSize=5`);
+  const data = await driveReq('GET', `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&pageSize=5&corpora=allDrives&includeItemsFromAllDrives=true&supportsAllDrives=true`);
   return data.files?.[0]?.id || null;
 }
 
@@ -728,7 +728,7 @@ async function initDriveFolder() {
   } else {
     // Not in PACQ Deals — search Drive-wide (auto-migrates files from wrong folder)
     const q = encodeURIComponent(`name='deals.json' and trashed=false`);
-    const found = await driveReq('GET', `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&pageSize=1&includeItemsFromAllDrives=true&supportsAllDrives=true`).catch(() => null);
+    const found = await driveReq('GET', `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&pageSize=1&corpora=allDrives&includeItemsFromAllDrives=true&supportsAllDrives=true`).catch(() => null);
     if (found?.files?.[0]?.id) {
       try { _dealsCache = await readJsonFile(found.files[0].id); } catch { _dealsCache = []; }
       if (_dealsCache.length) {
@@ -747,7 +747,7 @@ async function initDriveFolder() {
   } else {
     // Search Drive-wide (auto-migrates from wrong folder)
     const q2 = encodeURIComponent(`name='advisors.json' and trashed=false`);
-    const found2 = await driveReq('GET', `https://www.googleapis.com/drive/v3/files?q=${q2}&fields=files(id)&pageSize=1`).catch(() => null);
+    const found2 = await driveReq('GET', `https://www.googleapis.com/drive/v3/files?q=${q2}&fields=files(id)&pageSize=1&corpora=allDrives&includeItemsFromAllDrives=true&supportsAllDrives=true`).catch(() => null);
     if (found2?.files?.[0]?.id) {
       try { _advisorsCache = await readJsonFile(found2.files[0].id); } catch { _advisorsCache = []; }
       if (_advisorsCache.length) {
