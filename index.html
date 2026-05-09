@@ -519,20 +519,27 @@ async function connectDrive() {
   if (btn) { btn.textContent = 'Connecting…'; btn.disabled = true; }
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.addScope(DRIVE_SCOPE);
-  provider.setCustomParameters({ hd: ALLOWED_DOMAIN });
+  // prompt:consent forces Google to show the Drive permission screen and
+  // always return a fresh access token — reauthenticateWithPopup can return
+  // null credentials if the session is still valid, silently skipping Drive.
+  provider.setCustomParameters({ hd: ALLOWED_DOMAIN, prompt: 'consent' });
   try {
-    const result = await firebase.auth().currentUser.reauthenticateWithPopup(provider);
-    if (result.credential && result.credential.accessToken) {
-      driveToken = result.credential.accessToken;
-      sessionStorage.setItem('_driveToken', driveToken);
-      sessionStorage.setItem('_driveTokenExp', Date.now() + 3500000);
-      const banner = document.getElementById('drive-connect-banner');
-      if (banner) banner.remove();
-      renderDealsListLoading('Loading from Drive…');
+    const result = await firebase.auth().signInWithPopup(provider);
+    const token = result?.credential?.accessToken;
+    if (!token) throw new Error('No Drive access token returned — please try again.');
+    driveToken = token;
+    sessionStorage.setItem('_driveToken', token);
+    sessionStorage.setItem('_driveTokenExp', Date.now() + 3500000);
+    renderDealsListLoading('Loading from Drive…');
+    try {
       await initDriveFolder();
-      renderDealsList();
-      renderAdvisorOptions();
+    } catch(driveErr) {
+      showDriveError('Drive connected but could not load deals: ' + driveErr.message);
     }
+    const banner = document.getElementById('drive-connect-banner');
+    if (banner) banner.remove();
+    renderDealsList();
+    renderAdvisorOptions();
   } catch(e) {
     if (btn) { btn.textContent = 'Connect to Drive'; btn.disabled = false; }
     showDriveError('Could not connect to Drive — ' + (e.message || 'please try again'));
@@ -602,11 +609,13 @@ async function getOrCreatePacqFolder() {
 function showDriveError(msg) {
   const el = document.getElementById('deals-list');
   if (!el) return;
+  const existing = document.getElementById('drive-error-msg');
+  if (existing) existing.remove();
   const toast = document.createElement('div');
-  toast.style.cssText = 'padding:10px 14px;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:4px;font-size:12px;margin:8px';
-  toast.textContent = '⚠ ' + msg;
+  toast.id = 'drive-error-msg';
+  toast.style.cssText = 'padding:12px 16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:6px;font-size:13px;color:#f87171;margin-bottom:10px;line-height:1.5';
+  toast.innerHTML = '<strong>Drive error:</strong> ' + msg;
   el.prepend(toast);
-  setTimeout(() => toast.remove(), 6000);
 }
 
 async function driveReq(method, url, body, contentType) {
