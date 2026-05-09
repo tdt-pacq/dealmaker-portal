@@ -591,10 +591,10 @@ let _dealsFolderId   = null;
 
 async function getOrCreatePacqFolder() {
   if (_dealsFolderId) return _dealsFolderId;
-  const cached = localStorage.getItem('_pacqFolderId');
-  if (cached) { _dealsFolderId = cached; return cached; }
+  // Do NOT cache folder ID in localStorage — a stale ID from a previous session
+  // can point to a wrong/empty folder. Always search Drive fresh each session.
   const q = encodeURIComponent(`name='${PACQ_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-  const data = await driveReq('GET', `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&pageSize=1`);
+  const data = await driveReq('GET', `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&pageSize=5`);
   if (data.files?.[0]?.id) {
     _dealsFolderId = data.files[0].id;
   } else {
@@ -602,7 +602,6 @@ async function getOrCreatePacqFolder() {
     const res = await driveReq('POST', 'https://www.googleapis.com/drive/v3/files', meta, 'application/json');
     _dealsFolderId = res.id;
   }
-  localStorage.setItem('_pacqFolderId', _dealsFolderId);
   return _dealsFolderId;
 }
 
