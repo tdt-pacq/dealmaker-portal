@@ -19,7 +19,7 @@ const PORTAL_SECTIONS = [
       { id: 'discovery',   label: 'Discovery Prep',        icon: '🔍', basePath: '/discovery',   live: false },
       { id: 'analyzer',    label: 'Market Price Analyzer', icon: '📊', basePath: '/analyzer',    live: true  },
       { id: 'engagements', label: 'Engagements',           icon: '🤝', basePath: '/engagements', live: false },
-      { id: 'marketing',   label: 'Deal Marketing',        icon: '📄', basePath: '/marketing',   live: true  },
+      { id: 'marketing',   label: 'Deal Marketing',        icon: '📄', basePath: '/marketing',   live: true, href: '/pacq-app' },
     ],
   },
   {
@@ -236,7 +236,55 @@ export default function Sidebar({ collapsed, onToggle, onSignOut }) {
                       );
                     }
 
-                    // Live item
+                    // Live item — if item.href is set, use a plain <a> (full-page nav outside SPA)
+                    const itemContent = (active) => (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 9,
+                          padding: collapsed ? '8px 0' : '7px 10px',
+                          borderRadius: 5,
+                          borderLeft: active ? '2px solid #2eb860' : '2px solid transparent',
+                          background: active ? 'rgba(46,184,96,0.09)' : 'transparent',
+                          transition: 'background 0.14s, border-color 0.14s',
+                          justifyContent: collapsed ? 'center' : 'flex-start',
+                        }}
+                        onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+                        onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
+                      >
+                        <span style={{ fontSize: 14, lineHeight: 1, flexShrink: 0 }}>{item.icon}</span>
+                        {!collapsed && (
+                          <span style={{
+                            fontSize: 12.5,
+                            fontWeight: active ? 600 : 500,
+                            color: active ? '#e2e8f0' : '#94a3b8',
+                            fontFamily: 'system-ui, sans-serif',
+                            transition: 'color 0.14s',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}>
+                            {item.label}
+                          </span>
+                        )}
+                      </div>
+                    );
+
+                    if (item.href) {
+                      return (
+                        <li key={item.id}>
+                          <a
+                            href={item.href}
+                            title={collapsed ? item.label : undefined}
+                            style={{ textDecoration: 'none', display: 'block', marginBottom: 1 }}
+                          >
+                            {itemContent(false)}
+                          </a>
+                        </li>
+                      );
+                    }
+
                     return (
                       <li key={item.id}>
                         <NavLink
@@ -244,37 +292,7 @@ export default function Sidebar({ collapsed, onToggle, onSignOut }) {
                           title={collapsed ? item.label : undefined}
                           style={{ textDecoration: 'none', display: 'block', marginBottom: 1 }}
                         >
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 9,
-                              padding: collapsed ? '8px 0' : '7px 10px',
-                              borderRadius: 5,
-                              borderLeft: active ? '2px solid #2eb860' : '2px solid transparent',
-                              background: active ? 'rgba(46,184,96,0.09)' : 'transparent',
-                              transition: 'background 0.14s, border-color 0.14s',
-                              justifyContent: collapsed ? 'center' : 'flex-start',
-                            }}
-                            onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
-                            onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
-                          >
-                            <span style={{ fontSize: 14, lineHeight: 1, flexShrink: 0 }}>{item.icon}</span>
-                            {!collapsed && (
-                              <span style={{
-                                fontSize: 12.5,
-                                fontWeight: active ? 600 : 500,
-                                color: active ? '#e2e8f0' : '#94a3b8',
-                                fontFamily: 'system-ui, sans-serif',
-                                transition: 'color 0.14s',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                              }}>
-                                {item.label}
-                              </span>
-                            )}
-                          </div>
+                          {({ isActive }) => itemContent(isActive)}
                         </NavLink>
                       </li>
                     );
