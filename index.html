@@ -591,18 +591,20 @@ let _dealsFolderId   = null;
 
 async function getOrCreatePacqFolder() {
   if (_dealsFolderId) return _dealsFolderId;
-  // Sort by createdTime so we get the OLDEST folder (the original one with deals),
-  // not a newly-created empty duplicate. Include all drives in case it's shared.
+  // orderBy is NOT supported with corpora=allDrives — omit it.
+  // Search all drives including shared drives.
   const q = encodeURIComponent(`name='${PACQ_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
   const data = await driveReq('GET',
-    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,createdTime)&pageSize=10&orderBy=createdTime&corpora=allDrives&includeItemsFromAllDrives=true&supportsAllDrives=true`
+    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&pageSize=10&corpora=allDrives&includeItemsFromAllDrives=true&supportsAllDrives=true`
   );
-  if (data.files?.[0]?.id) {
-    // files are sorted oldest-first — pick the first (original) folder
+  console.log('[Drive] PACQ Deals search result:', JSON.stringify(data));
+  if (data.files?.length) {
     _dealsFolderId = data.files[0].id;
+    console.log('[Drive] Using folder:', _dealsFolderId, '(', data.files.length, 'found )');
   } else {
+    console.log('[Drive] No PACQ Deals folder found — creating new one');
     const meta = JSON.stringify({ name: PACQ_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' });
-    const res = await driveReq('POST', 'https://www.googleapis.com/drive/v3/files', meta, 'application/json');
+    const res = await driveReq('POST', 'https://www.googleapis.com/drive/v3/files?supportsAllDrives=true', meta, 'application/json');
     _dealsFolderId = res.id;
   }
   return _dealsFolderId;
@@ -720,11 +722,14 @@ async function deleteDriveFolder(dealId) {
 
 async function initDriveFolder() {
   const rootId = await getOrCreatePacqFolder();
+  console.log('[Drive] Folder ID:', rootId);
   // Load deals.json
   let dealsFileId = await findFile('deals.json', rootId);
+  console.log('[Drive] deals.json file ID:', dealsFileId);
   if (dealsFileId) {
     _driveFileIds['deals.json'] = dealsFileId;
     try { _dealsCache = await readJsonFile(dealsFileId); } catch { _dealsCache = []; }
+    console.log('[Drive] Loaded', _dealsCache.length, 'deals');
   } else {
     // Not in PACQ Deals — search Drive-wide (auto-migrates files from wrong folder)
     const q = encodeURIComponent(`name='deals.json' and trashed=false`);
