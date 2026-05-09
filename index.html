@@ -591,11 +591,14 @@ let _dealsFolderId   = null;
 
 async function getOrCreatePacqFolder() {
   if (_dealsFolderId) return _dealsFolderId;
-  // Do NOT cache folder ID in localStorage — a stale ID from a previous session
-  // can point to a wrong/empty folder. Always search Drive fresh each session.
+  // Sort by createdTime so we get the OLDEST folder (the original one with deals),
+  // not a newly-created empty duplicate. Include all drives in case it's shared.
   const q = encodeURIComponent(`name='${PACQ_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-  const data = await driveReq('GET', `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&pageSize=5`);
+  const data = await driveReq('GET',
+    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,createdTime)&pageSize=10&orderBy=createdTime&includeItemsFromAllDrives=true&supportsAllDrives=true`
+  );
   if (data.files?.[0]?.id) {
+    // files are sorted oldest-first — pick the first (original) folder
     _dealsFolderId = data.files[0].id;
   } else {
     const meta = JSON.stringify({ name: PACQ_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' });
@@ -725,7 +728,7 @@ async function initDriveFolder() {
   } else {
     // Not in PACQ Deals — search Drive-wide (auto-migrates files from wrong folder)
     const q = encodeURIComponent(`name='deals.json' and trashed=false`);
-    const found = await driveReq('GET', `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&pageSize=1`).catch(() => null);
+    const found = await driveReq('GET', `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&pageSize=1&includeItemsFromAllDrives=true&supportsAllDrives=true`).catch(() => null);
     if (found?.files?.[0]?.id) {
       try { _dealsCache = await readJsonFile(found.files[0].id); } catch { _dealsCache = []; }
       if (_dealsCache.length) {
