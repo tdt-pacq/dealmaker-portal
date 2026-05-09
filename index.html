@@ -36,10 +36,6 @@ input[type=color]{border:1.5px solid #334155;border-radius:4px;cursor:pointer;he
 label{display:block;font-size:13px;font-weight:500;color:#94a3b8;margin-bottom:4px}
 .req{color:#2eb860;margin-left:2px}
 .fg{margin-bottom:16px}
-.topbar{background:#0a0e18;padding:0 24px;height:56px;display:flex;align-items:center;gap:24px;position:sticky;top:0;z-index:100;box-shadow:0 1px 0 #1a2235}
-.brand-t{font-family:var(--font-d);font-weight:700;font-size:17px;color:#e2e8f0;letter-spacing:.5px;line-height:1}
-.brand-s{font-family:var(--font-d);font-size:10px;color:#2eb860;letter-spacing:1.5px;text-transform:uppercase;line-height:1}
-.tuser{color:#64748b;font-size:12px;font-weight:600;letter-spacing:.5px;padding-left:16px;border-left:1px solid #1a2235;margin-left:8px;cursor:pointer}
 .page{padding:28px 32px;max-width:960px;margin:0 auto;width:100%}
 .ph{margin-bottom:24px}
 .pt{font-family:var(--font-d);font-weight:700;font-size:26px;color:#e2e8f0;text-transform:uppercase;letter-spacing:.5px}
@@ -121,17 +117,6 @@ label{display:block;font-size:13px;font-weight:500;color:#94a3b8;margin-bottom:4
 
 <!-- APP -->
 <div id="app" class="hidden">
-  <div class="topbar">
-    <div>
-      <div class="brand-t">Peterson Acquisitions</div>
-      <div class="brand-s">The Deal Team</div>
-    </div>
-    <div style="margin-left:auto;display:flex;align-items:center;gap:12px">
-      <a href="/" target="_top" style="font-size:12px;font-weight:600;color:#64748b;text-decoration:none;letter-spacing:.3px;padding:5px 10px;border:1px solid #1a2235;border-radius:4px;transition:border-color .15s,color .15s" onmouseover="this.style.borderColor='#2eb860';this.style.color='#2eb860'" onmouseout="this.style.borderColor='#1a2235';this.style.color='#64748b'">← Portal</a>
-      <span id="topbar-user" style="font-size:12px;color:#64748b"></span>
-      <div class="tuser" onclick="doLogout()">Sign Out</div>
-    </div>
-  </div>
 
   <div class="page">
     <div class="ph">

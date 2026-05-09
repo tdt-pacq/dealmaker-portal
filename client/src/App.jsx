@@ -2,6 +2,7 @@ import React, { useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { getAuth, setAuth, clearAuth } from './api';
 import Sidebar from './components/Sidebar';
+import Topbar from './components/Topbar';
 
 const Home = lazy(() => import('./pages/Home'));
 const DealMarketingApp = lazy(() => import('./pages/marketing/DealMarketingApp'));
@@ -180,22 +181,25 @@ export default function App() {
           onToggle={() => setSidebarCollapsed(c => !c)}
           onSignOut={handleLogout}
         />
-        <main className="portal-content">
-          <Suspense fallback={
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b' }}>
-              <div className="spinner spinner-dark" style={{ width: 28, height: 28, borderWidth: 3, display: 'inline-block', marginRight: 10 }} />
-              Loading…
-            </div>
-          }>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/marketing/*" element={<DealMarketingApp />} />
-              <Route path="/analyzer" element={<AnalyzerApp />} />
-              <Route path="/analyzer/*" element={<AnalyzerApp />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Suspense>
-        </main>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+          <Topbar />
+          <main className="portal-content">
+            <Suspense fallback={
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b' }}>
+                <div className="spinner spinner-dark" style={{ width: 28, height: 28, borderWidth: 3, display: 'inline-block', marginRight: 10 }} />
+                Loading…
+              </div>
+            }>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/marketing/*" element={<DealMarketingApp />} />
+                <Route path="/analyzer" element={<AnalyzerApp />} />
+                <Route path="/analyzer/*" element={<AnalyzerApp />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Suspense>
+          </main>
+        </div>
       </div>
     </BrowserRouter>
   );
