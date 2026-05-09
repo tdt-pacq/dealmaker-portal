@@ -1,0 +1,2960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Deal Team Marketing Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyCWorkeafYu5DoOc0kYE_InVFBZZOCgUPk",
+  authDomain:"qsi-marketing-generator.firebaseapp.com",
+  projectId:"qsi-marketing-generator",
+  storageBucket:"qsi-marketing-generator.firebasestorage.app",
+  messagingSenderId:"364758287464",
+  appId:"1:364758287464:web:56b4adb8a5f54ab4eae7dd",
+  measurementId:"G-7F0L4CQ6N5"
+});
+</script>
+<style>
+:root{--dark:#0a0e18;--copper:#2eb860;--white:#1e293b;--lgray:#0f1117;--mgray:#94a3b8;--border:#2d3748;--green:#2eb860;--font-d:'Oswald',Arial,sans-serif;--font-b:'Inter',Arial,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html{width:100vw;max-width:100vw;overflow-x:hidden}
+body{font-family:var(--font-b);background:#0f1117;color:#e2e8f0;-webkit-font-smoothing:antialiased;width:100%}
+button{font-family:var(--font-b);cursor:pointer;border:none;border-radius:4px;font-size:14px;font-weight:500;padding:8px 16px;transition:background .15s,opacity .15s}
+button:disabled{opacity:.5;cursor:not-allowed}
+.btn-p{background:#2eb860;color:#fff}.btn-p:hover:not(:disabled){background:#26a054}
+.btn-g{background:transparent;color:#2eb860;border:1.5px solid #2eb860}.btn-g:hover:not(:disabled){background:rgba(46,184,96,0.1)}
+.btn-sm{padding:5px 10px;font-size:12px}.btn-lg{padding:12px 28px;font-size:15px}
+input,textarea{font-family:var(--font-b);font-size:14px;padding:8px 12px;border:1.5px solid #334155;border-radius:4px;width:100%;background:#0d1117;color:#e2e8f0;transition:border-color .15s}
+input:focus,textarea:focus{outline:none;border-color:#2eb860}
+input[type=color]{border:1.5px solid #334155;border-radius:4px;cursor:pointer;height:38px;width:44px;padding:2px}
+label{display:block;font-size:13px;font-weight:500;color:#94a3b8;margin-bottom:4px}
+.req{color:#2eb860;margin-left:2px}
+.fg{margin-bottom:16px}
+.topbar{background:#0a0e18;padding:0 24px;height:56px;display:flex;align-items:center;gap:24px;position:sticky;top:0;z-index:100;box-shadow:0 1px 0 #1a2235}
+.brand-t{font-family:var(--font-d);font-weight:700;font-size:17px;color:#e2e8f0;letter-spacing:.5px;line-height:1}
+.brand-s{font-family:var(--font-d);font-size:10px;color:#2eb860;letter-spacing:1.5px;text-transform:uppercase;line-height:1}
+.tuser{color:#64748b;font-size:12px;font-weight:600;letter-spacing:.5px;padding-left:16px;border-left:1px solid #1a2235;margin-left:8px;cursor:pointer}
+.page{padding:28px 32px;max-width:960px;margin:0 auto;width:100%}
+.ph{margin-bottom:24px}
+.pt{font-family:var(--font-d);font-weight:700;font-size:26px;color:#e2e8f0;text-transform:uppercase;letter-spacing:.5px}
+.ps{font-size:14px;color:#64748b;margin-top:3px}
+.card{background:#1e293b;border-radius:8px;border:1px solid #2d3748;overflow:hidden;margin-bottom:20px}
+.ch{padding:16px 20px;border-bottom:1px solid #1a2235;display:flex;align-items:center;justify-content:space-between;background:#161f2e}
+.ct{font-family:var(--font-d);font-weight:600;font-size:15px;text-transform:uppercase;letter-spacing:.5px;color:#e2e8f0}
+.cb{padding:20px}
+.tabs{display:flex;border-bottom:2px solid #1a2235;margin-bottom:0;background:#161f2e;border-radius:8px 8px 0 0;overflow:hidden}
+.tab{background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;padding:12px 20px;font-family:var(--font-d);font-weight:600;font-size:13px;letter-spacing:.5px;text-transform:uppercase;color:#64748b;border-radius:0;transition:color .15s,border-color .15s;white-space:nowrap}
+.tab:hover{color:#e2e8f0}.tab.active{color:#2eb860;border-bottom-color:#2eb860}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:16px;height:16px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+.spinner-dk{border-color:rgba(255,255,255,.15);border-top-color:#2eb860}
+.alert{padding:12px 16px;border-radius:6px;font-size:14px;margin-bottom:16px;line-height:1.5}
+.ae{background:rgba(220,38,38,0.1);color:#f87171;border-left:4px solid #ef4444}
+.hidden{display:none}
+#login-view{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f1117}
+.login-box{width:380px;background:#1e293b;border-radius:10px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6);border:1px solid #2d3748}
+.login-hd{background:#0a0e18;padding:28px 32px;text-align:center;border-bottom:3px solid #2eb860}
+.login-t{font-family:var(--font-d);font-weight:700;font-size:20px;color:#e2e8f0;letter-spacing:1px}
+.login-s{font-family:var(--font-d);font-size:11px;color:#2eb860;letter-spacing:2px;margin-top:3px}
+.login-form{padding:28px 32px;background:#1e293b}
+.pdf-zone{border:2px dashed #334155;border-radius:8px;padding:18px 12px;text-align:center;cursor:pointer;background:#0d1117;transition:all .15s;min-height:112px;display:flex;align-items:center;justify-content:center}
+.pdf-zone:hover:not(.ready):not(.parsing){border-color:#2eb860;background:rgba(46,184,96,0.05)}
+.pdf-zone.drag{border-color:#2eb860!important;background:rgba(46,184,96,0.08)!important}
+.pdf-zone.ready{border-color:#2eb860;background:rgba(46,184,96,0.08);cursor:default}
+.pdf-zone.error{border-color:#ef4444;background:rgba(220,38,38,0.08)}
+.pdf-zone.parsing{cursor:default;border-color:#334155}
+.pdf-inner{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%}
+.pdf-err{font-size:12px;color:#f87171;margin-top:5px;line-height:1.4}
+.img-zone{border:2px dashed #334155;border-radius:8px;padding:18px 12px;text-align:center;cursor:pointer;background:#0d1117;transition:all .15s;min-height:112px;display:flex;align-items:center;justify-content:center}
+.img-zone:hover:not(.ready){border-color:#2eb860;background:rgba(46,184,96,0.05)}
+.img-zone.drag{border-color:#2eb860!important;background:rgba(46,184,96,0.08)!important}
+.img-zone.ready{border-color:#2eb860;background:rgba(46,184,96,0.08);cursor:default}
+.otb{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid #1a2235;background:#161f2e;flex-wrap:wrap}
+.otb-lbl{font-family:var(--font-d);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8}
+.out-ta{width:100%;min-height:500px;font-family:'Courier New',monospace;font-size:13px;line-height:1.7;padding:20px;border:none;resize:vertical;background:#0d1117;color:#e2e8f0}
+.out-ta:focus{outline:none}
+.missing-out{margin:16px 20px;padding:14px 16px;background:rgba(220,38,38,0.1);border-left:4px solid #ef4444;border-radius:0 4px 4px 0;color:#f87171;font-weight:700;font-size:14px}
+.qa-item{display:flex;align-items:flex-start;gap:12px;padding:13px 0;border-bottom:1px solid #1a2235}
+.qa-item:last-child{border-bottom:none}
+.qa-item input[type=checkbox]{width:18px;height:18px;accent-color:#2eb860;cursor:pointer;flex-shrink:0;margin-top:1px}
+.qa-item label{font-size:14px;color:#e2e8f0;font-weight:500;cursor:pointer;margin:0;line-height:1.4}
+.frow2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.gen-prog{text-align:center;padding:32px 20px;color:#64748b}
+.color-row{display:flex;gap:8px;align-items:center}
+.color-row input[type=color]{flex-shrink:0}
+.color-row input[type=text]{flex:1}
+@media(max-width:640px){
+  .page{padding:16px 14px}
+  .frow2,.frow3{grid-template-columns:1fr}
+  .tabs{overflow-x:auto;flex-wrap:nowrap}
+  .tab{padding:10px 14px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-view">
+  <div class="login-box">
+    <div class="login-hd">
+      <div class="login-t">PETERSON ACQUISITIONS</div>
+      <div class="login-s">THE DEAL TEAM — INTERNAL PLATFORM</div>
+    </div>
+    <div class="login-form">
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:20px;text-align:center;line-height:1.5">Sign in with your <strong style="color:#e2e8f0">@thedealteam.co</strong> Google account to access the platform.</p>
+      <div id="l-err" class="alert ae hidden"></div>
+      <button onclick="doGoogleLogin()" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px 20px;background:#0d1117;border:1px solid #334155;border-radius:6px;font-size:14px;font-weight:600;color:#e2e8f0;cursor:pointer;transition:border-color .15s,background .15s" onmouseover="this.style.borderColor='#2eb860';this.style.background='#111827'" onmouseout="this.style.borderColor='#334155';this.style.background='#0d1117'">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" height="18"/>
+        Sign in with Google
+      </button>
+      <div id="login-loading" style="display:none;text-align:center;margin-top:16px;font-size:13px;color:#64748b">Signing in…</div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+  <div class="topbar">
+    <div>
+      <div class="brand-t">Peterson Acquisitions</div>
+      <div class="brand-s">The Deal Team</div>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:12px">
+      <a href="/" style="font-size:12px;font-weight:600;color:#64748b;text-decoration:none;letter-spacing:.3px;padding:5px 10px;border:1px solid #1a2235;border-radius:4px;transition:border-color .15s,color .15s" onmouseover="this.style.borderColor='#2eb860';this.style.color='#2eb860'" onmouseout="this.style.borderColor='#1a2235';this.style.color='#64748b'">← Portal</a>
+      <span id="topbar-user" style="font-size:12px;color:#64748b"></span>
+      <div class="tuser" onclick="doLogout()">Sign Out</div>
+    </div>
+  </div>
+
+  <div class="page">
+    <div class="ph">
+      <div class="pt">Marketing Generator</div>
+      <div class="ps">Upload documents and photos, enter deal details, then generate all outputs in one pass.</div>
+    </div>
+
+    <!-- DEALS -->
+    <div class="card" id="deals-card">
+      <div class="ch">
+        <span class="ct">Deals</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span id="current-deal-badge" style="font-size:11px;color:#64748b"></span>
+          <button class="btn-g btn-sm" onclick="saveDeal()" id="save-deal-btn" style="display:none">Save to Drive</button>
+          <button class="btn-p btn-sm" onclick="startNewDeal()">+ New Deal</button>
+        </div>
+      </div>
+      <div id="deals-list" style="max-height:320px;overflow-y:auto"></div>
+    </div>
+
+    <!-- DOCUMENTS -->
+    <div class="card">
+      <div class="ch">
+        <span class="ct">Documents</span>
+        <span style="font-size:12px;color:#64748b">First three required · PDF only</span>
+      </div>
+      <div class="cb">
+        <div class="frow3">
+          <div>
+            <label>Interview Doc <span class="req">*</span></label>
+            <div class="pdf-zone" id="zone-interview"
+                 onclick="zoneClick('interview')"
+                 ondragover="dragOver(event,this)"
+                 ondragleave="dragLeave(this)"
+                 ondrop="dropPdf(event,'interview')">
+              <input type="file" id="file-interview" accept=".pdf" style="display:none"
+                     onchange="handlePdf(this.files[0],'interview')"/>
+              <div class="pdf-inner" id="inner-interview">
+                <div style="font-size:28px">📄</div>
+                <div style="font-weight:600;color:#94a3b8;font-size:13px">Drop or click to upload</div>
+                <div style="font-size:11px;color:#64748b;margin-top:2px">Interview Doc</div>
+              </div>
+            </div>
+            <div class="pdf-err hidden" id="err-interview"></div>
+          </div>
+          <div>
+            <label>Engagement Agreement <span class="req">*</span></label>
+            <div class="pdf-zone" id="zone-ea"
+                 onclick="zoneClick('ea')"
+                 ondragover="dragOver(event,this)"
+                 ondragleave="dragLeave(this)"
+                 ondrop="dropPdf(event,'ea')">
+              <input type="file" id="file-ea" accept=".pdf" style="display:none"
+                     onchange="handlePdf(this.files[0],'ea')"/>
+              <div class="pdf-inner" id="inner-ea">
+                <div style="font-size:28px">📄</div>
+                <div style="font-weight:600;color:#94a3b8;font-size:13px">Drop or click to upload</div>
+                <div style="font-size:11px;color:#64748b;margin-top:2px">Engagement Agreement</div>
+              </div>
+            </div>
+            <div class="pdf-err hidden" id="err-ea"></div>
+          </div>
+          <div>
+            <label>QSI MPA Report <span class="req">*</span></label>
+            <div class="pdf-zone" id="zone-mpa"
+                 onclick="zoneClick('mpa')"
+                 ondragover="dragOver(event,this)"
+                 ondragleave="dragLeave(this)"
+                 ondrop="dropPdf(event,'mpa')">
+              <input type="file" id="file-mpa" accept=".pdf" style="display:none"
+                     onchange="handlePdf(this.files[0],'mpa')"/>
+              <div class="pdf-inner" id="inner-mpa">
+                <div style="font-size:28px">📄</div>
+                <div style="font-weight:600;color:#94a3b8;font-size:13px">Drop or click to upload</div>
+                <div style="font-size:11px;color:#64748b;margin-top:2px">QSI MPA Report</div>
+              </div>
+            </div>
+            <div class="pdf-err hidden" id="err-mpa"></div>
+          </div>
+        </div>
+        <div style="margin-top:12px">
+          <label>Bank Term Sheet <span style="font-size:11px;color:#64748b;font-weight:400">(optional — SBA bank name &amp; loan terms)</span></label>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="pdf-zone" id="zone-termsheet" style="flex:1;max-width:260px"
+                 onclick="zoneClick('termsheet')"
+                 ondragover="dragOver(event,this)"
+                 ondragleave="dragLeave(this)"
+                 ondrop="dropPdf(event,'termsheet')">
+              <input type="file" id="file-termsheet" accept=".pdf" style="display:none"
+                     onchange="handlePdf(this.files[0],'termsheet')"/>
+              <div class="pdf-inner" id="inner-termsheet">
+                <div style="font-size:24px">🏦</div>
+                <div style="font-weight:600;color:#94a3b8;font-size:12px">Drop or click to upload</div>
+                <div style="font-size:11px;color:#64748b;margin-top:2px">Bank Term Sheet</div>
+              </div>
+            </div>
+            <div style="font-size:11px;color:#64748b;line-height:1.6">If uploaded, the bank name, rate,<br/>loan terms and payment will be<br/>extracted for the SBA section.</div>
+          </div>
+          <div class="pdf-err hidden" id="err-termsheet"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHOTOS -->
+    <div class="card">
+      <div class="ch">
+        <span class="ct">Photos</span>
+        <span style="font-size:12px;color:#64748b">Advisor headshot required · Business photos optional</span>
+      </div>
+      <div class="cb">
+        <div class="frow2">
+          <div>
+            <label>Business Photos <span style="font-size:11px;color:#64748b;font-weight:400">(optional · up to 5 · first used in flyer &amp; CIM cover)</span></label>
+            <div id="biz-photos-outer" style="border:2px dashed #334155;border-radius:8px;padding:10px;background:#0d1117;min-height:90px">
+              <input type="file" id="file-biz-photos" accept="image/*" multiple style="display:none" onchange="handleBizPhotos(this.files)"/>
+              <div id="biz-photos-grid" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+                <div id="biz-add-btn" onclick="document.getElementById('file-biz-photos').click()" style="width:64px;height:64px;border:2px dashed #334155;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#64748b;cursor:pointer;flex-shrink:0" title="Add photo">+</div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label>Advisor Headshot <span class="req">*</span></label>
+            <div class="img-zone" id="zone-advisor-photo"
+                 onclick="imgZoneClick('advisor-photo')"
+                 ondragover="dragOver(event,this)"
+                 ondragleave="dragLeave(this)"
+                 ondrop="dropImg(event,'advisor-photo')">
+              <input type="file" id="file-advisor-photo" accept="image/*" style="display:none"
+                     onchange="handleImage(this.files[0],'advisor-photo')"/>
+              <div class="pdf-inner" id="inner-advisor-photo">
+                <div style="font-size:28px">👤</div>
+                <div style="font-weight:600;color:#94a3b8;font-size:13px">Drop or click to upload</div>
+                <div style="font-size:11px;color:#64748b;margin-top:2px">JPG, PNG, WEBP</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEAL INFO -->
+    <div class="card">
+      <div class="ch">
+        <span class="ct">Deal Information</span>
+        <span style="font-size:12px;color:#64748b">Required fields marked *</span>
+      </div>
+      <div class="cb">
+        <div class="fg">
+          <label>Saved Advisor <span style="font-size:11px;color:#64748b;font-weight:400">(optional — auto-fills fields below)</span></label>
+          <div style="display:flex;gap:8px">
+            <select id="f-advisor-select" onchange="selectAdvisor(this.value)" style="flex:1;font-family:var(--font-b);font-size:14px;padding:8px 12px;border:1.5px solid var(--border);border-radius:4px;background:#0d1117;color:#e2e8f0;transition:border-color .15s">
+              <option value="">— Enter manually below —</option>
+            </select>
+            <button class="btn-g btn-sm" onclick="openAdvisorModal()">Manage</button>
+          </div>
+        </div>
+        <div class="frow2">
+          <div class="fg">
+            <label>Confirmed Asking Price <span class="req">*</span></label>
+            <input type="text" id="f-price" placeholder="e.g. 1,500,000" oninput="updateGenBtn()"/>
+          </div>
+          <div class="fg">
+            <label>Advisor Name <span class="req">*</span></label>
+            <input type="text" id="f-name" placeholder="Full name" oninput="updateGenBtn()"/>
+          </div>
+        </div>
+        <div class="frow2">
+          <div class="fg">
+            <label>Advisor Email <span class="req">*</span></label>
+            <input type="text" id="f-email" placeholder="advisor@thedealteam.co" oninput="updateGenBtn()"/>
+          </div>
+          <div class="fg">
+            <label>Advisor Phone <span class="req">*</span></label>
+            <input type="text" id="f-phone" placeholder="(555) 000-0000" oninput="updateGenBtn()"/>
+          </div>
+        </div>
+        <div class="fg">
+          <label>Company Website <span style="font-size:11px;color:#64748b;font-weight:400">(optional — used to extract brand colors)</span></label>
+          <input type="text" id="f-website" placeholder="e.g. www.electricalcontractorssupply.com"/>
+        </div>
+        <div class="frow2" style="margin-top:4px">
+          <div class="fg" style="margin-bottom:0">
+            <label>Primary Brand Color <span style="font-size:11px;color:#64748b;font-weight:400">(auto-filled after generate)</span></label>
+            <div class="color-row">
+              <input type="color" id="f-primary-color" value="#1A1A1A" oninput="syncColorPicker('primary')"/>
+              <input type="text" id="f-primary-color-hex" value="#1A1A1A" placeholder="#000000" oninput="syncColorHex('primary')"/>
+            </div>
+          </div>
+          <div class="fg" style="margin-bottom:0">
+            <label>Accent Brand Color <span style="font-size:11px;color:#64748b;font-weight:400">(auto-filled after generate)</span></label>
+            <div class="color-row">
+              <input type="color" id="f-accent-color" value="#C1622F" oninput="syncColorPicker('accent')"/>
+              <input type="text" id="f-accent-color-hex" value="#C1622F" placeholder="#000000" oninput="syncColorHex('accent')"/>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ERROR + GENERATE BUTTON -->
+    <div id="gen-error" class="alert ae hidden"></div>
+
+    <div id="gen-btn-wrap" style="margin-bottom:24px">
+      <button id="gen-btn" class="btn-p btn-lg" onclick="runGeneration()" disabled
+              style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px">
+        <span id="gen-spin" class="spinner hidden"></span>
+        Generate All Outputs
+      </button>
+    </div>
+
+    <div id="gen-progress" class="gen-prog hidden" style="margin-bottom:24px">
+      <div class="spinner spinner-dk" style="width:32px;height:32px;border-width:4px;display:inline-block"></div>
+      <div style="margin-top:12px;font-size:14px;font-weight:500;color:#444">Claude is reading the documents and generating all outputs…</div>
+      <div style="font-size:12px;color:#64748b;margin-top:5px">Usually 30–90 seconds · <span id="gen-elapsed">0s</span></div>
+    </div>
+
+    <!-- EDIT PANEL -->
+    <div id="edit-panel" class="card hidden" style="margin-bottom:20px">
+      <div class="ch">
+        <span class="ct">Edit Outputs</span>
+        <span style="font-size:12px;color:#64748b">Review and adjust content before opening preview</span>
+      </div>
+      <div class="cb" style="padding-top:0">
+        <div class="tabs" id="edit-tabs" style="margin-bottom:0">
+          <button class="tab active" id="etab-flyer" onclick="switchEditTab('flyer',this)">🖨 Flyer Zones</button>
+          <button class="tab" id="etab-cim" onclick="switchEditTab('cim',this)">📊 CIM Sections</button>
+        </div>
+        <div id="edit-flyer-panel" style="padding:16px 0 4px;max-height:540px;overflow-y:auto"></div>
+        <div id="edit-cim-panel" style="padding:16px 0 4px;max-height:540px;overflow-y:auto" class="hidden"></div>
+      </div>
+    </div>
+
+    <!-- QA GATE -->
+    <div id="qa-gate" class="hidden" style="margin-bottom:20px">
+      <div class="card" style="margin-bottom:0;border:2px solid #2eb860">
+        <div class="ch" style="background:#0d1f14">
+          <span class="ct">QA Review</span>
+          <span style="font-size:12px;color:#c0392b;font-weight:600" id="qa-status">Check all four boxes to unlock outputs ↓</span>
+        </div>
+        <div class="cb">
+          <div class="qa-item">
+            <input type="checkbox" id="qa1" onchange="updateQaGate()"/>
+            <label for="qa1">Confirmed asking price matches the Engagement Agreement</label>
+          </div>
+          <div class="qa-item">
+            <input type="checkbox" id="qa2" onchange="updateQaGate()"/>
+            <label for="qa2">No identifying information visible in Blind Ad or Flyer Copy tabs</label>
+          </div>
+          <div class="qa-item">
+            <input type="checkbox" id="qa3" onchange="updateQaGate()"/>
+            <label for="qa3">Financial figures match the QSI MPA Report</label>
+          </div>
+          <div class="qa-item">
+            <input type="checkbox" id="qa4" onchange="updateQaGate()"/>
+            <label for="qa4">Advisor contact information is correct in all outputs</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OUTPUT PANEL -->
+    <div id="output-panel" class="hidden" style="background:#1e293b;border-radius:8px;border:1px solid #2d3748;overflow:hidden;margin-bottom:40px">
+      <div class="tabs">
+        <button class="tab active" id="tab-blind-ad" onclick="switchOutTab('blind-ad',this)">📋 Blind Ad</button>
+        <button class="tab" id="tab-flyer-copy" onclick="switchOutTab('flyer-copy',this)">🖨 Flyer</button>
+        <button class="tab" id="tab-cim-content" onclick="switchOutTab('cim-content',this)">📊 CIM</button>
+        <button class="tab" id="tab-internal-summary" onclick="switchOutTab('internal-summary',this)">🔒 Internal</button>
+      </div>
+
+      <div id="out-blind-ad">
+        <div class="otb">
+          <span class="otb-lbl">BizBuySell Blind Ad</span>
+          <button class="btn-g btn-sm" onclick="copyOutput('ta-blind-ad',this)">Copy to Clipboard</button>
+        </div>
+        <div id="content-blind-ad"></div>
+      </div>
+
+      <div id="out-flyer-copy" class="hidden">
+        <div class="otb">
+          <span class="otb-lbl">One-Page Flyer</span>
+          <button class="btn-g btn-sm" onclick="copyOutput('ta-flyer-copy',this)">Copy Text</button>
+          <button class="btn-p btn-sm" onclick="openFlyerPreview()">🖨 Open Flyer Preview</button>
+        </div>
+        <div id="content-flyer-copy"></div>
+      </div>
+
+      <div id="out-cim-content" class="hidden">
+        <div class="otb">
+          <span class="otb-lbl">CIM / CBR Report</span>
+          <button class="btn-g btn-sm" onclick="copyOutput('ta-cim-content',this)">Copy Text</button>
+          <button class="btn-p btn-sm" onclick="openCimPreview()">🖨 Open CIM Preview</button>
+        </div>
+        <div id="content-cim-content"></div>
+      </div>
+
+      <div id="out-internal-summary" class="hidden">
+        <div class="otb">
+          <span class="otb-lbl">Internal Deal Summary — Not for Distribution</span>
+          <button class="btn-g btn-sm" onclick="copyOutput('ta-internal-summary',this)">Copy to Clipboard</button>
+        </div>
+        <div id="content-internal-summary"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ADVISOR MODAL -->
+<div id="advisor-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center">
+  <div style="background:#1e293b;border:1px solid #2d3748;border-radius:8px;width:540px;max-height:82vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.6)">
+    <div class="ch" style="position:sticky;top:0;background:#161f2e;z-index:1">
+      <span class="ct">Manage Advisors</span>
+      <button onclick="closeAdvisorModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#64748b;line-height:1;padding:0 4px">✕</button>
+    </div>
+    <div class="cb">
+      <div id="advisor-list-inner"></div>
+      <div style="border-top:1px solid #eee;margin-top:16px;padding-top:16px">
+        <div style="font-family:var(--font-d);font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--mgray);margin-bottom:12px" id="advisor-form-title">Add Advisor</div>
+        <div id="advisor-form-inner"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+
+const ALLOWED_DOMAIN   = 'thedealteam.co';
+const PACQ_FOLDER_NAME = 'PACQ Deals';
+const GOOGLE_CLIENT_ID = '364758287464-2p3ulpojl7kkg4gi3d66b9vpsuohcfkd.apps.googleusercontent.com';
+const DRIVE_SCOPE      = 'https://www.googleapis.com/auth/drive';
+const DEFAULT_API_KEY = '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';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+function getApiKey() { return localStorage.getItem('pacq_api_key') || DEFAULT_API_KEY; }
+function isAllowedEmail(e) { return e && e.toLowerCase().endsWith('@' + ALLOWED_DOMAIN); }
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+
+function doGoogleLogin() {
+  const err = document.getElementById('l-err');
+  const loading = document.getElementById('login-loading');
+  err.classList.add('hidden');
+  loading.style.display = 'block';
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.addScope(DRIVE_SCOPE);
+  provider.setCustomParameters({ hd: ALLOWED_DOMAIN });
+  // Use redirect instead of popup — popups are blocked in iframe contexts
+  firebase.auth().signInWithRedirect(provider).catch(() => {
+    loading.style.display = 'none';
+    err.textContent = 'Sign-in failed. Please try again.';
+    err.classList.remove('hidden');
+  });
+}
+
+function doLogout() { firebase.auth().signOut(); }
+
+let _appBooted = false;
+async function initDriveToken() {
+  if (_appBooted) return;
+  _appBooted = true;
+  // Check sessionStorage for a still-valid token from this browser session
+  const stored = sessionStorage.getItem('_driveToken');
+  const exp    = parseInt(sessionStorage.getItem('_driveTokenExp') || '0');
+  if (stored && Date.now() < exp) {
+    driveToken = stored;
+    await bootApp(true);
+    return;
+  }
+  // Token missing — boot without Drive and show a Connect button
+  await bootApp(false);
+}
+
+async function connectDrive() {
+  const btn = document.getElementById('drive-connect-btn');
+  if (btn) { btn.textContent = 'Connecting…'; btn.disabled = true; }
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.addScope(DRIVE_SCOPE);
+  provider.setCustomParameters({ hd: ALLOWED_DOMAIN });
+  // Use redirect (not popup) — popups are blocked in non-top-level browsing contexts.
+  // getRedirectResult() on the next page load captures the new Drive token.
+  sessionStorage.setItem('_driveReconnect', '1');
+  firebase.auth().currentUser.reauthenticateWithRedirect(provider).catch(e => {
+    sessionStorage.removeItem('_driveReconnect');
+    if (btn) { btn.textContent = 'Connect to Drive'; btn.disabled = false; }
+    showDriveError('Could not connect to Drive — ' + (e.message || 'please try again'));
+  });
+}
+
+async function bootApp(useDrive) {
+  document.getElementById('login-view').style.display = 'none';
+  document.getElementById('app').classList.remove('hidden');
+  if (useDrive) {
+    renderDealsListLoading('Loading from Drive…');
+    try { await initDriveFolder(); }
+    catch(e) { showDriveError('Could not load from Drive: ' + e.message); }
+  } else {
+    // Inject a Connect banner above the deals list (only once)
+    const el = document.getElementById('deals-list');
+    if (el && !document.getElementById('drive-connect-banner')) el.insertAdjacentHTML('beforebegin', `
+      <div id="drive-connect-banner" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(251,191,36,0.08);border-bottom:1px solid rgba(251,191,36,0.2);font-size:12px;color:#94a3b8">
+        <span style="flex:1">Google Drive not connected — deals won't sync across devices.</span>
+        <button id="drive-connect-btn" class="btn-p btn-sm" onclick="connectDrive()">Connect to Drive</button>
+      </div>`);
+  }
+  renderDealsList();
+  renderAdvisorOptions();
+}
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+
+const pdfTexts  = { interview: null, ea: null, mpa: null, termsheet: null };
+const imageData = { bizPhotos: [], bizPhotoIds: [], advisorPhoto: null, advisorPhotoId: null };
+let currentDealId    = null;
+let _lastFlyerZones  = null;
+let _lastCimSections = null;
+let _lastBrandColors = { primary: '#1A1A1A', accent: '#C1622F', companyName: '' };
+let _elapsedTimer    = null;
+
+// ─── DRIVE STATE ──────────────────────────────────────────────────────────────
+let driveToken       = null;
+let driveTokenClient = null;
+let _dealsCache      = [];
+let _advisorsCache   = [];
+let _driveFileIds    = {};
+let _dealsFolderId   = null;
+
+// ─── DRIVE API ────────────────────────────────────────────────────────────────
+
+async function getOrCreatePacqFolder() {
+  if (_dealsFolderId) return _dealsFolderId;
+  const cached = localStorage.getItem('_pacqFolderId');
+  if (cached) { _dealsFolderId = cached; return cached; }
+  const q = encodeURIComponent(`name='${PACQ_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const data = await driveReq('GET', `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&pageSize=1`);
+  if (data.files?.[0]?.id) {
+    _dealsFolderId = data.files[0].id;
+  } else {
+    const meta = JSON.stringify({ name: PACQ_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' });
+    const res = await driveReq('POST', 'https://www.googleapis.com/drive/v3/files', meta, 'application/json');
+    _dealsFolderId = res.id;
+  }
+  localStorage.setItem('_pacqFolderId', _dealsFolderId);
+  return _dealsFolderId;
+}
+
+function showDriveError(msg) {
+  const el = document.getElementById('deals-list');
+  if (!el) return;
+  const toast = document.createElement('div');
+  toast.style.cssText = 'padding:10px 14px;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:4px;font-size:12px;margin:8px';
+  toast.textContent = '⚠ ' + msg;
+  el.prepend(toast);
+  setTimeout(() => toast.remove(), 6000);
+}
+
+async function driveReq(method, url, body, contentType) {
+  if (!driveToken) throw new Error('No Drive token');
+  const opts = { method, headers: { 'Authorization': 'Bearer ' + driveToken } };
+  if (body !== undefined) {
+    opts.body = body;
+    if (contentType) opts.headers['Content-Type'] = contentType;
+  }
+  const res = await fetch(url, opts);
+  if (res.status === 401) {
+    driveToken = null;
+    sessionStorage.removeItem('_driveToken');
+    sessionStorage.removeItem('_driveTokenExp');
+    const listEl = document.getElementById('deals-list');
+    if (listEl && !document.getElementById('drive-connect-banner')) {
+      listEl.insertAdjacentHTML('beforebegin', `<div id="drive-connect-banner" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:6px;font-size:12px;margin-bottom:8px"><span>Drive session expired — reconnect to sync deals.</span><button class="btn-p btn-sm" onclick="connectDrive()">Reconnect Drive</button></div>`);
+    }
+    throw new Error('token_expired');
+  }
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Drive ${method} ${res.status}: ${text.slice(0,200)}`);
+  }
+  const ct = res.headers.get('content-type') || '';
+  if (ct.includes('json')) return res.json();
+  return res;
+}
+
+async function findFile(name, parentId) {
+  const q = encodeURIComponent(`name='${name.replace(/'/g,"\\'")}' and '${parentId}' in parents and trashed=false`);
+  const data = await driveReq('GET', `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&pageSize=5`);
+  return data.files?.[0]?.id || null;
+}
+
+async function readJsonFile(fileId) {
+  const res = await driveReq('GET', `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
+  return res.json();
+}
+
+async function writeJsonFile(name, obj, parentId, existingId) {
+  const meta = JSON.stringify(existingId ? {} : { name, mimeType: 'application/json', parents: [parentId] });
+  const body = new FormData();
+  body.append('metadata', new Blob([meta], { type: 'application/json' }));
+  body.append('file',     new Blob([JSON.stringify(obj)], { type: 'application/json' }));
+  const url = existingId
+    ? `https://www.googleapis.com/upload/drive/v3/files/${existingId}?uploadType=multipart`
+    : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`;
+  const data = await driveReq(existingId ? 'PATCH' : 'POST', url, body);
+  return data.id;
+}
+
+async function uploadImage(name, base64DataUrl, parentId, existingId) {
+  const [header, b64] = base64DataUrl.split(',');
+  const mime = header.match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const meta = JSON.stringify(existingId ? {} : { name, mimeType: mime, parents: [parentId] });
+  const body = new FormData();
+  body.append('metadata', new Blob([meta], { type: 'application/json' }));
+  body.append('file',     new Blob([bytes], { type: mime }));
+  const url = existingId
+    ? `https://www.googleapis.com/upload/drive/v3/files/${existingId}?uploadType=multipart`
+    : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`;
+  const data = await driveReq(existingId ? 'PATCH' : 'POST', url, body);
+  return data.id;
+}
+
+async function fetchImageAsDataUrl(fileId) {
+  const res = await driveReq('GET', `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
+  const buf = await res.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return 'data:image/jpeg;base64,' + btoa(bin);
+}
+
+async function ensureDealFolder(dealId) {
+  const key = 'deal_' + dealId;
+  if (_driveFileIds[key]) return _driveFileIds[key];
+  const rootId = await getOrCreatePacqFolder();
+  let folderId = await findFile(dealId, rootId);
+  if (!folderId) {
+    const meta = JSON.stringify({ name: dealId, mimeType: 'application/vnd.google-apps.folder', parents: [rootId] });
+    const data = await driveReq('POST', 'https://www.googleapis.com/drive/v3/files', meta, 'application/json');
+    folderId = data.id;
+  }
+  _driveFileIds[key] = folderId;
+  return folderId;
+}
+
+async function deleteDriveFolder(dealId) {
+  const rootId = await getOrCreatePacqFolder().catch(() => null);
+  const folderId = _driveFileIds['deal_' + dealId] || (rootId ? await findFile(dealId, rootId) : null);
+  if (!folderId) return;
+  await driveReq('DELETE', `https://www.googleapis.com/drive/v3/files/${folderId}`).catch(() => {});
+  delete _driveFileIds['deal_' + dealId];
+}
+
+async function initDriveFolder() {
+  const rootId = await getOrCreatePacqFolder();
+  // Load deals.json
+  let dealsFileId = await findFile('deals.json', rootId);
+  if (dealsFileId) {
+    _driveFileIds['deals.json'] = dealsFileId;
+    try { _dealsCache = await readJsonFile(dealsFileId); } catch { _dealsCache = []; }
+  } else {
+    // Not in PACQ Deals — search Drive-wide (auto-migrates files from wrong folder)
+    const q = encodeURIComponent(`name='deals.json' and trashed=false`);
+    const found = await driveReq('GET', `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&pageSize=1`).catch(() => null);
+    if (found?.files?.[0]?.id) {
+      try { _dealsCache = await readJsonFile(found.files[0].id); } catch { _dealsCache = []; }
+      if (_dealsCache.length) {
+        const newId = await writeJsonFile('deals.json', _dealsCache, rootId, null);
+        _driveFileIds['deals.json'] = newId;
+      }
+    } else {
+      _dealsCache = [];
+    }
+  }
+  // Load advisors.json
+  let advisorsFileId = await findFile('advisors.json', rootId);
+  if (advisorsFileId) {
+    _driveFileIds['advisors.json'] = advisorsFileId;
+    try { _advisorsCache = await readJsonFile(advisorsFileId); } catch { _advisorsCache = []; }
+  } else {
+    // Search Drive-wide (auto-migrates from wrong folder)
+    const q2 = encodeURIComponent(`name='advisors.json' and trashed=false`);
+    const found2 = await driveReq('GET', `https://www.googleapis.com/drive/v3/files?q=${q2}&fields=files(id)&pageSize=1`).catch(() => null);
+    if (found2?.files?.[0]?.id) {
+      try { _advisorsCache = await readJsonFile(found2.files[0].id); } catch { _advisorsCache = []; }
+      if (_advisorsCache.length) {
+        const newId2 = await writeJsonFile('advisors.json', _advisorsCache, rootId, null);
+        _driveFileIds['advisors.json'] = newId2;
+      }
+    } else {
+      _advisorsCache = [];
+    }
+  }
+  // Migration from localStorage
+  if (_dealsCache.length === 0) {
+    const local = (() => { try { return JSON.parse(localStorage.getItem('pacq_deals') || '[]'); } catch { return []; } })();
+    if (local.length && confirm(`Migrate ${local.length} saved deal(s) from this device to Google Drive?\n\nThis only needs to happen once.`)) {
+      renderDealsListLoading('Migrating deals to Drive…');
+      for (const deal of local) await migrateLocalDeal(deal);
+    }
+  }
+  if (_advisorsCache.length === 0) {
+    const localAdv = (() => { try { return JSON.parse(localStorage.getItem('pacq_advisors') || '[]'); } catch { return []; } })();
+    if (localAdv.length) {
+      _advisorsCache = localAdv;
+      saveAdvisors(localAdv);
+    }
+  }
+}
+
+async function migrateLocalDeal(deal) {
+  const dealId = deal.id || ('deal_' + Date.now());
+  deal.id = dealId;
+  // Upload biz photos
+  const bizPhotoIds = [];
+  if (deal.bizPhotos?.length) {
+    const folderId = await ensureDealFolder(dealId);
+    for (let i = 0; i < deal.bizPhotos.length; i++) {
+      if (deal.bizPhotos[i]?.startsWith('data:')) {
+        try { bizPhotoIds.push(await uploadImage(`biz_${i}.jpg`, deal.bizPhotos[i], folderId, null)); }
+        catch { bizPhotoIds.push(null); }
+      }
+    }
+  }
+  // Upload advisor photo
+  let advisorPhotoId = null;
+  if (deal.advisorPhoto?.startsWith('data:')) {
+    try {
+      const folderId = await ensureDealFolder(dealId);
+      advisorPhotoId = await uploadImage('advisor.jpg', deal.advisorPhoto, folderId, null);
+    } catch {}
+  }
+  const record = { ...deal, bizPhotos: undefined, advisorPhoto: undefined, bizPhotoIds, advisorPhotoId };
+  delete record.bizPhotos;
+  delete record.advisorPhoto;
+  _dealsCache.unshift(record);
+  const rootId = await getOrCreatePacqFolder();
+  await writeJsonFile('deals.json', _dealsCache, rootId, _driveFileIds['deals.json'])
+    .then(id => { _driveFileIds['deals.json'] = id; });
+}
+
+// ─── CACHE-BACKED STORAGE ─────────────────────────────────────────────────────
+
+function loadDeals()  { return _dealsCache; }
+function loadAdvisors() { return _advisorsCache; }
+
+async function saveDeals(arr) {
+  _dealsCache = arr;
+  const rootId = await getOrCreatePacqFolder();
+  return writeJsonFile('deals.json', arr, rootId, _driveFileIds['deals.json'])
+    .then(id => { _driveFileIds['deals.json'] = id; console.log('[Drive] deals.json saved, fileId:', id); return id; })
+    .catch(e => { if (e.message !== 'token_expired') showDriveError('Could not save deals to Drive — ' + e.message); throw e; });
+}
+
+async function saveAdvisors(arr) {
+  _advisorsCache = arr;
+  const rootId = await getOrCreatePacqFolder();
+  writeJsonFile('advisors.json', arr, rootId, _driveFileIds['advisors.json'])
+    .then(id => { _driveFileIds['advisors.json'] = id; })
+    .catch(e => { if (e.message !== 'token_expired') showDriveError('Could not save advisors to Drive — ' + e.message); });
+}
+
+function renderDealsListLoading(msg) {
+  const el = document.getElementById('deals-list');
+  if (el) el.innerHTML = `<div style="padding:20px;text-align:center;color:#64748b;font-size:13px">${msg || 'Loading from Drive…'}</div>`;
+}
+
+// ─── DEAL MANAGEMENT ──────────────────────────────────────────────────────────
+
+async function saveDeal() {
+  const deals   = loadDeals();
+  const user    = firebase.auth().currentUser;
+  const now     = new Date().toISOString();
+  const company = _lastBrandColors?.companyName || '';
+  const dealName = company || ('Deal ' + new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}));
+  const dealId   = currentDealId || ('deal_' + Date.now());
+
+  const blindAdEl   = document.getElementById('ta-blind-ad');
+  const flyerCopyEl = document.getElementById('ta-flyer-copy');
+  const cimEl       = document.getElementById('ta-cim-content');
+  const internalEl  = document.getElementById('ta-internal-summary');
+
+  // Upload images to Drive — PATCH existing file if ID known, POST new otherwise
+  const bizPhotoIds = [...(imageData.bizPhotoIds || [])];
+  for (let i = 0; i < imageData.bizPhotos.length; i++) {
+    if (imageData.bizPhotos[i]?.startsWith('data:')) {
+      try {
+        const folderId = await ensureDealFolder(dealId);
+        const existingId = imageData.bizPhotoIds[i] || null;
+        bizPhotoIds[i] = await uploadImage(`biz_${i}.jpg`, imageData.bizPhotos[i], folderId, existingId);
+        imageData.bizPhotoIds[i] = bizPhotoIds[i];
+      } catch(e) { if (e.message !== 'token_expired') showDriveError('Photo upload failed'); }
+    }
+  }
+  let advisorPhotoId = imageData.advisorPhotoId || null;
+  if (imageData.advisorPhoto?.startsWith('data:')) {
+    try {
+      const folderId = await ensureDealFolder(dealId);
+      const existingId = imageData.advisorPhotoId || null;
+      advisorPhotoId = await uploadImage('advisor.jpg', imageData.advisorPhoto, folderId, existingId);
+      imageData.advisorPhotoId = advisorPhotoId;
+    } catch(e) { if (e.message !== 'token_expired') showDriveError('Advisor photo upload failed'); }
+  }
+
+  const record = {
+    id:          dealId,
+    name:        dealName,
+    status:      'active',
+    createdAt:   now,
+    updatedAt:   now,
+    createdBy:   user?.email || '',
+    price:       document.getElementById('f-price')?.value?.trim()  || '',
+    advisorName: document.getElementById('f-name')?.value?.trim()   || '',
+    advisorEmail:document.getElementById('f-email')?.value?.trim()  || '',
+    advisorPhone:document.getElementById('f-phone')?.value?.trim()  || '',
+    website:     document.getElementById('f-website')?.value?.trim()|| '',
+    primaryColor:document.getElementById('f-primary-color')?.value  || '#1A1A1A',
+    accentColor: document.getElementById('f-accent-color')?.value   || '#C1622F',
+    flyerZones:  _lastFlyerZones  || {},
+    cimSections: _lastCimSections || {},
+    brandColors: _lastBrandColors || {},
+    rawOutputs: {
+      blindAd:         blindAdEl?.value   || '',
+      flyerCopy:       flyerCopyEl?.value || '',
+      cimContent:      cimEl?.value       || '',
+      internalSummary: internalEl?.value  || '',
+    },
+    bizPhotoIds,
+    advisorPhotoId,
+  };
+
+  if (currentDealId) {
+    const idx = deals.findIndex(d => d.id === currentDealId);
+    if (idx >= 0) {
+      record.createdAt = deals[idx].createdAt;
+      record.status    = deals[idx].status;
+      deals[idx] = record;
+    } else {
+      deals.unshift(record);
+    }
+  } else {
+    currentDealId = dealId;
+    deals.unshift(record);
+  }
+
+  const badge = document.getElementById('current-deal-badge');
+  const saveBtn = document.getElementById('save-deal-btn');
+  if (badge) badge.textContent = 'Saving…';
+  if (saveBtn) saveBtn.style.display = 'inline-block';
+  try {
+    await saveDeals(deals);
+    if (badge) badge.textContent = '✓ Saved to Drive: ' + dealName;
+  } catch(e) {
+    if (badge) badge.textContent = e.message === 'token_expired' ? '⚠ Drive session expired' : '⚠ Save failed — see error above';
+  }
+  renderDealsList();
+}
+
+async function loadDeal(id) {
+  const deal = loadDeals().find(d => d.id === id);
+  if (!deal) return;
+  currentDealId = id;
+
+  const setVal = (elId, val) => { const el = document.getElementById(elId); if (el) el.value = val || ''; };
+  setVal('f-price',             deal.price);
+  setVal('f-name',              deal.advisorName);
+  setVal('f-email',             deal.advisorEmail);
+  setVal('f-phone',             deal.advisorPhone);
+  setVal('f-website',           deal.website);
+  setVal('f-primary-color',     deal.primaryColor || '#1A1A1A');
+  setVal('f-primary-color-hex', deal.primaryColor || '#1A1A1A');
+  setVal('f-accent-color',      deal.accentColor  || '#C1622F');
+  setVal('f-accent-color-hex',  deal.accentColor  || '#C1622F');
+
+  _lastFlyerZones  = deal.flyerZones  || {};
+  _lastCimSections = deal.cimSections || {};
+  _lastBrandColors = deal.brandColors || { primary: deal.primaryColor, accent: deal.accentColor, companyName: deal.name };
+
+  // Reset image state
+  imageData.bizPhotos    = [];
+  imageData.bizPhotoIds  = deal.bizPhotoIds  || [];
+  imageData.advisorPhoto = null;
+  imageData.advisorPhotoId = deal.advisorPhotoId || null;
+
+  // Show loading state on photo zones
+  const aZone  = document.getElementById('zone-advisor-photo');
+  const aInner = document.getElementById('inner-advisor-photo');
+  if (aInner && imageData.advisorPhotoId) {
+    aInner.innerHTML = `<div style="font-size:11px;color:#64748b;margin-top:8px">Loading photo…</div>`;
+  }
+
+  renderBizPhotoThumbs();
+
+  // Fetch biz photos from Drive (parallel)
+  const photoPromises = imageData.bizPhotoIds.map((fileId, i) =>
+    fileId ? fetchImageAsDataUrl(fileId).then(url => { imageData.bizPhotos[i] = url; }).catch(() => {}) : Promise.resolve()
+  );
+  // Fetch advisor photo from Drive
+  const advisorPromise = imageData.advisorPhotoId
+    ? fetchImageAsDataUrl(imageData.advisorPhotoId).then(url => { imageData.advisorPhoto = url; }).catch(() => {})
+    : Promise.resolve();
+
+  await Promise.all([...photoPromises, advisorPromise]);
+  renderBizPhotoThumbs();
+
+  if (aZone && aInner && imageData.advisorPhoto) {
+    aZone.classList.add('ready');
+    aInner.innerHTML = `<img src="${imageData.advisorPhoto}" style="max-width:100%;max-height:80px;border-radius:4px;object-fit:cover"/>
+      <div style="font-size:11px;color:#2e7d32;font-weight:600;margin-top:4px">Advisor photo loaded</div>
+      <div style="font-size:11px;color:#64748b;text-decoration:underline;cursor:pointer;margin-top:2px"
+           onclick="event.stopPropagation();replaceImage('advisor-photo')">Replace</div>`;
+  }
+
+  if (deal.rawOutputs) {
+    const { blindAd, flyerCopy, cimContent, internalSummary } = deal.rawOutputs;
+    renderOutput('blind-ad',        'ta-blind-ad',        blindAd        || null);
+    renderOutput('flyer-copy',      'ta-flyer-copy',      flyerCopy      || null);
+    renderOutput('cim-content',     'ta-cim-content',     cimContent     || null);
+    renderOutput('internal-summary','ta-internal-summary',internalSummary|| null);
+  }
+
+  if (Object.keys(_lastFlyerZones).length || Object.keys(_lastCimSections).length) {
+    populateEditPanel();
+    document.getElementById('qa-gate').classList.remove('hidden');
+    document.getElementById('output-panel').classList.remove('hidden');
+    ['qa1','qa2','qa3','qa4'].forEach(id => { const el=document.getElementById(id); if(el) el.checked=false; });
+    document.getElementById('qa-status').textContent = 'Check all four boxes to unlock outputs ↓';
+    document.getElementById('qa-status').style.color = '#c0392b';
+  }
+
+  updateGenBtn();
+  const badge = document.getElementById('current-deal-badge');
+  if (badge) badge.textContent = 'Editing: ' + deal.name;
+  const saveBtn = document.getElementById('save-deal-btn');
+  if (saveBtn) saveBtn.style.display = 'inline-block';
+  renderDealsList();
+  document.getElementById('deals-card').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function archiveDeal(id) {
+  const deals = loadDeals();
+  const idx   = deals.findIndex(d => d.id === id);
+  if (idx < 0) return;
+  deals[idx].status    = deals[idx].status === 'archived' ? 'active' : 'archived';
+  deals[idx].updatedAt = new Date().toISOString();
+  saveDeals(deals);
+  renderDealsList();
+}
+
+function deleteDeal(id) {
+  if (!confirm('Delete this deal? This cannot be undone.')) return;
+  saveDeals(loadDeals().filter(d => d.id !== id));
+  deleteDriveFolder(id).catch(() => {});
+  if (currentDealId === id) {
+    currentDealId = null;
+    const badge = document.getElementById('current-deal-badge');
+    if (badge) badge.textContent = '';
+  }
+  renderDealsList();
+}
+
+function startNewDeal() {
+  currentDealId = null;
+  ['f-price','f-name','f-email','f-phone','f-website'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('f-primary-color').value     = '#1A1A1A';
+  document.getElementById('f-primary-color-hex').value = '#1A1A1A';
+  document.getElementById('f-accent-color').value      = '#C1622F';
+  document.getElementById('f-accent-color-hex').value  = '#C1622F';
+  const advSel = document.getElementById('f-advisor-select');
+  if (advSel) advSel.value = '';
+
+  imageData.bizPhotos      = [];
+  imageData.bizPhotoIds    = [];
+  imageData.advisorPhoto   = null;
+  imageData.advisorPhotoId = null;
+  _lastFlyerZones          = null;
+  _lastCimSections       = null;
+  _lastBrandColors       = { primary: '#1A1A1A', accent: '#C1622F', companyName: '' };
+  pdfTexts.interview = pdfTexts.ea = pdfTexts.mpa = pdfTexts.termsheet = null;
+
+  const labels = { interview:'Interview Doc', ea:'Engagement Agreement', mpa:'QSI MPA Report' };
+  ['interview','ea','mpa'].forEach(k => {
+    const zone = document.getElementById('zone-' + k);
+    const inner = document.getElementById('inner-' + k);
+    if (zone) zone.className = 'pdf-zone';
+    if (inner) inner.innerHTML = `<div style="font-size:28px">📄</div>
+      <div style="font-weight:600;color:#94a3b8;font-size:13px">Drop or click to upload</div>
+      <div style="font-size:11px;color:#64748b;margin-top:2px">${labels[k]}</div>`;
+    const fileEl = document.getElementById('file-' + k);
+    if (fileEl) fileEl.value = '';
+    document.getElementById('err-' + k)?.classList.add('hidden');
+  });
+
+  renderBizPhotoThumbs();
+  const aZone = document.getElementById('zone-advisor-photo');
+  const aInner = document.getElementById('inner-advisor-photo');
+  if (aZone) aZone.className = 'img-zone';
+  if (aInner) aInner.innerHTML = `<div style="font-size:28px">👤</div>
+    <div style="font-weight:600;color:#94a3b8;font-size:13px">Drop or click to upload</div>
+    <div style="font-size:11px;color:#64748b;margin-top:2px">JPG, PNG, WEBP</div>`;
+  const afEl = document.getElementById('file-advisor-photo');
+  if (afEl) afEl.value = '';
+
+  document.getElementById('edit-panel').classList.add('hidden');
+  document.getElementById('qa-gate').classList.add('hidden');
+  document.getElementById('output-panel').classList.add('hidden');
+
+  const badge = document.getElementById('current-deal-badge');
+  if (badge) badge.textContent = '';
+  const saveBtn = document.getElementById('save-deal-btn');
+  if (saveBtn) saveBtn.style.display = 'none';
+  updateGenBtn();
+  renderDealsList();
+  document.querySelector('.ph').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function renderDealsList() {
+  const el = document.getElementById('deals-list');
+  if (!el) return;
+  const deals = loadDeals();
+  if (!deals.length) {
+    el.innerHTML = `<div style="padding:20px;text-align:center;color:#64748b;font-size:13px;font-style:italic">No saved deals yet — fill in the form below and generate to create your first deal.</div>`;
+    return;
+  }
+  el.innerHTML = deals.map(d => {
+    const isActive  = d.status !== 'archived';
+    const isCurrent = d.id === currentDealId;
+    const date = new Date(d.updatedAt || d.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const badge = isActive
+      ? `<span style="background:rgba(46,184,96,0.15);color:#2eb860;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:700">Active</span>`
+      : `<span style="background:rgba(100,116,139,0.2);color:#64748b;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:700">Archived</span>`;
+    const bg  = isCurrent ? 'background:rgba(46,184,96,0.06);' : '';
+    const bl  = isCurrent ? 'border-left:3px solid #2eb860;' : 'border-left:3px solid transparent;';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid #1a2235;${bg}${bl}">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:13px;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.name)}${isCurrent?` <span style="font-size:10px;color:#2eb860;font-weight:400">(current)</span>`:''}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px">${badge} &nbsp;${esc(date)}${d.price?' · $'+esc(d.price):''}</div>
+      </div>
+      <button class="btn-g btn-sm" onclick="loadDeal('${d.id}')">Open</button>
+      <button class="btn-g btn-sm" onclick="archiveDeal('${d.id}')">${isActive?'Archive':'Restore'}</button>
+      <button onclick="deleteDeal('${d.id}')" style="background:none;border:none;color:#475569;cursor:pointer;font-size:16px;padding:4px 6px;border-radius:4px" title="Delete">✕</button>
+    </div>`;
+  }).join('');
+}
+
+let _saveTimer = null;
+function debouncedSave() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(saveDeal, 1000);
+}
+
+// ─── ADVISOR MANAGEMENT ───────────────────────────────────────────────────────
+
+let _editingAdvisorId  = null;
+let _advisorFormPhoto  = null;
+
+function renderAdvisorOptions() {
+  const sel = document.getElementById('f-advisor-select');
+  if (!sel) return;
+  const advisors = loadAdvisors();
+  sel.innerHTML = `<option value="">— Enter manually below —</option>` +
+    advisors.map(a => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('');
+}
+
+function selectAdvisor(id) {
+  if (!id) return;
+  const adv = loadAdvisors().find(a => a.id === id);
+  if (!adv) return;
+  const setVal = (elId, val) => { const el = document.getElementById(elId); if (el) el.value = val || ''; };
+  setVal('f-name',  adv.name);
+  setVal('f-email', adv.email);
+  setVal('f-phone', adv.phone);
+  updateGenBtn();
+  if (adv.photo) {
+    imageData.advisorPhoto = adv.photo;
+    const zone  = document.getElementById('zone-advisor-photo');
+    const inner = document.getElementById('inner-advisor-photo');
+    if (zone)  zone.classList.add('ready');
+    if (inner) inner.innerHTML = `<img src="${adv.photo}" style="max-width:100%;max-height:80px;border-radius:4px;object-fit:cover"/>
+      <div style="font-size:11px;color:#2e7d32;font-weight:600;margin-top:4px">${esc(adv.name)}</div>
+      <div style="font-size:11px;color:#64748b;text-decoration:underline;cursor:pointer;margin-top:2px"
+           onclick="event.stopPropagation();replaceImage('advisor-photo')">Replace</div>`;
+    updateGenBtn();
+  }
+}
+
+function openAdvisorModal() {
+  _editingAdvisorId = null;
+  _advisorFormPhoto = null;
+  renderAdvisorListInner();
+  renderAdvisorFormInner();
+  document.getElementById('advisor-modal').style.display = 'flex';
+}
+function closeAdvisorModal() {
+  document.getElementById('advisor-modal').style.display = 'none';
+  _editingAdvisorId = null;
+  _advisorFormPhoto = null;
+}
+
+function renderAdvisorListInner() {
+  const el = document.getElementById('advisor-list-inner');
+  if (!el) return;
+  const advisors = loadAdvisors();
+  if (!advisors.length) {
+    el.innerHTML = `<div style="color:#64748b;font-size:13px;font-style:italic;padding:4px 0 12px">No advisors saved yet — add one below.</div>`;
+    return;
+  }
+  el.innerHTML = advisors.map(a => {
+    const photoHtml = a.photo
+      ? `<img src="${a.photo}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--copper);flex-shrink:0"/>`
+      : `<div style="width:38px;height:38px;border-radius:50%;background:var(--dark);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-weight:700;font-size:16px;flex-shrink:0">${esc((a.name||'?').charAt(0).toUpperCase())}</div>`;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f5f5f5">
+      ${photoHtml}
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:13px">${esc(a.name)}</div>
+        <div style="font-size:11px;color:#64748b">${esc(a.title||'Acquisition Advisor')} · ${esc(a.email||'')}</div>
+      </div>
+      <button class="btn-g btn-sm" onclick="editAdvisor('${a.id}')">Edit</button>
+      <button onclick="deleteAdvisor('${a.id}')" style="background:none;border:none;color:#475569;cursor:pointer;font-size:16px;padding:4px 6px;border-radius:4px">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function renderAdvisorFormInner(adv) {
+  const titleEl = document.getElementById('advisor-form-title');
+  const el = document.getElementById('advisor-form-inner');
+  if (!el) return;
+  if (titleEl) titleEl.textContent = adv ? 'Edit Advisor' : 'Add Advisor';
+  _advisorFormPhoto = adv?.photo || null;
+  el.innerHTML = `
+    <div class="frow2">
+      <div class="fg"><label>Full Name <span class="req">*</span></label>
+        <input type="text" id="adv-name" value="${esc(adv?.name||'')}" placeholder="Full name"/></div>
+      <div class="fg"><label>Title</label>
+        <input type="text" id="adv-title" value="${esc(adv?.title||'Acquisition Advisor')}" placeholder="Acquisition Advisor"/></div>
+    </div>
+    <div class="frow2">
+      <div class="fg"><label>Email</label>
+        <input type="text" id="adv-email" value="${esc(adv?.email||'')}" placeholder="advisor@thedealteam.co"/></div>
+      <div class="fg"><label>Phone</label>
+        <input type="text" id="adv-phone" value="${esc(adv?.phone||'')}" placeholder="(555) 000-0000"/></div>
+    </div>
+    <div class="fg"><label>Headshot Photo</label>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="adv-photo-thumb" style="width:56px;height:56px;border-radius:50%;background:#eee;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:22px">
+          ${adv?.photo ? `<img src="${adv.photo}" style="width:100%;height:100%;object-fit:cover"/>` : '👤'}
+        </div>
+        <div>
+          <input type="file" id="adv-photo-file" accept="image/*" style="display:none" onchange="handleAdvisorFormPhoto(this.files[0])"/>
+          <button class="btn-g btn-sm" onclick="document.getElementById('adv-photo-file').click()">Upload Photo</button>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn-p btn-sm" onclick="saveAdvisorForm()">Save Advisor</button>
+      ${adv ? `<button class="btn-g btn-sm" onclick="cancelEditAdvisor()">Cancel</button>` : ''}
+    </div>`;
+}
+
+function handleAdvisorFormPhoto(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _advisorFormPhoto = e.target.result;
+    const thumb = document.getElementById('adv-photo-thumb');
+    if (thumb) thumb.innerHTML = `<img src="${_advisorFormPhoto}" style="width:100%;height:100%;object-fit:cover"/>`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveAdvisorForm() {
+  const name = document.getElementById('adv-name')?.value?.trim();
+  if (!name) { alert('Name is required.'); return; }
+  const advisors = loadAdvisors();
+  const record = {
+    id:    _editingAdvisorId || ('adv_' + Date.now()),
+    name,
+    title: document.getElementById('adv-title')?.value?.trim() || 'Acquisition Advisor',
+    email: document.getElementById('adv-email')?.value?.trim() || '',
+    phone: document.getElementById('adv-phone')?.value?.trim() || '',
+    photo: _advisorFormPhoto || null,
+  };
+  if (_editingAdvisorId) {
+    const idx = advisors.findIndex(a => a.id === _editingAdvisorId);
+    if (idx >= 0) advisors[idx] = record; else advisors.push(record);
+  } else {
+    advisors.push(record);
+  }
+  saveAdvisors(advisors);
+  _editingAdvisorId = null;
+  _advisorFormPhoto = null;
+  renderAdvisorListInner();
+  renderAdvisorFormInner();
+  renderAdvisorOptions();
+}
+
+function editAdvisor(id) {
+  _editingAdvisorId = id;
+  renderAdvisorFormInner(loadAdvisors().find(a => a.id === id));
+}
+
+function cancelEditAdvisor() {
+  _editingAdvisorId = null;
+  _advisorFormPhoto = null;
+  renderAdvisorFormInner();
+}
+
+function deleteAdvisor(id) {
+  if (!confirm('Delete this advisor?')) return;
+  saveAdvisors(loadAdvisors().filter(a => a.id !== id));
+  if (_editingAdvisorId === id) { _editingAdvisorId = null; renderAdvisorFormInner(); }
+  renderAdvisorListInner();
+  renderAdvisorOptions();
+}
+
+// ─── MULTI-PHOTO ──────────────────────────────────────────────────────────────
+
+function handleBizPhotos(files) {
+  if (!files || !files.length) return;
+  const remaining = 5 - imageData.bizPhotos.length;
+  let loaded = 0;
+  const toRead = Math.min(files.length, remaining);
+  for (let i = 0; i < toRead; i++) {
+    const file = files[i];
+    if (!file.type.startsWith('image/')) continue;
+    const reader = new FileReader();
+    reader.onload = e => {
+      imageData.bizPhotos.push(e.target.result);
+      imageData.bizPhotoIds.push(null); // no Drive ID yet — will upload on save
+      loaded++;
+      if (loaded === toRead) renderBizPhotoThumbs();
+    };
+    reader.readAsDataURL(file);
+  }
+  document.getElementById('file-biz-photos').value = '';
+}
+
+function removeBizPhoto(i) {
+  imageData.bizPhotos.splice(i, 1);
+  imageData.bizPhotoIds.splice(i, 1);
+  renderBizPhotoThumbs();
+}
+
+function renderBizPhotoThumbs() {
+  const grid = document.getElementById('biz-photos-grid');
+  if (!grid) return;
+  const thumbs = imageData.bizPhotos.map((src, i) =>
+    `<div style="position:relative;width:64px;height:64px;flex-shrink:0">
+       <img src="${src}" style="width:64px;height:64px;object-fit:cover;border-radius:6px;border:2px solid #d0d0d0;display:block"/>
+       <div onclick="removeBizPhoto(${i})" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;background:#c0392b;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;cursor:pointer;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,.3)">✕</div>
+       ${i===0?`<div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-size:8px;background:rgba(0,0,0,.65);color:#fff;border-radius:3px;padding:1px 4px;white-space:nowrap">cover</div>`:''}
+     </div>`
+  ).join('');
+  const addBtn = imageData.bizPhotos.length < 5
+    ? `<div id="biz-add-btn" onclick="document.getElementById('file-biz-photos').click()" style="width:64px;height:64px;border:2px dashed #334155;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#64748b;cursor:pointer;flex-shrink:0" title="Add photo">+</div>`
+    : '';
+  grid.innerHTML = thumbs + addBtn;
+}
+
+// ─── PDF ZONES ────────────────────────────────────────────────────────────────
+
+function zoneClick(key) {
+  const zone = document.getElementById('zone-' + key);
+  if (zone.classList.contains('ready') || zone.classList.contains('parsing')) return;
+  document.getElementById('file-' + key).click();
+}
+
+function dragOver(e, zone) {
+  e.preventDefault();
+  if (!zone.classList.contains('ready') && !zone.classList.contains('parsing'))
+    zone.classList.add('drag');
+}
+function dragLeave(zone) { zone.classList.remove('drag'); }
+
+function dropPdf(e, key) {
+  e.preventDefault();
+  document.getElementById('zone-' + key).classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) handlePdf(f, key);
+}
+
+async function handlePdf(file, key) {
+  if (!file) return;
+  const zone  = document.getElementById('zone-' + key);
+  const inner = document.getElementById('inner-' + key);
+  const errEl = document.getElementById('err-' + key);
+
+  if (!file.name.match(/\.pdf$/i)) {
+    zone.classList.add('error');
+    showPdfErr(key, 'Only PDF files are accepted.');
+    return;
+  }
+
+  zone.classList.remove('ready', 'error', 'drag');
+  zone.classList.add('parsing');
+  errEl.classList.add('hidden');
+  inner.innerHTML = `
+    <div class="spinner spinner-dk" style="width:22px;height:22px;border-width:3px;display:inline-block"></div>
+    <div style="font-size:13px;color:#64748b;margin-top:6px">Reading PDF…</div>`;
+
+  try {
+    const text = await extractPdfText(file);
+    if (!text.trim()) throw new Error('No text found — this PDF may be image-based or encrypted.');
+    pdfTexts[key] = text;
+    zone.classList.remove('parsing');
+    zone.classList.add('ready');
+    inner.innerHTML = `
+      <div style="font-size:22px">✅</div>
+      <div style="font-weight:700;color:#2e7d32;font-size:13px;word-break:break-all;max-width:100%">${esc(file.name)}</div>
+      <div style="font-size:11px;color:#64748b;margin-top:2px">${(file.size/1024).toFixed(0)} KB · ${text.length.toLocaleString()} chars</div>
+      <div style="font-size:11px;color:#64748b;margin-top:3px;text-decoration:underline;cursor:pointer"
+           onclick="event.stopPropagation();replacePdf('${key}')">Replace</div>`;
+  } catch (err) {
+    pdfTexts[key] = null;
+    zone.classList.remove('parsing');
+    zone.classList.add('error');
+    document.getElementById('file-' + key).value = '';
+    inner.innerHTML = `
+      <div style="font-size:22px">⚠️</div>
+      <div style="font-weight:600;color:#c0392b;font-size:13px">Parse failed</div>
+      <div style="font-size:11px;color:#64748b;margin-top:2px">Click to try again</div>`;
+    showPdfErr(key, 'Could not read PDF: ' + err.message);
+  }
+  updateGenBtn();
+}
+
+function replacePdf(key) {
+  pdfTexts[key] = null;
+  const zone  = document.getElementById('zone-' + key);
+  const inner = document.getElementById('inner-' + key);
+  zone.classList.remove('ready', 'error', 'parsing');
+  const labels = { interview:'Interview Doc', ea:'Engagement Agreement', mpa:'QSI MPA Report' };
+  inner.innerHTML = `
+    <div style="font-size:28px">📄</div>
+    <div style="font-weight:600;color:#94a3b8;font-size:13px">Drop or click to upload</div>
+    <div style="font-size:11px;color:#64748b;margin-top:2px">${labels[key]}</div>`;
+  document.getElementById('err-' + key).classList.add('hidden');
+  document.getElementById('file-' + key).value = '';
+  updateGenBtn();
+  document.getElementById('file-' + key).click();
+}
+
+function showPdfErr(key, msg) {
+  const el = document.getElementById('err-' + key);
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+async function extractPdfText(file) {
+  const ab  = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+  let out = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page    = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    out += content.items.map(it => it.str).join(' ') + '\n\n';
+  }
+  return out.slice(0, 40000);
+}
+
+// ─── IMAGE ZONES ──────────────────────────────────────────────────────────────
+
+function imgZoneClick(key) {
+  const zone = document.getElementById('zone-' + key);
+  if (zone.classList.contains('ready')) return;
+  document.getElementById('file-' + key).click();
+}
+
+function dropImg(e, key) {
+  e.preventDefault();
+  document.getElementById('zone-' + key).classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) handleImage(f, key);
+}
+
+function handleImage(file, key) {
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    alert('Please upload an image file (JPG, PNG, WEBP).');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    imageData.advisorPhoto = dataUrl;
+    const zone  = document.getElementById('zone-' + key);
+    const inner = document.getElementById('inner-' + key);
+    zone.classList.add('ready');
+    inner.innerHTML = `
+      <img src="${dataUrl}" style="max-width:100%;max-height:80px;border-radius:4px;object-fit:cover"/>
+      <div style="font-size:11px;color:#2e7d32;font-weight:600;margin-top:4px;word-break:break-all;max-width:100%">${esc(file.name)}</div>
+      <div style="font-size:11px;color:#64748b;text-decoration:underline;cursor:pointer;margin-top:2px"
+           onclick="event.stopPropagation();replaceImage('${key}')">Replace</div>`;
+    updateGenBtn();
+  };
+  reader.readAsDataURL(file);
+}
+
+function replaceImage(key) {
+  imageData.advisorPhoto   = null;
+  imageData.advisorPhotoId = null;
+  const zone  = document.getElementById('zone-' + key);
+  const inner = document.getElementById('inner-' + key);
+  if (zone)  zone.classList.remove('ready');
+  if (inner) inner.innerHTML = `
+    <div style="font-size:28px">👤</div>
+    <div style="font-weight:600;color:#94a3b8;font-size:13px">Drop or click to upload</div>
+    <div style="font-size:11px;color:#64748b;margin-top:2px">JPG, PNG, WEBP</div>`;
+  const fileEl = document.getElementById('file-' + key);
+  if (fileEl) { fileEl.value = ''; fileEl.click(); }
+  updateGenBtn();
+}
+
+// ─── COLOR PICKERS ────────────────────────────────────────────────────────────
+
+function syncColorPicker(which) {
+  const val = document.getElementById('f-' + which + '-color').value;
+  document.getElementById('f-' + which + '-color-hex').value = val;
+}
+
+function syncColorHex(which) {
+  const val = document.getElementById('f-' + which + '-color-hex').value.trim();
+  if (/^#[0-9a-f]{6}$/i.test(val))
+    document.getElementById('f-' + which + '-color').value = val;
+}
+
+// ─── GENERATE BUTTON STATE ────────────────────────────────────────────────────
+
+function updateGenBtn() {
+  const allPdfs     = pdfTexts.interview !== null && pdfTexts.ea !== null && pdfTexts.mpa !== null;
+  const allFields   = ['f-price','f-name','f-email','f-phone'].every(id =>
+    document.getElementById(id).value.trim() !== '');
+  const hasHeadshot = imageData.advisorPhoto !== null;
+  document.getElementById('gen-btn').disabled = !(allPdfs && allFields && hasHeadshot);
+}
+
+// ─── PROMPTS ──────────────────────────────────────────────────────────────────
+
+const SYSTEM_PROMPT = `You are The Deal Team marketing content engine. The Deal Team is the number 1 SBA acquisition advisory firm at Peterson Acquisitions, operating the proprietary QSI system with a 90 percent success rate vs. 20 percent industry average.
+
+YOUR MISSION: Transform documents from a completed business engagement into five distinct, production-ready outputs that are narratively consistent, brand-aligned, and immediately usable with minimal editing.
+
+BRAND VOICE:
+- Confident, direct, buyer outcome-oriented
+- Never use passive voice or broker cliches
+- Lead with what the buyer gains: wealth, time, freedom
+- Reference QSI positioning where relevant
+- Tagline: You are only one deal away from the wealth, time, and freedom you deserve.
+- DEAL values: Dominate with Discipline, Execute Relentlessly, Align with Purpose, Lead with Honor
+
+CONFIDENTIALITY RULES:
+- BLIND OUTPUTS (Ad and Flyer): Use region only. No city, no county, no address, no business name, no owner name, no identifying operational details that could expose the business.
+- CONFIDENTIAL OUTPUTS (CIM/CBR): Full detail permitted. Released only under NDA.
+- If any field could expose identity in a blind output, omit it and use a generalized descriptor instead.
+- Flag in the internal_summary any field that required generalization.
+
+FINANCIAL ACCURACY:
+- Use ONLY numbers provided in the documents. Never interpolate, estimate, or round unless explicitly instructed.
+- If a financial field is missing, output [TO BE PROVIDED] and never fabricate.
+- Format all dollar amounts with dollar sign and commas.
+- The Engagement Agreement is authoritative for all listing prices, asking price, and deal terms.
+- The QSI MPA is authoritative for all financial performance data, SDE, DSCR, and valuation analysis.
+- Where EA and MPA conflict on price, the EA governs.
+- The Confirmed Asking Price entered by the advisor overrides all other price figures in all outputs.
+
+OUTPUT FORMAT:
+Return all five outputs wrapped in XML tags exactly as specified in the user prompt. Do not add preamble, commentary, or explanation outside the tags.`;
+
+function buildUserPrompt(price, advisorName, advisorEmail, advisorPhone, website, interviewText, eaText, mpaText, termSheetText) {
+  return `Using the three business documents below, generate all five Deal Team outputs. Follow all brand voice, confidentiality, and formatting rules exactly.
+
+CONFIRMED ASKING PRICE (EA-VERIFIED): $${price}
+COMPANY WEBSITE: ${website || 'Not provided'}
+
+ADVISOR NAME: ${advisorName}
+ADVISOR EMAIL: ${advisorEmail}
+ADVISOR PHONE: ${advisorPhone}
+
+DOCUMENT 1 - INTERVIEW DOC:
+${interviewText}
+
+DOCUMENT 2 - ENGAGEMENT AGREEMENT:
+${eaText}
+
+DOCUMENT 3 - QSI MPA REPORT:
+${mpaText}
+${termSheetText ? `
+DOCUMENT 4 - BANK TERM SHEET (optional — use for SBA section):
+${termSheetText}
+` : ''}
+Return all five outputs in this exact XML structure:
+
+<blind_ad>
+Generate the full BizBuySell blind ad using this exact format:
+
+HEADLINE: Keyword-rich title | X Plus Years | Key Differentiator
+Region only, State
+
+Asking Price: $${price}
+Cash Flow SDE: $[most recent SDE from MPA]
+EBITDA: $[most recent EBITDA from MPA]
+Gross Revenue: $[most recent revenue from MPA]
+Established: [year founded from EA]
+
+Business Description:
+[Opening hook. Rare opportunity framing. Lead with durability and differentiation.]
+
+[Paragraph 2. Origin and track record. Generalized owner descriptor. Years in operation. Core customer base without identifying detail.]
+
+[Paragraph 3. Operational model. Simple bullet list:]
+- [Operational differentiator 1]
+- [Operational differentiator 2]
+- [Operational differentiator 3]
+- [Operational differentiator 4]
+
+[Closing paragraph. Recession-tested, operationally stable, positioned for specific buyer type.]
+
+KEY HIGHLIGHTS:
+- [Most compelling financial or operational proof point]
+- [Highlight 2]
+- [Highlight 3]
+- [Highlight 4]
+- [Highlight 5]
+- [Highlight 6]
+- [Highlight 7]
+- Clean Financials - professionally maintained, accurate records
+
+IDEAL BUYER:
+- [Industry or background profile]
+- [Operator type]
+- [Entrepreneur description]
+- [Strategic buyer note if applicable]
+- SBA-qualified with 680 plus credit score, 10 percent down, and 10 percent liquidity post-close
+
+This will be structured as an Asset Purchase Sale.
+
+SUPPORT AND TRANSITION:
+The seller is committed to a smooth transition and will provide training and support to ensure continuity of customer relationships, vendor terms, and operational knowledge.
+
+REASON FOR SELLING:
+[reason from EA]
+
+REPRESENTATION:
+This opportunity is being handled by ${advisorName} with The Deal Team powered by Peterson Acquisitions. An experienced acquisition advisor may follow up to answer questions and guide next steps.
+
+NEXT STEPS:
+Inquire today for full financials and a confidential business summary. All prospective buyers must sign an NDA and demonstrate financial ability to purchase.
+
+Detailed Information
+
+Inventory: $[inventory value or TBD]
+[Included or Not included] in asking price
+
+Furniture Fixtures and Equipment FF&E: $[FFE value or TBD]
+[Included or Not included] in asking price
+
+Employees: [FT count] Full-time [PT count Part-time if applicable]
+
+Financing: [Seller financing available or SBA financing available]
+[Seller carry terms if applicable]
+
+Support and Training: The seller is committed to a smooth transition and will provide training and support to ensure continuity of customer relationships, vendor terms, and operational knowledge.
+
+Reason for Selling: [reason from EA]
+
+Business Location
+Location: [region only, no city or address], [State]
+Real Estate: [Leased or Owned]
+Building SF: [sf from EA]
+Rent: $[rent from EA]
+</blind_ad>
+
+<flyer_copy>
+Output each zone as a labeled field for direct paste into Canva template:
+
+ZONE: HEADLINE_LINE_1
+[3-5 words max. Most compelling differentiator. All caps.]
+
+ZONE: HEADLINE_LINE_2
+[3-5 words max. Second differentiator. All caps.]
+
+ZONE: HEADLINE_LINE_3
+[3-5 words max. Third differentiator. All caps. Omit if not needed.]
+
+ZONE: SUBHEAD_INDUSTRY
+[Industry type plus any relevant note, e.g. "E-commerce + Retail (Relocatable)"]
+
+ZONE: SUBHEAD_DESCRIPTOR
+[One sentence, 15 words max. Years in business plus key strength.]
+
+ZONE: OVERVIEW_PARAGRAPH
+[3-5 sentences. Buyer outcome-focused. No identifying info. Approximately 75 words.]
+
+ZONE: PRICE_BOX_ASKING_PRICE
+$${price}
+
+ZONE: PRICE_BOX_REVENUE_LABEL
+[Most recent year] Sales:
+
+ZONE: PRICE_BOX_REVENUE_VALUE
+$[revenue from MPA]
+
+ZONE: PRICE_BOX_CASHFLOW_LABEL
+[Most recent year] Cash Flow/SDE:
+
+ZONE: PRICE_BOX_CASHFLOW_VALUE
+$[SDE from MPA]
+
+ZONE: PRICE_BOX_MULTIPLE_LABEL
+Valuation Multiple:
+
+ZONE: PRICE_BOX_MULTIPLE_VALUE
+[multiple from MPA] X SDE
+
+ZONE: PRICE_BOX_FFE_LABEL
+FF&E:
+
+ZONE: PRICE_BOX_FFE_VALUE
+$[FFE value or TBD]
+
+ZONE: HOURS_OF_OPERATION
+[hours from EA]
+
+ZONE: EMPLOYEES
+[FT count]FT [PT count PT if applicable]
+
+ZONE: BUSINESS_STARTED
+[year founded]
+
+ZONE: KEY_FEATURE_1_LABEL
+[Feature name, 2-3 words]
+
+ZONE: KEY_FEATURE_1_VALUE
+[Short descriptor]
+
+ZONE: KEY_FEATURE_2_LABEL
+[Feature name, 2-3 words]
+
+ZONE: KEY_FEATURE_2_VALUE
+[Short descriptor]
+
+ZONE: KEY_FEATURE_3_LABEL
+[Feature name, 2-3 words]
+
+ZONE: KEY_FEATURE_3_VALUE
+[Short descriptor]
+
+ZONE: KEY_FEATURE_4_LABEL
+[Feature name, 2-3 words]
+
+ZONE: KEY_FEATURE_4_VALUE
+[Short descriptor]
+
+ZONE: KEY_FEATURE_5_LABEL
+Turn Key:
+
+ZONE: KEY_FEATURE_5_VALUE
+Sellers will train
+
+ZONE: KEY_FEATURE_6_LABEL
+SBA Pre-Approved:
+
+ZONE: KEY_FEATURE_6_VALUE
+Financing available
+
+ZONE: ANALYSIS_POINT_1_LABEL
+[Strength label, 3-5 words]
+
+ZONE: ANALYSIS_POINT_1_BODY
+[2-3 sentences. Specific detail from documents. Buyer outcome focus.]
+
+ZONE: ANALYSIS_POINT_2_LABEL
+[Strength label]
+
+ZONE: ANALYSIS_POINT_2_BODY
+[2-3 sentences]
+
+ZONE: ANALYSIS_POINT_3_LABEL
+[Strength label]
+
+ZONE: ANALYSIS_POINT_3_BODY
+[2-3 sentences]
+
+ZONE: ANALYSIS_POINT_4_LABEL
+[Strength label]
+
+ZONE: ANALYSIS_POINT_4_BODY
+[2-3 sentences]
+
+ZONE: ANALYSIS_POINT_5_LABEL
+[Strength label]
+
+ZONE: ANALYSIS_POINT_5_BODY
+[2-3 sentences]
+
+ZONE: ADVISOR_NAME
+${advisorName}
+
+ZONE: ADVISOR_TITLE
+Acquisition Advisor
+
+ZONE: ADVISOR_COMPANY
+The Deal Team | Peterson Acquisitions
+
+ZONE: ADVISOR_PHONE
+${advisorPhone}
+
+ZONE: ADVISOR_EMAIL
+${advisorEmail}
+
+ZONE: ADVISOR_WEBSITE
+www.thedealteam.co
+</flyer_copy>
+
+<cim_content>
+Output each section using the exact labeled format below. Each label appears on its own line followed by a colon. Content follows on subsequent lines until the next label.
+
+COVER_TAGLINE:
+[One compelling sentence capturing the opportunity, 15 words max. No identifying info.]
+
+EXEC_OVERVIEW:
+[3-4 paragraphs. What the business does, region, how long in operation, core model. Buyer outcome focused.]
+
+EXEC_KEY_HIGHLIGHTS:
+Business Name: [name]
+DBA: [dba or N/A]
+Tagline: [tagline or N/A]
+Business Owners: [owner names]
+Industry: [industry]
+Address: [full address]
+Website: [website or N/A]
+Employees: [total FT + PT breakdown]
+Business Start Date: [year]
+Current Owner Since: [year]
+Real Estate: [Owned or Leased]
+Value / Rent: $[rent]/month
+Most Recent Revenue: $[revenue]
+Most Recent SDE: $[SDE]
+Valuation Multiple: [multiple]X SDE
+Market Price: $${price}
+Hours of Operation: [hours]
+
+EXEC_REASON_FOR_SALE:
+[1-2 paragraphs. Owner motivation. Not performance-driven. Transition commitment.]
+
+BIZ_HISTORY:
+[2-3 paragraphs. Founding story, track record, milestones, growth through market cycles.]
+
+BIZ_OWNERSHIP:
+[2 paragraphs. Legal structure, ownership composition, management responsibilities.]
+
+BIZ_PRODUCTS:
+[2-3 paragraphs. Core offerings, positioning vs. competitors, pricing strategy.]
+
+BIZ_CUSTOMERS:
+[2-3 paragraphs. Customer count, repeat rate, average revenue per customer, geographic reach, concentration risk.]
+
+BIZ_MARKET:
+[2-3 paragraphs. Industry overview, competitive landscape, SBA lending perspective, trends.]
+
+OPS_LOCATION:
+[1-2 paragraphs. Facility size, location type, lease details, what it supports.]
+
+OPS_OPERATIONS:
+[2-3 paragraphs. Day-to-day workflow, order processing, inventory management, vendor relationships, technology.]
+
+OPS_DAY_IN_LIFE:
+[2-3 paragraphs. Owner typical day, time allocation, what employees handle, oversight vs. hands-on.]
+
+FIN_FFE:
+[1-2 paragraphs describing FF&E value, what is included, any specific exclusions from the sale.]
+
+FIN_CASHFLOW:
+METRIC | [Most Recent Year] | [MRY] % Rev | [Prior Year] | [PY] % Rev | [2 Years Prior] | [2YP] % Rev
+Gross Revenue | $X | 100% | $X | 100% | $X | 100%
+Cost of Goods Sold | $(X) | XX% | $(X) | XX% | $(X) | XX%
+Gross Profit | $X | XX% | $X | XX% | $X | XX%
+Operating Expenses | $(X) | XX% | $(X) | XX% | $(X) | XX%
+Depreciation/Amortization | $X | XX% | $X | XX% | $X | XX%
+Net Operating Income | $X | XX% | $X | XX% | $X | XX%
+EBITDA | $X | XX% | $X | XX% | $X | XX%
+Owner Compensation | $X | XX% | $X | XX% | $X | XX%
+Other Add-Backs | $X | XX% | $X | XX% | $X | XX%
+Adjusted EBITDA | $X | XX% | $X | XX% | $X | XX%
+SDE | $X | XX% | $X | XX% | $X | XX%
+---
+Weighted Average SDE: $X
+Most Recent Year SDE: $X
+Valuation Basis: $X
+
+VAL_METRICS:
+Total Asking Price: $${price}
+Real Estate Value: $[real estate value if owned from EA, or N/A]
+Business Value (excl. RE): $[total price minus RE value, or same as asking price if N/A]
+Seller's Discretionary Earnings (SDE): $[most recent SDE from MPA]
+Business Value Multiple (excl. RE): [business value divided by SDE, 2 decimal places]X
+Total Multiple (incl. RE if applicable): [total price divided by SDE]X
+Annual Revenue: $[most recent revenue]
+SDE Margin: [SDE divided by revenue as percentage]%
+DSCR: [ratio from MPA]
+SBA Pre-Approved: YES
+FF&E Included: $[FFE value or TBD]
+Inventory (est.): $[inventory value or TBD]
+
+VAL_SBA:
+Bank: [lender name from term sheet if provided, otherwise "SBA preferred lender"]
+Loan Program: [e.g. SBA 7(a) — from term sheet or standard]
+Interest Rate: [rate from term sheet, or "current SBA rate"]
+Loan Term: [term from term sheet, or "10 years"]
+Down Payment: $[from term sheet, or 10% of asking price]
+Monthly Payment (est.): $[from term sheet if available, otherwise estimate]
+Estimated Closing Costs: $[from term sheet if available, otherwise estimate]
+Total Cash to Close: $[down payment + closing costs + SBA fees]
+
+GROWTH_OPPORTUNITIES:
+TITLE_1: [opportunity title]
+DESC_1: [2-3 sentences. What it requires. Potential upside.]
+TITLE_2: [opportunity title]
+DESC_2: [description]
+TITLE_3: [opportunity title]
+DESC_3: [description]
+TITLE_4: [opportunity title if applicable]
+DESC_4: [description if applicable]
+TITLE_5: [opportunity title if applicable]
+DESC_5: [description if applicable]
+
+TRANS_PRICE: $${price}
+
+TRANS_STRUCTURE:
+Deal Type: Asset Purchase
+Financing: SBA 7(a)
+Down Payment: $[10% of price] (10%)
+Estimated Inventory: $[inventory value]
+Estimated SBA Fee: $[SBA fee]
+Estimated Closing Costs: $[closing costs]
+Estimated Amount Financed: $[total financed]
+Term: 10 years
+DSCR: [ratio]
+
+TRANS_TRANSITION:
+[1-2 paragraphs. Seller transition commitment, training period, continuity for customers/vendors/employees.]
+</cim_content>
+
+<internal_summary>
+INTERNAL DEAL SUMMARY - NOT FOR DISTRIBUTION
+
+JOBE PROFILE FIT ANALYSIS:
+- Revenue: $[revenue] - [IN RANGE or BELOW or ABOVE target]
+- SDE: $[SDE] - [IN RANGE or BELOW or ABOVE target]
+- Employee Count: [count] - [IN RANGE or OUTSIDE 10-50 Jobe target]
+- Years in Business: [years] - [IN RANGE or OUTSIDE 10 plus year Jobe target]
+- Overall Jobe Fit: [STRONG or MODERATE or WEAK] - [one line rationale]
+
+RED FLAGS TO SURFACE IN BUYER CONVERSATIONS:
+[Concentration risks, owner dependencies, declining trends, financial concerns, items needing explanation]
+
+DEAL STRENGTHS (INTERNAL):
+[Top 3-5 genuine strengths beyond what appears in the blind ad]
+
+SUGGESTED BUYER PROFILE:
+[Ideal buyer: industry background, operating experience, financial profile, strategic vs. financial buyer fit]
+
+BUYER LIST CRITERIA FOR OUTREACH:
+[Specific targeting criteria: industry codes, company size, geography, keywords]
+
+ADVISOR TALKING POINTS:
+[5-7 specific points for the initial buyer call. Most compelling angles. Questions to expect. How to position QSI in context of this deal.]
+
+ITEMS NEEDING FOLLOW-UP BEFORE LISTING:
+[Missing fields. Financial items to clarify. Legal items to confirm. Interview gaps.]
+
+CONFIDENTIALITY ALERTS:
+[Any fields generalized for blind outputs. What was changed and why.]
+</internal_summary>
+
+<brand_colors>
+Analyze the company website provided (if any) and identify its primary brand color and accent/highlight color. If no website is provided or the company has minimal web presence, select professional colors appropriate to the industry that would look polished in a business document. Return only these three lines:
+
+PRIMARY_HEX:#[6-digit hex — dominant brand or background color, should be dark enough for white text on top]
+ACCENT_HEX:#[6-digit hex — secondary highlight or accent color]
+COMPANY_DISPLAY_NAME:[clean business name for document headers, e.g. "Electrical Contractors Supply, Inc."]
+</brand_colors>`;
+}
+
+// ─── GENERATION ───────────────────────────────────────────────────────────────
+
+async function runGeneration() {
+  const btn      = document.getElementById('gen-btn');
+  const spin     = document.getElementById('gen-spin');
+  const progress = document.getElementById('gen-progress');
+  const errEl    = document.getElementById('gen-error');
+  const elapsed  = document.getElementById('gen-elapsed');
+
+  const price        = document.getElementById('f-price').value.trim();
+  const advisorName  = document.getElementById('f-name').value.trim();
+  const advisorEmail = document.getElementById('f-email').value.trim();
+  const advisorPhone = document.getElementById('f-phone').value.trim();
+  const website      = document.getElementById('f-website').value.trim();
+
+  errEl.classList.add('hidden');
+  document.getElementById('qa-gate').classList.add('hidden');
+  document.getElementById('output-panel').classList.add('hidden');
+  ['qa1','qa2','qa3','qa4'].forEach(id => { document.getElementById(id).checked = false; });
+  document.getElementById('qa-status').textContent = 'Check all four boxes to unlock outputs ↓';
+  document.getElementById('qa-status').style.color = '#c0392b';
+
+  btn.disabled = true;
+  spin.classList.remove('hidden');
+  progress.classList.remove('hidden');
+  const t0 = Date.now();
+  elapsed.textContent = '0s';
+  _elapsedTimer = setInterval(() => {
+    elapsed.textContent = Math.round((Date.now() - t0) / 1000) + 's';
+  }, 1000);
+
+  try {
+    const userPrompt = buildUserPrompt(
+      price, advisorName, advisorEmail, advisorPhone, website,
+      pdfTexts.interview, pdfTexts.ea, pdfTexts.mpa, pdfTexts.termsheet
+    );
+    const raw = await callClaude(SYSTEM_PROMPT, userPrompt, 16000);
+
+    const outputs = {
+      blind_ad:         extractXml(raw, 'blind_ad'),
+      flyer_copy:       extractXml(raw, 'flyer_copy'),
+      cim_content:      extractXml(raw, 'cim_content'),
+      internal_summary: extractXml(raw, 'internal_summary'),
+    };
+
+    // Extract brand colors and populate pickers
+    const brandRaw = extractXml(raw, 'brand_colors');
+    _lastBrandColors = parseBrandColors(brandRaw);
+    document.getElementById('f-primary-color').value     = _lastBrandColors.primary;
+    document.getElementById('f-primary-color-hex').value = _lastBrandColors.primary;
+    document.getElementById('f-accent-color').value      = _lastBrandColors.accent;
+    document.getElementById('f-accent-color-hex').value  = _lastBrandColors.accent;
+
+    // Parse structured data for renderers
+    _lastFlyerZones  = parseFlyerZones(outputs.flyer_copy || '');
+    _lastCimSections = parseCimSections(outputs.cim_content || '');
+
+    renderOutput('blind-ad',        'ta-blind-ad',        outputs.blind_ad);
+    renderOutput('flyer-copy',      'ta-flyer-copy',      outputs.flyer_copy);
+    renderOutput('cim-content',     'ta-cim-content',     outputs.cim_content);
+    renderOutput('internal-summary','ta-internal-summary',outputs.internal_summary);
+
+    populateEditPanel();
+    saveDeal();
+    document.getElementById('qa-gate').classList.remove('hidden');
+    document.getElementById('qa-gate').scrollIntoView({ behavior:'smooth', block:'start' });
+
+  } catch (err) {
+    errEl.innerHTML =
+      '<strong>Generation failed:</strong> ' + esc(err.message) +
+      ' &nbsp; <button class="btn-g btn-sm" onclick="runGeneration()" style="margin-left:6px">↺ Retry</button>';
+    errEl.classList.remove('hidden');
+    errEl.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  } finally {
+    clearInterval(_elapsedTimer);
+    spin.classList.add('hidden');
+    progress.classList.add('hidden');
+    updateGenBtn();
+  }
+}
+
+// ─── XML / SECTION PARSERS ────────────────────────────────────────────────────
+
+function extractXml(text, tag) {
+  const re = new RegExp('<' + tag + '>[\\s\\S]*?<\\/' + tag + '>', 'i');
+  const m  = text.match(re);
+  if (!m) return null;
+  return m[0]
+    .replace(new RegExp('^<' + tag + '>', 'i'), '')
+    .replace(new RegExp('<\\/' + tag + '>$', 'i'), '')
+    .trim();
+}
+
+function parseBrandColors(raw) {
+  if (!raw) return { primary: '#1A1A1A', accent: '#C1622F', companyName: '' };
+  const primary     = (raw.match(/PRIMARY_HEX:\s*(#[0-9a-fA-F]{6})/) || [])[1] || '#1A1A1A';
+  const accent      = (raw.match(/ACCENT_HEX:\s*(#[0-9a-fA-F]{6})/)  || [])[1] || '#C1622F';
+  const companyName = (raw.match(/COMPANY_DISPLAY_NAME:\s*(.+)/)      || [])[1]?.trim() || '';
+  return { primary, accent, companyName };
+}
+
+function parseFlyerZones(text) {
+  const result = {};
+  const lines = text.split('\n');
+  let currentKey = null;
+  const currentLines = [];
+  for (const line of lines) {
+    const m = line.match(/^ZONE:\s*([A-Z0-9_]+)\s*$/);
+    if (m) {
+      if (currentKey) result[currentKey] = currentLines.join('\n').trim();
+      currentKey = m[1];
+      currentLines.length = 0;
+    } else if (currentKey !== null) {
+      currentLines.push(line);
+    }
+  }
+  if (currentKey) result[currentKey] = currentLines.join('\n').trim();
+  return result;
+}
+
+function parseCimSections(text) {
+  const result = {};
+  const lines = text.split('\n');
+  let currentKey = null;
+  const currentLines = [];
+  for (const line of lines) {
+    const m = line.match(/^([A-Z][A-Z0-9]*_[A-Z0-9][A-Z0-9_]*):\s*(.*)$/);
+    if (m) {
+      if (currentKey) result[currentKey] = currentLines.join('\n').trim();
+      currentKey = m[1];
+      currentLines.length = 0;
+      if (m[2].trim()) currentLines.push(m[2].trim());
+    } else if (currentKey !== null) {
+      currentLines.push(line);
+    }
+  }
+  if (currentKey) result[currentKey] = currentLines.join('\n').trim();
+  return result;
+}
+
+// ─── OUTPUT RENDERING ─────────────────────────────────────────────────────────
+
+function renderOutput(panelKey, taId, content) {
+  const container = document.getElementById('content-' + panelKey);
+  if (!content) {
+    container.innerHTML =
+      '<div class="missing-out">⚠ REQUIRED — ADD BEFORE PUBLISHING' +
+      '<div style="font-size:12px;font-weight:400;margin-top:4px">This section could not be parsed from the API response. Try regenerating.</div></div>';
+    return;
+  }
+  container.innerHTML =
+    '<textarea id="' + taId + '" class="out-ta" readonly>' + esc(content) + '</textarea>';
+}
+
+// ─── QA GATE ─────────────────────────────────────────────────────────────────
+
+function updateQaGate() {
+  const checked = ['qa1','qa2','qa3','qa4'].filter(id => document.getElementById(id).checked).length;
+  const all     = checked === 4;
+  const panel   = document.getElementById('output-panel');
+  const status  = document.getElementById('qa-status');
+  if (all) {
+    panel.classList.remove('hidden');
+    status.textContent = '✓ All checks passed — outputs unlocked';
+    status.style.color = '#2e7d32';
+    panel.scrollIntoView({ behavior:'smooth', block:'start' });
+  } else {
+    panel.classList.add('hidden');
+    status.textContent = (4 - checked) + ' of 4 boxes remaining';
+    status.style.color = '#c0392b';
+  }
+}
+
+// ─── OUTPUT TABS ──────────────────────────────────────────────────────────────
+
+function switchOutTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  ['blind-ad','flyer-copy','cim-content','internal-summary'].forEach(k => {
+    document.getElementById('out-' + k).classList.toggle('hidden', k !== name);
+  });
+}
+
+function copyOutput(taId, btn) {
+  const ta = document.getElementById(taId);
+  if (!ta) { alert('No output to copy — please regenerate.'); return; }
+  navigator.clipboard.writeText(ta.value).then(() => {
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => { btn.textContent = orig; }, 1800);
+    }
+  }).catch(() => alert('Copy failed — please select all and copy manually.'));
+}
+
+// ─── EDIT PANEL ──────────────────────────────────────────────────────────────
+
+const FLYER_MULTILINE = new Set([
+  'OVERVIEW_PARAGRAPH',
+  'ANALYSIS_POINT_1_BODY','ANALYSIS_POINT_2_BODY','ANALYSIS_POINT_3_BODY',
+  'ANALYSIS_POINT_4_BODY','ANALYSIS_POINT_5_BODY',
+]);
+
+const CIM_LONG = new Set([
+  'EXEC_OVERVIEW','EXEC_KEY_HIGHLIGHTS','EXEC_REASON_FOR_SALE',
+  'BIZ_HISTORY','BIZ_OWNERSHIP','BIZ_PRODUCTS','BIZ_CUSTOMERS','BIZ_MARKET',
+  'OPS_LOCATION','OPS_OPERATIONS','OPS_DAY_IN_LIFE','FIN_FFE','FIN_CASHFLOW',
+  'VAL_METRICS','VAL_SBA','GROWTH_OPPORTUNITIES','TRANS_STRUCTURE','TRANS_TRANSITION',
+]);
+
+function populateEditPanel() {
+  const flyerEl = document.getElementById('edit-flyer-panel');
+  flyerEl.innerHTML = Object.entries(_lastFlyerZones).map(([key, val]) => {
+    const label = key.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase());
+    if (FLYER_MULTILINE.has(key)) {
+      return `<div class="fg"><label>${esc(label)}</label>
+        <textarea class="out-ta" style="min-height:72px;font-size:13px;padding:8px 12px;resize:vertical"
+          oninput="_lastFlyerZones['${key}']=this.value;debouncedSave()">${esc(val)}</textarea></div>`;
+    }
+    return `<div class="fg"><label>${esc(label)}</label>
+      <input type="text" value="${esc(val)}" oninput="_lastFlyerZones['${key}']=this.value;debouncedSave()"/></div>`;
+  }).join('');
+
+  const cimEl = document.getElementById('edit-cim-panel');
+  cimEl.innerHTML = Object.entries(_lastCimSections).map(([key, val]) => {
+    const label = key.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase());
+    const rows = CIM_LONG.has(key) ? 5 : 2;
+    return `<div class="fg"><label>${esc(label)}</label>
+      <textarea class="out-ta" style="min-height:${rows*18+24}px;font-size:13px;padding:8px 12px;resize:vertical"
+        oninput="_lastCimSections['${key}']=this.value;debouncedSave()">${esc(val)}</textarea></div>`;
+  }).join('');
+
+  document.getElementById('edit-panel').classList.remove('hidden');
+}
+
+function switchEditTab(name, btn) {
+  document.querySelectorAll('#edit-tabs .tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('edit-flyer-panel').classList.toggle('hidden', name !== 'flyer');
+  document.getElementById('edit-cim-panel').classList.toggle('hidden', name !== 'cim');
+}
+
+// ─── FLYER PREVIEW ────────────────────────────────────────────────────────────
+
+function openFlyerPreview() {
+  if (!_lastFlyerZones || !Object.keys(_lastFlyerZones).length) {
+    alert('No flyer data available. Please generate outputs first.');
+    return;
+  }
+  const advisor = {
+    name:  document.getElementById('f-name').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+  };
+  const colors = {
+    primary: document.getElementById('f-primary-color').value || '#1A1A1A',
+    accent:  document.getElementById('f-accent-color').value  || '#C1622F',
+  };
+  renderFlyer(_lastFlyerZones, colors, imageData, advisor);
+}
+
+function renderFlyer(zones, colors, imgs, advisor) {
+  const p  = colors.primary;
+  const a  = colors.accent;
+  const zv = (key, fb) => zones[key] || fb || '';
+  const ce = 'contenteditable="true" spellcheck="false"';
+
+  const headlineParts = [zones.HEADLINE_LINE_1, zones.HEADLINE_LINE_2, zones.HEADLINE_LINE_3].filter(Boolean);
+  const headlineHtml  = headlineParts.map(l => esc(l)).join('<br/>');
+
+  const bizPhotoHtml = imgs.bizPhotos && imgs.bizPhotos[0]
+    ? `<img src="${imgs.bizPhotos[0]}" style="width:100%;height:100%;object-fit:cover"/>`
+    : `<div style="width:100%;height:100%;background:#2d2d2d;display:flex;align-items:center;justify-content:center;color:#666;font-size:12px;font-family:Arial">Business Photo</div>`;
+
+  const advisorPhotoHtml = imgs.advisorPhoto
+    ? `<img src="${imgs.advisorPhoto}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2.5px solid ${a};flex-shrink:0"/>`
+    : `<div style="width:72px;height:72px;border-radius:50%;background:#444;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">👤</div>`;
+
+  const secHd = title =>
+    `<div style="font-family:'Oswald',Arial,sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#1A1A1A;border-bottom:2.5px solid #1A1A1A;padding-bottom:4px;margin-bottom:10px">${title}</div>`;
+
+  const featureItems = [];
+  for (let i = 1; i <= 6; i++) {
+    const lbl = zv(`KEY_FEATURE_${i}_LABEL`);
+    const val = zv(`KEY_FEATURE_${i}_VALUE`);
+    if (lbl || val) featureItems.push(`
+      <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0">
+        <div style="width:36px;height:36px;border-radius:50%;background:${a};color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Oswald',Arial,sans-serif;font-size:14px;font-weight:700;flex-shrink:0">${i}</div>
+        <div style="padding-top:2px">
+          <div style="font-weight:700;font-size:10px;color:#1A1A1A;line-height:1.3" ${ce}>${esc(lbl)}</div>
+          <div style="font-size:10px;color:#94a3b8;margin-top:2px" ${ce}>${esc(val)}</div>
+        </div>
+      </div>`);
+  }
+
+  const analysisItems = [];
+  for (let i = 1; i <= 5; i++) {
+    const title = zv(`ANALYSIS_POINT_${i}_LABEL`);
+    const body  = zv(`ANALYSIS_POINT_${i}_BODY`);
+    if (title) analysisItems.push(`
+      <div style="margin-bottom:10px">
+        <div style="font-weight:700;font-size:10px;color:#1A1A1A;margin-bottom:3px" ${ce}>${esc(title)}</div>
+        <div style="font-size:10px;color:#94a3b8;line-height:1.65" ${ce}>${esc(body)}</div>
+      </div>`);
+  }
+
+  const metricRows = [
+    ['PRICE_BOX_REVENUE_LABEL','PRICE_BOX_REVENUE_VALUE'],
+    ['PRICE_BOX_CASHFLOW_LABEL','PRICE_BOX_CASHFLOW_VALUE'],
+    ['PRICE_BOX_MULTIPLE_LABEL','PRICE_BOX_MULTIPLE_VALUE'],
+    ['PRICE_BOX_FFE_LABEL','PRICE_BOX_FFE_VALUE'],
+  ].map(([lk,vk]) => `
+    <div style="border-bottom:1px solid #f0f0f0;padding:5px 0">
+      <div style="font-size:9px;color:#999" ${ce}>${esc(zv(lk))}</div>
+      <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:14px;color:#1A1A1A" ${ce}>${esc(zv(vk))}</div>
+    </div>`).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<title>Flyer Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+@page{size:letter portrait;margin:0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',Arial,sans-serif;background:#ccc}
+.print-bar{background:#e8e8e8;padding:8px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:99;border-bottom:1px solid #d0d0d0}
+.flyer{width:816px;margin:12px auto;background:#fff;box-shadow:0 2px 16px rgba(0,0,0,.25)}
+[contenteditable]{cursor:text;border-radius:2px;transition:outline .1s}
+[contenteditable]:hover{outline:1px dashed rgba(0,0,0,.2)}
+[contenteditable]:focus{outline:2px solid ${a}!important;background:rgba(255,255,255,.08)}
+@media print{
+  .print-bar{display:none!important}
+  body{background:#fff;margin:0}
+  .flyer{margin:0;box-shadow:none}
+  -webkit-print-color-adjust:exact;print-color-adjust:exact
+}
+</style></head><body>
+<div class="print-bar">
+  <span style="font-size:12px;color:#666;margin-right:auto">✏ Click any text to edit directly before printing</span>
+  <button onclick="window.print()" style="background:${p};color:#fff;border:none;padding:8px 20px;border-radius:4px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer">🖨 Print / Save as PDF</button>
+</div>
+<div class="flyer">
+
+  <!-- HEADER -->
+  <div style="display:flex;height:248px">
+    <div style="width:56%;background:#1A1A1A;padding:14px 20px;display:flex;flex-direction:column">
+      <div>
+        <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:11px;color:#fff;letter-spacing:1.5px">PETERSON ACQUISITIONS</div>
+        <div style="font-family:'Oswald',Arial,sans-serif;font-size:9px;color:${a};letter-spacing:2px;text-transform:uppercase">THE DEAL TEAM</div>
+      </div>
+      <div style="margin-top:auto">
+        <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:30px;color:${a};line-height:1.05;text-transform:uppercase" ${ce}>${headlineHtml}</div>
+        <div style="margin-top:10px">
+          <span style="background:${a};color:#fff;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:600;font-family:'Oswald',Arial,sans-serif;letter-spacing:.5px" ${ce}>${esc(zv('SUBHEAD_INDUSTRY'))}</span>
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:8px;line-height:1.5" ${ce}>${esc(zv('SUBHEAD_DESCRIPTOR'))}</div>
+      </div>
+    </div>
+    <div style="width:44%;overflow:hidden">${bizPhotoHtml}</div>
+  </div>
+
+  <!-- CONTENT AREA -->
+  <div style="display:flex;padding:14px 18px;gap:18px;background:#fff">
+
+    <!-- LEFT COLUMN -->
+    <div style="flex:1;min-width:0;padding-right:4px">
+      ${secHd('Overview')}
+      <div style="font-size:11px;line-height:1.75;color:#e2e8f0;margin-bottom:15px;text-align:justify" ${ce}>${esc(zv('OVERVIEW_PARAGRAPH'))}</div>
+
+      ${secHd('Key Features')}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:14px">
+        ${featureItems.join('')}
+      </div>
+
+      ${secHd('Business Analysis')}
+      <div>${analysisItems.join('')}</div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div style="width:194px;flex-shrink:0;padding-top:1px">
+      <div style="margin-bottom:13px">
+        <div style="font-size:9px;color:#999;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:2px">Price</div>
+        <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:32px;color:${p};line-height:1" ${ce}>${esc(zv('PRICE_BOX_ASKING_PRICE'))}</div>
+      </div>
+      <div style="margin-bottom:12px">${metricRows}</div>
+      <div style="font-size:10px;color:#666;line-height:2.1;border-top:1px solid #f0f0f0;padding-top:8px">
+        <div><span style="color:#64748b">Hours: </span><strong ${ce}>${esc(zv('HOURS_OF_OPERATION'))}</strong></div>
+        <div><span style="color:#64748b">Employees: </span><strong ${ce}>${esc(zv('EMPLOYEES'))}</strong></div>
+        <div><span style="color:#64748b">Est.: </span><strong ${ce}>${esc(zv('BUSINESS_STARTED'))}</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADVISOR FOOTER -->
+  <div style="background:#1A1A1A;display:flex;align-items:center;padding:12px 18px;gap:14px">
+    ${advisorPhotoHtml}
+    <div style="flex:1">
+      <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:17px;color:#fff" ${ce}>${esc(advisor.name)}</div>
+      <div style="font-size:10px;color:${a};font-weight:600;margin-top:2px">Acquisition Advisor</div>
+      <div style="font-size:10px;color:#64748b;margin-top:1px">The Deal Team | Peterson Acquisitions</div>
+    </div>
+    <div style="text-align:right;font-size:10px;color:#64748b;line-height:2">
+      <div ${ce}>${esc(advisor.phone)}</div>
+      <div ${ce}>${esc(advisor.email)}</div>
+      <div style="color:${a}">www.thedealteam.co</div>
+    </div>
+    <div style="border-left:1px solid #333;padding-left:16px;text-align:right">
+      <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:11px;color:#fff;letter-spacing:1px;line-height:1.4">PETERSON</div>
+      <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:11px;color:#fff;letter-spacing:1px;line-height:1.4">ACQUISITIONS</div>
+      <div style="font-size:8px;color:${a};letter-spacing:2px;margin-top:3px">THE DEAL TEAM</div>
+    </div>
+  </div>
+
+</div></body></html>`;
+
+  const win = window.open('', '_blank');
+  if (!win) { alert('Popup blocked — please allow popups for this site.'); return; }
+  win.document.write(html);
+  win.document.close();
+}
+
+// ─── CIM PREVIEW ─────────────────────────────────────────────────────────────
+
+function openCimPreview() {
+  if (!_lastCimSections || !Object.keys(_lastCimSections).length) {
+    alert('No CIM data available. Please generate outputs first.');
+    return;
+  }
+  const advisor = {
+    name:  document.getElementById('f-name').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+  };
+  const colors = {
+    primary:     document.getElementById('f-primary-color').value || '#1A1A1A',
+    accent:      document.getElementById('f-accent-color').value  || '#C1622F',
+    companyName: _lastBrandColors.companyName || '',
+  };
+  renderCim(_lastCimSections, colors, imageData, advisor);
+}
+
+function renderCim(sections, colors, imgs, advisor) {
+  const p  = colors.primary;
+  const a  = colors.accent;
+  const cn = colors.companyName || 'Confidential Business Review';
+  const s  = key => sections[key] || '';
+  const ce = 'contenteditable="true" spellcheck="false"';
+
+  function page(content, sidebar) {
+    const inner = sidebar
+      ? `<div style="display:flex;flex:1;min-height:0">
+           <div style="flex:1;min-width:0;padding:44px 32px 68px 52px">${content}</div>
+           <div style="width:212px;flex-shrink:0;background:#f3f7f1;padding:28px 20px">${sidebar}</div>
+         </div>`
+      : `<div style="padding:44px 52px 68px">${content}</div>`;
+    return `<div style="width:816px;min-height:1056px;background:#fff;position:relative;display:flex;flex-direction:column;page-break-after:always;font-family:'Inter',Arial,sans-serif;overflow:hidden">
+      <div style="height:5px;background:${p};flex-shrink:0"></div>
+      ${inner}
+      <div style="position:absolute;bottom:0;left:0;right:0;padding:9px 52px;background:#fff;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:9px;color:#64748b">
+        <span>© 2026 Peterson Acquisitions</span>
+        <span ${ce}>Confidential Business Review · ${esc(cn)}</span>
+        <span>thedealteam.co</span>
+      </div>
+    </div>`;
+  }
+
+  function divider(title) {
+    const lines = title.split('\n').map(l => esc(l)).join('<br/>');
+    return `<div style="width:816px;height:1056px;background:${p};display:flex;flex-direction:column;align-items:center;justify-content:center;page-break-after:always;position:relative;overflow:hidden">
+      <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:56px;color:#fff;text-align:center;letter-spacing:3px;text-transform:uppercase;padding:0 60px;line-height:1.1">${lines}</div>
+      <div style="display:flex;margin-top:18px">
+        <div style="width:60px;height:5px;background:rgba(255,255,255,.4)"></div>
+        <div style="width:40px;height:5px;background:${a}"></div>
+      </div>
+      <div style="position:absolute;bottom:24px;font-family:'Oswald',Arial,sans-serif;font-size:9px;color:rgba(255,255,255,.25);letter-spacing:3px;text-transform:uppercase">PROPRIETARY AND CONFIDENTIAL · ALL RIGHTS RESERVED</div>
+    </div>`;
+  }
+
+  function secHead(section, title) {
+    return `<div style="margin-bottom:20px">
+      <div style="font-size:9px;color:#64748b;font-weight:500;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px">${esc(section)}</div>
+      <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:22px;color:${p};text-transform:uppercase;letter-spacing:.5px" ${ce}>${esc(title)}</div>
+      <div style="margin-top:8px;height:1px;background:#e8e8e8;position:relative">
+        <div style="position:absolute;left:0;top:-1px;width:44px;height:3px;background:${a}"></div>
+      </div>
+    </div>`;
+  }
+
+  function decorSidebar(label) {
+    return `<div style="display:flex;flex-direction:column;align-items:center;padding-top:32px;height:100%">
+      <div style="width:2px;height:48px;background:${p};opacity:.25"></div>
+      <div style="font-family:'Oswald',Arial,sans-serif;font-size:10px;color:${p};opacity:.4;text-transform:uppercase;letter-spacing:3px;writing-mode:vertical-rl;transform:rotate(180deg);margin:12px 0;flex:1">${esc(label)}</div>
+      <div style="width:2px;height:48px;background:${p};opacity:.1"></div>
+    </div>`;
+  }
+
+  function paras(text) {
+    if (!text) return `<p style="color:#64748b;font-style:italic;font-size:11px">[Content to be added]</p>`;
+    return text.split(/\n\n+/).filter(t => t.trim()).map(t =>
+      `<p style="font-size:11px;line-height:1.9;color:#e2e8f0;margin-bottom:13px" ${ce}>${esc(t.trim())}</p>`
+    ).join('');
+  }
+
+  function lineItems(text) {
+    if (!text) return `<p style="color:#64748b;font-style:italic;font-size:11px">[To be provided]</p>`;
+    return text.split('\n').filter(l => l.trim()).map(l => {
+      const colon = l.indexOf(':');
+      if (colon > 0 && colon < 28) {
+        const lbl = l.substring(0, colon).trim();
+        const val = l.substring(colon + 1).trim();
+        return `<div style="display:flex;gap:8px;font-size:11px;padding:4px 0;border-bottom:1px solid #f5f5f5">
+          <span style="font-weight:600;color:${p};white-space:nowrap;min-width:140px">${esc(lbl)}</span>
+          <span style="color:#e2e8f0" ${ce}>${esc(val)}</span>
+        </div>`;
+      }
+      return `<div style="font-size:11px;color:#e2e8f0;padding:4px 0;border-bottom:1px solid #f5f5f5" ${ce}>${esc(l.trim())}</div>`;
+    }).join('');
+  }
+
+  function highlightTable(text) {
+    if (!text) return '';
+    const rows = text.split('\n').filter(l => l.includes(':') && l.trim()).map((l, i) => {
+      const idx   = l.indexOf(':');
+      const label = l.substring(0, idx).trim();
+      const value = l.substring(idx + 1).trim();
+      return `<tr style="background:${i%2===0?'#fff':'#fafafa'}">
+        <td style="font-weight:700;font-size:10px;color:${p};padding:7px 12px;border-bottom:1px solid #f0f0f0;white-space:nowrap;width:38%;vertical-align:top">${esc(label)}</td>
+        <td style="font-size:10px;color:#e2e8f0;padding:7px 12px;border-bottom:1px solid #f0f0f0" ${ce}>${esc(value)}</td>
+      </tr>`;
+    });
+    return `<table style="width:100%;border-collapse:collapse;border:1px solid #f0f0f0;border-radius:4px;overflow:hidden">${rows.join('')}</table>`;
+  }
+
+  function cashFlowTable(text) {
+    if (!text) return `<p style="color:#64748b;font-style:italic;font-size:11px">[Financial data to be provided]</p>`;
+    const BOLD_CF = new Set(['Gross Profit','Net Operating Income','EBITDA','Adjusted EBITDA','SDE']);
+    // Split off footer block (after ---)
+    const sepIdx      = text.search(/\n---/);
+    const mainBlock   = sepIdx >= 0 ? text.substring(0, sepIdx).trim() : text.trim();
+    const footerBlock = sepIdx >= 0 ? text.substring(sepIdx + 4).trim() : '';
+    const lines = mainBlock.split('\n').filter(l => l.trim() && l.includes('|'));
+    if (!lines.length) return `<p style="color:#64748b;font-style:italic;font-size:11px">[Financial data to be provided]</p>`;
+    const rows = lines.map((line, i) => {
+      const cells = line.split('|').map(c => c.trim());
+      const label = cells[0] || '';
+      if (i === 0) {
+        return `<tr>${cells.map((c,j) =>
+          `<th style="background:${p};color:#fff;font-family:'Oswald',Arial,sans-serif;font-size:9px;font-weight:600;padding:7px 5px;text-align:${j===0?'left':'right'};white-space:nowrap;border-right:1px solid rgba(255,255,255,.12)">${esc(c)}</th>`
+        ).join('')}</tr>`;
+      }
+      const isBold = BOLD_CF.has(label);
+      const isSDE  = label === 'SDE';
+      const rowBg  = isBold ? '#f0f5f0' : (i % 2 === 0 ? '#fff' : '#fafafa');
+      return `<tr style="background:${rowBg}">${cells.map((c, j) => {
+        const isNum   = j > 0;
+        const color   = (isSDE && isNum) ? 'color:#2e7d32;' : '';
+        const fw      = isBold ? 'font-weight:700;' : '';
+        return `<td style="font-size:9.5px;padding:5px 5px;border-bottom:1px solid #f0f0f0;border-right:1px solid #f5f5f5;text-align:${j===0?'left':'right'};${fw}${color}" ${ce}>${esc(c)}</td>`;
+      }).join('')}</tr>`;
+    });
+    let footerHtml = '';
+    if (footerBlock) {
+      const flines = footerBlock.split('\n').filter(l => l.trim());
+      footerHtml = `<div style="border-top:2.5px solid ${p};padding:10px 8px 4px;margin-top:2px">` +
+        flines.map(l => {
+          const colon = l.indexOf(':');
+          if (colon > 0) {
+            const lbl = l.substring(0, colon).trim();
+            const val = l.substring(colon + 1).trim();
+            return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f5f5f5">
+              <span style="font-size:10.5px;color:#666;font-weight:500">${esc(lbl)}</span>
+              <span style="font-family:'Oswald',Arial,sans-serif;font-weight:700;color:${p};font-size:13px" ${ce}>${esc(val)}</span>
+            </div>`;
+          }
+          return `<div style="font-size:10px;color:#64748b;padding:2px 0" ${ce}>${esc(l.trim())}</div>`;
+        }).join('') + '</div>';
+    }
+    return `<div style="border:1px solid #e8e8e8;border-radius:4px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;table-layout:fixed">${rows.join('')}</table>
+    </div>${footerHtml}`;
+  }
+
+  function valMetrics(text) {
+    if (!text) return '';
+    const items = text.split('\n').filter(l => l.includes(':') && l.trim()).map(l => {
+      const idx = l.indexOf(':');
+      return { label: l.substring(0, idx).trim(), value: l.substring(idx + 1).trim() };
+    });
+    const get = (key) => items.find(it => it.label === key)?.value || '';
+
+    // ── Price breakdown bar ──────────────────────────────────────────────────
+    const totalPrice   = get('Total Asking Price');
+    const reValue      = get('Real Estate Value');
+    const bizValue     = get('Business Value (excl. RE)');
+    const hasRE        = reValue && reValue !== 'N/A' && reValue !== '$N/A';
+    let breakdownHtml  = '';
+    if (hasRE && bizValue) {
+      breakdownHtml = `
+        <div style="margin-bottom:18px">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#999;margin-bottom:8px">Price Breakdown</div>
+          <div style="display:flex;border-radius:6px;overflow:hidden;border:1px solid #e0e0e0">
+            <div style="flex:1;background:${p};padding:14px 12px;text-align:center">
+              <div style="font-size:8px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Business Value</div>
+              <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:18px;color:#fff" ${ce}>${esc(bizValue)}</div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;padding:0 6px;background:#f5f5f5;font-size:14px;color:#64748b;font-weight:700">+</div>
+            <div style="flex:1;background:${a};padding:14px 12px;text-align:center">
+              <div style="font-size:8px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Real Estate</div>
+              <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:18px;color:#fff" ${ce}>${esc(reValue)}</div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;padding:0 6px;background:#f5f5f5;font-size:14px;color:#64748b;font-weight:700">=</div>
+            <div style="flex:1;background:#2c2c2c;padding:14px 12px;text-align:center">
+              <div style="font-size:8px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Total Asking Price</div>
+              <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:18px;color:#fff" ${ce}>${esc(totalPrice)}</div>
+            </div>
+          </div>
+        </div>`;
+    } else if (totalPrice) {
+      breakdownHtml = `
+        <div style="margin-bottom:18px">
+          <div style="background:${p};padding:16px;border-radius:6px;text-align:center">
+            <div style="font-size:9px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px">Total Asking Price</div>
+            <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:28px;color:#fff" ${ce}>${esc(totalPrice)}</div>
+          </div>
+        </div>`;
+    }
+
+    // ── Callout boxes (SDE, Multiple, DSCR) ─────────────────────────────────
+    const CALLOUT_KEYS = ['Business Value (excl. RE)', "Seller's Discretionary Earnings (SDE)", 'Business Value Multiple (excl. RE)', 'DSCR'];
+    const BREAKDOWN_KEYS = new Set(['Total Asking Price', 'Real Estate Value', 'Business Value (excl. RE)']);
+    const callouts = CALLOUT_KEYS.map(k => items.find(it => it.label === k)).filter(Boolean);
+    const details  = items.filter(it => !BREAKDOWN_KEYS.has(it.label) && !CALLOUT_KEYS.includes(it.label));
+
+    const calloutHtml = callouts.length
+      ? `<div style="display:grid;grid-template-columns:repeat(${Math.min(callouts.length, 4)},1fr);gap:10px;margin-bottom:16px">` +
+        callouts.map(it => `
+          <div style="background:${p};color:#fff;padding:16px 10px;text-align:center;border-radius:6px;min-height:84px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.12)">
+            <div style="font-size:8px;opacity:.6;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;line-height:1.3" ${ce}>${esc(it.label)}</div>
+            <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:22px;line-height:1.05" ${ce}>${esc(it.value)}</div>
+          </div>`).join('') + '</div>'
+      : '';
+
+    const detailsHtml = details.length
+      ? `<div style="border:1px solid #f0f0f0;border-radius:4px;overflow:hidden">` +
+        details.map((it, i) => {
+          const isSba = it.label.toLowerCase().includes('sba pre-approved');
+          const bg = isSba ? 'background:#f0fdf4;border-left:3px solid #2e7d32;' : (i%2===0?'background:#fff;':'background:#fafafa;');
+          return `<div style="display:flex;gap:8px;font-size:11px;padding:7px 12px;border-bottom:1px solid #f5f5f5;${bg}">
+            <span style="font-weight:600;color:${isSba?'#2e7d32':p};white-space:nowrap;min-width:200px">${esc(it.label)}</span>
+            <span style="color:${isSba?'#2e7d32':'#333'};${isSba?'font-weight:700;':''}" ${ce}>${esc(it.value)}</span>
+          </div>`;
+        }).join('') + '</div>'
+      : '';
+    return breakdownHtml + calloutHtml + detailsHtml;
+  }
+
+  function growthCards(text) {
+    const titles = {}, descs = {};
+    // From embedded text
+    if (text) {
+      for (const line of text.split('\n')) {
+        const tm = line.match(/^TITLE_(\d+):\s*(.+)/);
+        const dm = line.match(/^DESC_(\d+):\s*(.+)/);
+        if (tm) titles[tm[1]] = tm[2];
+        if (dm) descs[dm[1]]  = dm[2];
+      }
+    }
+    // Also look in top-level parsed sections (parser may have split them out)
+    Object.entries(sections).forEach(([k, v]) => {
+      const tm = k.match(/^TITLE_(\d+)$/);
+      const dm = k.match(/^DESC_(\d+)$/);
+      if (tm && !titles[tm[1]]) titles[tm[1]] = v;
+      if (dm && !descs[dm[1]])  descs[dm[1]]  = v;
+    });
+    if (!Object.keys(titles).length) return `<p style="color:#64748b;font-style:italic;font-size:11px">[Growth opportunities to be added]</p>`;
+    return Object.keys(titles).sort().map(n => `
+      <div style="border:1px solid #e8e8e8;border-radius:6px;padding:16px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:9px">
+          <div style="width:10px;height:10px;background:${a};border-radius:50%;flex-shrink:0"></div>
+          <div style="font-family:'Oswald',Arial,sans-serif;font-weight:600;font-size:13px;color:${p}" ${ce}>${esc(titles[n])}</div>
+        </div>
+        <div style="font-size:11px;color:#94a3b8;line-height:1.7" ${ce}>${esc(descs[n]||'')}</div>
+      </div>`).join('');
+  }
+
+  const bizCoverHtml = imgs.bizPhotos && imgs.bizPhotos[0]
+    ? `<img src="${imgs.bizPhotos[0]}" style="width:100%;height:100%;object-fit:cover;display:block"/>`
+    : `<div style="width:100%;height:100%;background:#2d2d2d;display:flex;align-items:center;justify-content:center;color:#666;font-size:14px;font-family:Arial">Business Photo</div>`;
+
+  const bizSidebarHtml = imgs.bizPhotos && imgs.bizPhotos.length > 0
+    ? `<img src="${imgs.bizPhotos[1] || imgs.bizPhotos[0]}" style="width:100%;height:220px;object-fit:cover;display:block;border-radius:4px;margin-bottom:16px"/>`
+    : '';
+
+  function photoGalleryPage(photos) {
+    const items = photos.slice(0, 4).map(src =>
+      `<div style="flex:1;min-width:0;overflow:hidden"><img src="${src}" style="width:100%;height:100%;object-fit:cover;display:block"/></div>`
+    );
+    const topRow = items.slice(0, 2).join('');
+    const botRow = items.slice(2, 4).join('');
+    return `<div style="width:816px;height:1056px;background:#1A1A1A;display:flex;flex-direction:column;page-break-after:always;overflow:hidden;font-family:'Inter',Arial,sans-serif">
+      <div style="height:5px;background:${a};flex-shrink:0"></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:4px;padding:4px">
+        <div style="flex:1;display:flex;gap:4px">${topRow}</div>
+        ${botRow ? `<div style="flex:1;display:flex;gap:4px">${botRow}</div>` : ''}
+      </div>
+      <div style="padding:10px 24px;background:#111;display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,.3);flex-shrink:0;letter-spacing:1px;text-transform:uppercase">
+        <span>© 2026 Peterson Acquisitions · Confidential</span><span>Property Photo Gallery</span>
+      </div>
+    </div>`;
+  }
+
+  const now = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}).toUpperCase();
+  const pages = [];
+
+  // ── COVER ──
+  // (photo gallery inserted after cover if 3+ photos)
+  pages.push(`<div style="width:816px;height:1056px;background:#1A1A1A;display:flex;flex-direction:column;page-break-after:always;overflow:hidden;font-family:'Inter',Arial,sans-serif">
+    <div style="height:5px;background:${a};flex-shrink:0"></div>
+    <div style="flex:1;overflow:hidden;position:relative">${bizCoverHtml}</div>
+    <div style="background:${p};padding:28px 52px 0">
+      <div style="font-family:'Oswald',Arial,sans-serif;font-size:10px;color:rgba(255,255,255,.4);letter-spacing:3px;text-transform:uppercase;margin-bottom:6px">CONFIDENTIAL BUSINESS REVIEW</div>
+      <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:34px;color:#fff;line-height:1.1;text-transform:uppercase" ${ce}>${esc(cn)}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.55);margin-top:8px;line-height:1.65;font-style:italic" ${ce}>${esc(s('COVER_TAGLINE'))}</div>
+    </div>
+    <div style="background:${p};padding:16px 52px 20px;border-top:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:13px;color:#fff;letter-spacing:1px">PETERSON ACQUISITIONS</div>
+        <div style="font-size:9px;color:${a};letter-spacing:2px;margin-top:2px">THE DEAL TEAM</div>
+      </div>
+      <div style="font-size:9px;color:rgba(255,255,255,.3);text-align:right;line-height:1.8">
+        Offered Exclusively by Peterson Acquisitions<br/>
+        Strictly Confidential — Do not contact the business directly.
+      </div>
+    </div>
+  </div>`);
+
+  // Photo gallery after cover if 3+ business photos
+  if (imgs.bizPhotos && imgs.bizPhotos.length >= 3) {
+    pages.push(photoGalleryPage(imgs.bizPhotos));
+  }
+
+  // ── TOC ──
+  const tocItems = [
+    ['Executive Summary',      'Business overview, key highlights, reason for sale'],
+    ['Business Description',   'History, structure, offerings, customers, industry'],
+    ['Operational Information','Location, operations, management structure'],
+    ['Financial Information',  'Performance history, FF&E, cash flow'],
+    ['Market Price Valuation', 'SBA market price, valuation metrics, funding options'],
+    ['Growth Opportunities',   'Expansion and value-add opportunities'],
+    ['Transaction Details',    'Price, deal structure, transition plan'],
+    ['Next Steps',             'QSI™ buyer process and deal team introduction'],
+  ];
+
+  pages.push(page(`
+    <div style="margin-bottom:32px">
+      <div style="font-size:9px;color:#64748b;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px">AS OF ${now}</div>
+      <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:28px;color:${p};text-transform:uppercase;letter-spacing:.5px">Table of Contents</div>
+      <div style="margin-top:8px;height:1px;background:#e8e8e8;position:relative">
+        <div style="position:absolute;left:0;top:-1px;width:44px;height:3px;background:${a}"></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+    ${tocItems.map((t,i) => `
+      <div style="display:flex;align-items:flex-start;padding:12px 16px 12px 0;border-bottom:1px solid #f5f5f5;gap:14px">
+        <div style="width:36px;height:36px;border-radius:50%;background:${p};color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:16px;flex-shrink:0">${i+1}</div>
+        <div>
+          <div style="font-family:'Oswald',Arial,sans-serif;font-weight:600;font-size:13px;color:#1A1A1A">${t[0]}</div>
+          <div style="font-size:10px;color:#64748b;margin-top:3px;font-style:italic">${t[1]}</div>
+        </div>
+      </div>`).join('')}
+    </div>
+    <div style="margin-top:24px;padding:14px 18px;background:#fafafa;border-left:4px solid ${a};font-size:10px;color:#64748b;line-height:1.8">
+      The contents contained in this review are strictly confidential. Do not contact the business or the owner directly. Coordinate with your Peterson Acquisitions advisor. Copyright 2026, All Rights Reserved.
+    </div>
+  `));
+
+  // ── EXECUTIVE SUMMARY ──
+  pages.push(divider('Executive\nSummary'));
+  pages.push(page(
+    `${secHead('Executive Summary','Business Overview')}${paras(s('EXEC_OVERVIEW'))}`,
+    `${bizSidebarHtml}${decorSidebar('Executive Summary')}`
+  ));
+  pages.push(page(`${secHead('Executive Summary','Key Highlights')}${highlightTable(s('EXEC_KEY_HIGHLIGHTS'))}`));
+  pages.push(page(
+    `${secHead('Executive Summary','Reason for Sale')}${paras(s('EXEC_REASON_FOR_SALE'))}`,
+    decorSidebar('Exec Summary')
+  ));
+
+  // ── BUSINESS DESCRIPTION ──
+  pages.push(divider('Business\nDescription'));
+  pages.push(page(
+    `${secHead('Business Description','History & Background')}${paras(s('BIZ_HISTORY'))}`,
+    decorSidebar('Business Desc')
+  ));
+  pages.push(page(
+    `${secHead('Business Description','Ownership & Structure')}${paras(s('BIZ_OWNERSHIP'))}
+     <div style="margin-top:22px">${secHead('Business Description','Products & Services')}${paras(s('BIZ_PRODUCTS'))}</div>`,
+    decorSidebar('Business Desc')
+  ));
+  pages.push(page(
+    `${secHead('Business Description','Customer Base')}${paras(s('BIZ_CUSTOMERS'))}
+     <div style="margin-top:22px">${secHead('Business Description','Market & Industry')}${paras(s('BIZ_MARKET'))}</div>`,
+    decorSidebar('Business Desc')
+  ));
+
+  // ── OPERATIONAL ──
+  pages.push(divider('Operational\nInformation'));
+  pages.push(page(
+    `${secHead('Operational Information','Location & Facilities')}${paras(s('OPS_LOCATION'))}
+     <div style="margin-top:22px">${secHead('Operational Information','Daily Operations')}${paras(s('OPS_OPERATIONS'))}</div>`,
+    decorSidebar('Operations')
+  ));
+  pages.push(page(
+    `${secHead('Operational Information','A Day in the Life of the Owner')}${paras(s('OPS_DAY_IN_LIFE'))}`,
+    decorSidebar('Operations')
+  ));
+
+  // ── FINANCIAL ──
+  pages.push(divider('Financial\nInformation'));
+  pages.push(page(
+    `${secHead('Financial Information','Furniture, Fixtures & Equipment (FF&E)')}${paras(s('FIN_FFE'))}`,
+    decorSidebar('Financials')
+  ));
+  pages.push(page(`${secHead('Financial Information','Financial Performance & Seller\'s Discretionary Earnings')}${cashFlowTable(s('FIN_CASHFLOW'))}`));
+
+  // ── VALUATION ──
+  pages.push(divider('Market Price\nValuation'));
+  pages.push(page(`
+    ${secHead('Market Price Valuation','Valuation Metrics')}
+    ${valMetrics(s('VAL_METRICS'))}
+    <div style="margin-top:28px">${secHead('Market Price Valuation','SBA Pre-Approval')}${lineItems(s('VAL_SBA'))}</div>
+  `));
+
+  // ── GROWTH ──
+  pages.push(divider('Growth\nOpportunities'));
+  pages.push(page(`
+    ${secHead('Growth Opportunities','Expansion Potential')}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">${growthCards(s('GROWTH_OPPORTUNITIES'))}</div>
+  `));
+
+  // ── TRANSACTION ──
+  pages.push(divider('Transaction\nDetails'));
+  pages.push(page(`
+    ${secHead('Transaction Details','Listing Price, Deal Structure & Transition')}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px">
+      <div>
+        <div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px">Asking Price</div>
+        <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:32px;color:${p}" ${ce}>${esc(s('TRANS_PRICE'))}</div>
+        <div style="margin-top:18px">${secHead('Transaction Details','Deal Structure')}${lineItems(s('TRANS_STRUCTURE'))}</div>
+      </div>
+      <div>${secHead('Transaction Details','Transition Support')}${paras(s('TRANS_TRANSITION'))}</div>
+    </div>
+  `));
+
+  // ── NEXT STEPS ──
+  pages.push(divider('Next\nSteps'));
+  pages.push(page(`
+    ${secHead('Next Steps','Leveraging QSI™ to Acquire Your Business')}
+    <div style="border-left:4px solid ${a};padding:16px 20px;margin:16px 0;background:#fafafa;border-radius:0 4px 4px 0">
+      <div style="font-size:14px;color:#e2e8f0;font-style:italic;line-height:1.8">"The fastest path to building wealth in small business is through the strategic acquisition of an established, cash flowing privately held company. QSI™ is the blueprint for stacking the odds in your favor."</div>
+      <div style="font-size:11px;font-weight:700;color:${p};margin-top:10px">— MICHAEL R. MOORE, PETERSON ACQUISITIONS</div>
+    </div>
+    <p style="font-size:11px;color:#94a3b8;line-height:1.85;margin-top:14px">Recognized as the #1 business brokerage in the country due to our proprietary "Quantum Stack Investing" methodology, we have mastered the process of building wealth through the acquisition of privately held businesses. Our unique approach delivers a success rate four times the industry average.</p>
+  `));
+
+  const savedAdvisors = loadAdvisors();
+  const team = savedAdvisors.length > 0
+    ? savedAdvisors.map(a => ({ name: a.name, role: a.title || 'Acquisition Advisor', photo: a.photo || null, phone: a.phone || '', email: a.email || '' }))
+    : [
+        { name:'MICHAEL MOORE', role:'Lead Broker · Deal Structure · Strategy · Negotiations', photo: null, phone: '', email: '' },
+        { name:'ROBIN',         role:'Sr. Acquisition Advisor · Operations · Due Diligence',  photo: null, phone: '', email: '' },
+        { name:'ALISHA',        role:'Acquisition Advisor · Seller Advisor · Buyer Relations', photo: null, phone: '', email: '' },
+        { name:'KEN',           role:'Acquisition Associate · Seller Advisor · Buyer Relations', photo: null, phone: '', email: '' },
+      ];
+
+  pages.push(page(`
+    ${secHead('Acquisition Team','Your QSI™ Certified Deal Team')}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      ${team.map(m => {
+        const photoHtml = m.photo
+          ? `<img src="${m.photo}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2.5px solid ${p};margin-bottom:10px;display:block"/>`
+          : `<div style="width:56px;height:56px;background:${p};border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Oswald',sans-serif;font-weight:700;font-size:22px;margin-bottom:10px">${esc(m.name.charAt(0).toUpperCase())}</div>`;
+        const contactLine = [m.phone, m.email].filter(Boolean).join(' · ');
+        return `<div style="border:1px solid #e8e8e8;border-radius:6px;padding:18px;background:#fafafa">
+          ${photoHtml}
+          <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:14px;color:${p}">${esc(m.name)}</div>
+          <div style="font-size:10px;color:${a};font-weight:600;margin-top:3px">${esc(m.role)}</div>
+          ${contactLine ? `<div style="font-size:9px;color:#666;margin-top:5px;line-height:1.5">${esc(contactLine)}</div>` : ''}
+          <div style="font-size:9px;color:#999;margin-top:2px">www.thedealteam.co</div>
+        </div>`;
+      }).join('')}
+    </div>
+  `));
+
+  // ── THANK YOU ──
+  pages.push(`<div style="width:816px;height:1056px;background:${p};display:flex;flex-direction:column;align-items:center;justify-content:center;page-break-after:always;font-family:'Inter',Arial,sans-serif;position:relative">
+    <div style="position:absolute;top:0;left:0;right:0;height:5px;background:${a}"></div>
+    <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:42px;color:#fff;text-transform:uppercase;text-align:center;line-height:1.15;letter-spacing:2px">THANK YOU FOR<br/>YOUR INTEREST</div>
+    <div style="display:flex;margin:20px auto">
+      <div style="width:60px;height:5px;background:rgba(255,255,255,.4)"></div>
+      <div style="width:40px;height:5px;background:${a}"></div>
+    </div>
+    <div style="font-size:13px;color:rgba(255,255,255,.6);text-align:center;max-width:480px;line-height:1.85">The next step is to determine if this deal is the right fit for you and your goals. We are here to guide you step-by-step through the entire acquisition process to create a win-win for both you and the seller.</div>
+    <div style="margin-top:32px;text-align:center;padding:20px 40px;background:rgba(0,0,0,.2);border-radius:8px">
+      <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:16px;color:#fff" ${ce}>${esc(advisor.name)}</div>
+      <div style="font-size:11px;color:${a};margin-top:4px">Acquisition Advisor · The Deal Team</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:5px" ${ce}>${esc(advisor.phone)} · ${esc(advisor.email)}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:3px">www.thedealteam.co</div>
+    </div>
+  </div>`);
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<title>CIM — ${esc(cn)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+@page{size:letter portrait;margin:0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#bbb;font-family:'Inter',Arial,sans-serif}
+.print-bar{background:#e0e0e0;padding:8px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:99;border-bottom:1px solid #ccc}
+[contenteditable]{cursor:text;border-radius:2px;transition:outline .1s}
+[contenteditable]:hover{outline:1px dashed rgba(0,0,0,.2)}
+[contenteditable]:focus{outline:2px solid ${p}!important;background:rgba(255,255,255,.12)}
+@media print{
+  .print-bar{display:none!important}
+  body{background:#fff}
+  -webkit-print-color-adjust:exact;print-color-adjust:exact
+}
+</style></head><body>
+<div class="print-bar">
+  <span style="font-size:12px;color:#666;margin-right:auto">✏ Click any text to edit directly before printing</span>
+  <button onclick="window.print()" style="background:${p};color:#fff;border:none;padding:8px 20px;border-radius:4px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer">🖨 Print / Save as PDF (${pages.length} pages)</button>
+</div>
+${pages.join('\n')}
+</body></html>`;
+
+  const win = window.open('', '_blank', 'width=960,height=820');
+  if (!win) { alert('Popup blocked — please allow popups for this site.'); return; }
+  win.document.write(html);
+  win.document.close();
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── CLAUDE API ───────────────────────────────────────────────────────────────
+
+async function callClaude(system, user, maxTokens) {
+  const key = getApiKey();
+  if (!key) throw new Error('No API key configured.');
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: maxTokens,
+      system,
+      messages: [{ role:'user', content:user }],
+    }),
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'API error ' + resp.status);
+  }
+  const data = await resp.json();
+  return data.content[0].text;
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (!localStorage.getItem('pacq_api_key'))
+    localStorage.setItem('pacq_api_key', DEFAULT_API_KEY);
+
+  // Capture Drive token from Google redirect result (handles both sign-in and Drive reconnect)
+  firebase.auth().getRedirectResult().then(async result => {
+    if (result && result.credential) {
+      const token = result.credential.accessToken;
+      if (token) {
+        driveToken = token;
+        sessionStorage.setItem('_driveToken', token);
+        sessionStorage.setItem('_driveTokenExp', Date.now() + 3500000);
+        // If this was a Drive reconnect (token expired), reload the deals list
+        if (sessionStorage.getItem('_driveReconnect')) {
+          sessionStorage.removeItem('_driveReconnect');
+          const banner = document.getElementById('drive-connect-banner');
+          if (banner) banner.remove();
+          renderDealsListLoading('Loading from Drive…');
+          await initDriveFolder();
+          renderDealsList();
+          renderAdvisorOptions();
+        }
+      }
+    }
+  }).catch(() => {
+    // No redirect result — normal page load, not returning from OAuth
+    sessionStorage.removeItem('_driveReconnect');
+  });
+
+  firebase.auth().onAuthStateChanged(user => {
+    if (user && isAllowedEmail(user.email)) {
+      const nameEl = document.getElementById('topbar-user');
+      if (nameEl) nameEl.textContent = user.displayName || user.email;
+      initDriveToken();
+    } else if (user) {
+      firebase.auth().signOut();
+      const err = document.getElementById('l-err');
+      err.textContent = 'Access restricted to @' + ALLOWED_DOMAIN + ' accounts.';
+      err.classList.remove('hidden');
+      document.getElementById('login-loading').style.display = 'none';
+    } else {
+      document.getElementById('login-view').style.display = 'flex';
+      document.getElementById('app').classList.add('hidden');
+    }
+  });
+});
+
+// ── IFRAME AUTO-RESIZE BROADCASTER ───────────────────────────────────────────
+(function() {
+  function broadcastHeight() {
+    if (window.self === window.top) return; // not in an iframe
+    const h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    window.parent.postMessage({ type: 'pacq-resize', height: h }, '*');
+  }
+  window.addEventListener('load', broadcastHeight);
+  window.addEventListener('resize', broadcastHeight);
+  new MutationObserver(broadcastHeight).observe(document.body, { childList: true, subtree: true, attributes: true });
+})();
+</script>
+</body>
+</html>

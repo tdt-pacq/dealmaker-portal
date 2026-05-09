@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Peterson Acquisitions — Deal Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --dark:#1A1A1A;--copper:#C1622F;--white:#fff;
+  --lgray:#F5F5F5;--mgray:#666;--border:#E0E0E0;
+  --green:#2D5016;
+  --font-d:'Oswald',Arial,sans-serif;
+  --font-b:'Inter',Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-b);background:var(--lgray);color:#333;-webkit-font-smoothing:antialiased}
+a{color:var(--copper);text-decoration:none}
+button{font-family:var(--font-b);cursor:pointer;border:none;border-radius:4px;font-size:14px;font-weight:500;padding:8px 16px;transition:background .15s,opacity .15s}
+button:disabled{opacity:.5;cursor:not-allowed}
+.btn-p{background:var(--copper);color:#fff}.btn-p:hover:not(:disabled){background:#a8521f}
+.btn-d{background:var(--dark);color:#fff}.btn-d:hover:not(:disabled){background:#333}
+.btn-g{background:transparent;color:var(--copper);border:1.5px solid var(--copper)}.btn-g:hover:not(:disabled){background:#fff0ea}
+.btn-r{background:transparent;color:#c0392b;border:1.5px solid #c0392b}.btn-r:hover:not(:disabled){background:#fdf0ee}
+.btn-sm{padding:5px 10px;font-size:12px}.btn-lg{padding:11px 24px;font-size:16px}
+input,select,textarea{font-family:var(--font-b);font-size:14px;padding:8px 12px;border:1.5px solid var(--border);border-radius:4px;width:100%;background:#fff;color:#333;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--copper)}
+textarea{resize:vertical;min-height:80px}
+label{display:block;font-size:13px;font-weight:500;color:var(--mgray);margin-bottom:4px}
+.req{color:var(--copper);margin-left:2px}
+.fg{margin-bottom:16px}
+.view{display:none}.view.active{display:block}
+
+/* TOPBAR */
+.topbar{background:var(--dark);padding:0 24px;height:56px;display:flex;align-items:center;gap:24px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.brand{display:flex;align-items:center;gap:10px;cursor:pointer}
+.brand-t{font-family:var(--font-d);font-weight:700;font-size:17px;color:#fff;letter-spacing:.5px;line-height:1}
+.brand-s{font-family:var(--font-d);font-size:10px;color:var(--copper);letter-spacing:1.5px;text-transform:uppercase;line-height:1}
+.tnav{display:flex;align-items:center;gap:4px;margin-left:auto}
+.tnav a,.tnav span{color:#ccc;font-size:13px;padding:6px 12px;border-radius:4px;transition:color .15s,background .15s;cursor:pointer}
+.tnav a:hover,.tnav a.active{color:#fff;background:rgba(255,255,255,.08)}
+.tuser{color:var(--copper);font-size:12px;font-weight:600;letter-spacing:.5px;padding-left:16px;border-left:1px solid #444;margin-left:8px;cursor:pointer}
+
+/* PAGE */
+.page{flex:1;padding:28px 32px;max-width:1400px;margin:0 auto;width:100%}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.pt{font-family:var(--font-d);font-weight:700;font-size:26px;color:var(--dark);text-transform:uppercase;letter-spacing:.5px}
+.ps{font-size:14px;color:var(--mgray);margin-top:2px}
+.phb{display:flex;gap:10px}
+
+/* CARD */
+.card{background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden}
+.ch{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.ct{font-family:var(--font-d);font-weight:600;font-size:15px;text-transform:uppercase;letter-spacing:.5px;color:var(--dark)}
+.cb{padding:20px}
+
+/* TABLE */
+.dt{width:100%;border-collapse:collapse}
+.dt th{text-align:left;padding:10px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--mgray);background:var(--lgray);border-bottom:2px solid var(--border)}
+.dt td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:14px;color:#333;vertical-align:middle}
+.dt tr:last-child td{border-bottom:none}
+.dt tr:hover td{background:#fafafa}
+
+/* BADGE */
+.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+.bd{background:#f0f0f0;color:#777}.ba{background:#e8f5e9;color:#2e7d32}.bc{background:#fce4ec;color:#c62828}
+
+/* TABS */
+.tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:24px}
+.tab{background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 20px;font-family:var(--font-d);font-weight:600;font-size:14px;letter-spacing:.5px;text-transform:uppercase;color:var(--mgray);border-radius:0;transition:color .15s,border-color .15s}
+.tab:hover{color:var(--dark)}.tab.active{color:var(--copper);border-bottom-color:var(--copper)}
+
+/* SPINNER */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:16px;height:16px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+.spinner-dk{border-color:rgba(0,0,0,.15);border-top-color:var(--copper)}
+
+/* ALERTS */
+.alert{padding:12px 16px;border-radius:6px;font-size:14px;margin-bottom:16px}
+.ae{background:#fdf0f0;color:#c0392b;border-left:4px solid #c0392b}
+.ai{background:#fff8f0;color:#a04010;border-left:4px solid var(--copper)}
+
+/* FORM SECTIONS */
+.fsec{background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:16px;overflow:hidden;scroll-margin-top:80px}
+.fsh{display:flex;align-items:center;padding:13px 20px;cursor:pointer;user-select:none;border-bottom:1px solid transparent;transition:border-color .15s}
+.fsh.open{border-bottom-color:var(--border)}
+.fsn{font-family:var(--font-d);font-size:13px;font-weight:600;color:var(--copper);margin-right:10px;min-width:24px}
+.fst{font-family:var(--font-d);font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:var(--dark);flex:1}
+.chev{color:var(--mgray);font-size:16px;transition:transform .2s}
+.chev.open{transform:rotate(180deg)}
+.fsb{padding:20px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.hint{font-size:11px;color:#888;margin-top:3px}
+.sub-h{font-family:var(--font-d);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--copper);margin:16px 0 12px}
+
+/* INTERVIEW LAYOUT */
+.ilayout{display:grid;grid-template-columns:210px 1fr;gap:24px;align-items:start}
+.snav{position:sticky;top:68px;background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden}
+.snavh{background:var(--dark);color:#fff;padding:11px 16px;font-family:var(--font-d);font-weight:600;font-size:12px;letter-spacing:1px;text-transform:uppercase}
+.snavi{display:flex;align-items:center;gap:8px;padding:9px 16px;font-size:13px;color:#555;cursor:pointer;border-bottom:1px solid #f0f0f0;transition:background .15s,color .15s}
+.snavi:hover{background:#fafafa;color:var(--dark)}
+.snavp{padding:10px 16px;font-size:11px;color:var(--mgray);border-top:1px solid var(--border)}
+.pbar{height:4px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden}
+.pfill{height:100%;background:var(--copper);border-radius:2px}
+
+/* OUTPUTS */
+.opanel{background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden}
+.otb{display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--lgray);flex-wrap:wrap}
+.gtime{font-size:11px;color:var(--mgray);margin-left:auto}
+.bad-ta{width:100%;min-height:580px;font-family:'Courier New',monospace;font-size:13px;line-height:1.7;padding:20px;border:none;resize:vertical;background:#fff;color:#222}
+.preview-wrap{background:#f0f0f0;padding:20px}
+
+/* EMPTY STATE */
+.es{text-align:center;padding:60px 20px;color:var(--mgray)}
+.esi{font-size:48px;margin-bottom:12px}
+.est{font-family:var(--font-d);font-size:18px;font-weight:600;color:var(--dark);margin-bottom:6px;text-transform:uppercase}
+.es p{font-size:14px;max-width:320px;margin:0 auto}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;z-index:500}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:10px;padding:28px;width:400px;box-shadow:0 8px 40px rgba(0,0,0,.3)}
+.modal-t{font-family:var(--font-d);font-weight:700;font-size:17px;margin-bottom:12px;text-transform:uppercase}
+.modal-btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+
+/* STAT BAR */
+.statbar{background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:14px 20px;margin-bottom:20px;display:flex;gap:32px;flex-wrap:wrap}
+.stat-lbl{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.5px}
+.stat-val{font-size:20px;font-weight:700;font-family:var(--font-d);color:var(--dark);margin-top:2px}
+
+/* LOGIN */
+#login-view{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--dark)}
+.login-box{width:360px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+.login-hd{background:var(--dark);padding:28px 32px;text-align:center;border-bottom:3px solid var(--copper)}
+.login-t{font-family:var(--font-d);font-weight:700;font-size:20px;color:#fff;letter-spacing:1px}
+.login-s{font-family:var(--font-d);font-size:11px;color:var(--copper);letter-spacing:2px;margin-top:3px}
+.login-form{padding:28px 32px}
+
+/* GEN PROGRESS */
+.gen-prog{padding:50px 20px;text-align:center;color:#888}
+.gen-prog .sp{width:32px;height:32px;border-width:4px;display:inline-block}
+.gen-steps{margin-top:20px;background:#f5f5f5;border-radius:8px;padding:12px 20px;display:inline-block;font-size:12px;color:#666;line-height:2}
+
+/* FLYER EMBED */
+.flyer-embed{background:#fff;max-width:850px;margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,.15)}
+
+/* CBR SLIDES */
+.cbr-wrap{background:#555}
+.slide{width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.3);margin-bottom:4px}
+
+/* Scrollable hidden sections */
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     LOGIN VIEW
+══════════════════════════════════════════════════════ -->
+<div id="login-view">
+  <div class="login-box">
+    <div class="login-hd">
+      <div class="login-t">PETERSON ACQUISITIONS</div>
+      <div class="login-s">THE DEAL TEAM — INTERNAL PLATFORM</div>
+    </div>
+    <div class="login-form">
+      <div class="fg">
+        <label>Username</label>
+        <input type="text" id="l-user" placeholder="pacq" autocomplete="username"/>
+      </div>
+      <div class="fg">
+        <label>Password</label>
+        <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password"/>
+      </div>
+      <div id="l-err" class="alert ae hidden"></div>
+      <button class="btn-p btn-lg" onclick="doLogin()" style="width:100%">Sign In →</button>
+      <div style="text-align:center;margin-top:12px;font-size:12px;color:#aaa">Demo: pacq / tdt2024</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     APP SHELL (hidden until logged in)
+══════════════════════════════════════════════════════ -->
+<div id="app" class="hidden">
+  <div class="topbar">
+    <div class="brand" onclick="showView('dashboard')">
+      <div>
+        <div class="brand-t">Peterson Acquisitions</div>
+        <div class="brand-s">The Deal Team</div>
+      </div>
+    </div>
+    <nav class="tnav">
+      <a onclick="showView('dashboard')" id="nav-dashboard" class="active">Dashboard</a>
+      <a onclick="showView('new-deal')" id="nav-new-deal">+ New Deal</a>
+    </nav>
+    <div class="tuser" onclick="doLogout()">Sign Out</div>
+  </div>
+
+  <div class="page">
+    <!-- DASHBOARD -->
+    <div id="view-dashboard" class="view active">
+      <div class="ph">
+        <div>
+          <div class="pt">Deal Dashboard</div>
+          <div class="ps">1 deal total</div>
+        </div>
+        <button class="btn-p btn-lg" onclick="showView('new-deal')">+ New Deal</button>
+      </div>
+      <div class="card">
+        <div class="ch">
+          <span class="ct">All Deals</span>
+          <div style="display:flex;gap:10px">
+            <select style="width:130px"><option>All Statuses</option><option>Draft</option><option>Active</option></select>
+            <select style="width:140px"><option>All Advisors</option><option>Alisha</option><option>Michael</option></select>
+          </div>
+        </div>
+        <table class="dt">
+          <thead><tr>
+            <th>Deal Name</th><th>Advisor</th><th>Status</th><th>Created</th><th>Last Updated</th><th>Outputs</th><th>Actions</th>
+          </tr></thead>
+          <tbody><tr>
+            <td><a onclick="showView('deal-detail')" style="font-weight:600;color:#1A1A1A;cursor:pointer">Nursery - NC - 2025</a></td>
+            <td>Alisha</td>
+            <td><span class="badge ba">Active</span></td>
+            <td style="color:#888;font-size:13px">Apr 19, 2025</td>
+            <td style="color:#888;font-size:13px">Apr 19, 2025</td>
+            <td>
+              <div style="display:flex;gap:6px">
+                <span style="font-size:11px;padding:2px 7px;background:#e8f5e9;border-radius:10px;color:#2e7d32;font-weight:600">✓ Ad</span>
+                <span style="font-size:11px;padding:2px 7px;background:#e8f5e9;border-radius:10px;color:#2e7d32;font-weight:600">✓ Flyer</span>
+                <span style="font-size:11px;padding:2px 7px;background:#e8f5e9;border-radius:10px;color:#2e7d32;font-weight:600">✓ CBR</span>
+              </div>
+            </td>
+            <td>
+              <div style="display:flex;gap:6px">
+                <button class="btn-g btn-sm" onclick="showView('deal-detail')">View</button>
+                <button class="btn-g btn-sm" onclick="showView('edit-deal')">Edit</button>
+                <button class="btn-r btn-sm" onclick="document.getElementById('del-modal').classList.add('open')">Delete</button>
+              </div>
+            </td>
+          </tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- NEW DEAL -->
+    <div id="view-new-deal" class="view">
+      <div class="ph">
+        <div><div class="pt">New Deal</div><div class="ps">Start by naming this deal and assigning an advisor</div></div>
+        <button class="btn-g" onclick="showView('dashboard')">← Back to Dashboard</button>
+      </div>
+      <div style="max-width:520px">
+        <div class="card">
+          <div class="ch"><span class="ct">Deal Information</span></div>
+          <div class="cb">
+            <div class="fg">
+              <label>Deal Name <span class="req">*</span></label>
+              <input type="text" id="nd-name" placeholder="e.g. HVAC Company - TX - 2025"/>
+              <div class="hint">Internal reference only — not shown in any marketing outputs</div>
+            </div>
+            <div class="fg">
+              <label>Assigned Advisor</label>
+              <select id="nd-advisor"><option value="">Unassigned</option><option>Michael</option><option>Robin</option><option>Alisha</option><option>Lee</option><option>Lance</option></select>
+            </div>
+            <div class="fg">
+              <label>Status</label>
+              <select><option>Draft</option><option>Active</option><option>Closed</option></select>
+            </div>
+            <button class="btn-p btn-lg" onclick="createNewDeal()">Create Deal &amp; Start Interview →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EDIT DEAL (Interview Form) -->
+    <div id="view-edit-deal" class="view">
+      <div class="ph">
+        <div>
+          <div class="pt" style="font-size:22px" id="edit-title">Nursery - NC - 2025</div>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:4px">
+            <span class="badge ba">Active</span>
+            <span style="font-size:13px;color:#888">Advisor: Alisha</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn-g" onclick="showView('deal-detail')">View Outputs →</button>
+          <button class="btn-g" onclick="showView('dashboard')">← Dashboard</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px">
+        <div class="cb" style="padding:14px 20px">
+          <div style="display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+              <label>Deal Name</label>
+              <input type="text" value="Nursery - NC - 2025"/>
+            </div>
+            <div style="width:160px">
+              <label>Advisor</label>
+              <select><option>Alisha</option><option>Michael</option><option>Robin</option></select>
+            </div>
+            <div style="width:130px">
+              <label>Status</label>
+              <select><option>Active</option><option>Draft</option><option>Closed</option></select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI EXTRACTION PANEL -->
+      <div id="extractor-panel" style="background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:20px;overflow:hidden;border:1.5px solid #e8d5c4">
+        <div onclick="toggleExtractor()" style="display:flex;align-items:center;gap:10px;padding:13px 20px;cursor:pointer;background:#fff8f3;border-bottom:1px solid #e8d5c4" id="extractor-hdr">
+          <span style="font-size:18px">✨</span>
+          <div style="flex:1">
+            <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:#1A1A1A">AI Interview Extraction</div>
+            <div style="font-size:12px;color:#888;margin-top:1px">Upload your Google Doc or paste interview notes to auto-populate the form</div>
+          </div>
+          <span id="ext-chev" style="color:#C1622F;font-size:16px;transition:transform .2s">▾</span>
+        </div>
+        <div id="extractor-body" style="padding:20px">
+          <!-- Mode tabs -->
+          <div style="display:flex;gap:0;margin-bottom:16px;border-radius:6px;overflow:hidden;border:1.5px solid #e0e0e0;width:fit-content">
+            <button id="tab-upload" onclick="setExtractMode('upload')" style="padding:7px 18px;font-size:13px;font-weight:600;border:none;border-radius:0;cursor:pointer;background:#C1622F;color:#fff">📎 Upload File</button>
+            <button id="tab-paste" onclick="setExtractMode('paste')" style="padding:7px 18px;font-size:13px;font-weight:600;border:none;border-radius:0;cursor:pointer;background:#fff;color:#555">📋 Paste Text</button>
+          </div>
+          <!-- Upload zone -->
+          <div id="ext-upload-zone" onclick="document.getElementById('ext-file-input').click()" ondragover="event.preventDefault();this.style.borderColor='#C1622F'" ondragleave="this.style.borderColor='#d0d0d0'" ondrop="handleExtractDrop(event)" style="border:2px dashed #d0d0d0;border-radius:8px;padding:28px 20px;text-align:center;cursor:pointer;background:#fafafa;transition:all .15s;margin-bottom:12px">
+            <input type="file" id="ext-file-input" accept=".docx,.txt" style="display:none" onchange="handleExtractFile(this.files[0])"/>
+            <div id="ext-drop-label">
+              <div style="font-size:32px;margin-bottom:8px">📄</div>
+              <div style="font-weight:600;color:#555;font-size:14px">Drop your interview doc here, or click to browse</div>
+              <div style="font-size:12px;color:#aaa;margin-top:4px">Supports .docx (Google Doc export) and .txt · Max 20MB</div>
+            </div>
+          </div>
+          <!-- Paste zone (hidden) -->
+          <textarea id="ext-paste-zone" placeholder="Paste your interview notes or Google Doc text here…" style="display:none;width:100%;min-height:160px;font-size:13px;padding:12px;border:1.5px solid #d0d0d0;border-radius:6px;resize:vertical;line-height:1.6;margin-bottom:12px;font-family:inherit"></textarea>
+          <!-- Error -->
+          <div id="ext-error" style="display:none;padding:10px 14px;border-radius:6px;font-size:13px;background:#fdf0f0;color:#c0392b;border-left:4px solid #c0392b;margin-bottom:12px"></div>
+          <!-- Extract button -->
+          <div id="ext-input-btns" style="display:flex;align-items:center;gap:12px">
+            <button class="btn-p" onclick="runMockExtraction()" id="ext-btn" style="min-width:160px">⚡ Extract Fields →</button>
+            <span style="font-size:12px;color:#888" id="ext-hint"></span>
+          </div>
+          <!-- Loading -->
+          <div id="ext-loading" style="display:none;padding:30px 0;text-align:center;color:#888">
+            <div class="spinner spinner-dk" style="width:28px;height:28px;border-width:3px;display:inline-block"></div>
+            <div style="margin-top:10px;font-size:14px">Claude is reading the document…</div>
+            <div style="font-size:12px;color:#aaa;margin-top:4px">Usually 10–30 seconds for a full interview doc</div>
+          </div>
+          <!-- Results -->
+          <div id="ext-results" style="display:none">
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;padding:10px 16px;background:#f0fdf4;border-radius:6px;border:1px solid #c8e6c9">
+              <span style="font-size:22px">🎯</span>
+              <div>
+                <div style="font-weight:700;font-size:15px;color:#2e7d32" id="ext-count-label">47 fields extracted</div>
+                <div style="font-size:12px;color:#555;margin-top:1px">Review below, deselect any you don't want, then click Apply.</div>
+              </div>
+              <label style="display:flex;align-items:center;gap:7px;margin-left:auto;cursor:pointer;font-size:13px;color:#555;font-weight:500;white-space:nowrap">
+                <input type="checkbox" id="ext-overwrite" style="width:14px;height:14px;accent-color:#C1622F;cursor:pointer"/>
+                Overwrite existing values
+              </label>
+            </div>
+            <div id="ext-checklist" style="max-height:300px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px;margin-bottom:12px"></div>
+            <div id="ext-sel-count" style="font-size:12px;color:#888;margin-bottom:12px"></div>
+            <div id="ext-apply-msg" style="display:none;padding:10px 14px;border-radius:6px;font-size:13px;margin-bottom:12px"></div>
+            <div style="display:flex;gap:10px">
+              <button class="btn-p" onclick="applyExtraction()" id="ext-apply-btn">✓ Apply to Form</button>
+              <button class="btn-g" onclick="resetExtractor()">↺ Discard &amp; Try Again</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ilayout">
+        <!-- Sidebar nav -->
+        <div class="snav">
+          <div class="snavh">Sections</div>
+          <div class="snavi" onclick="scrollToSection(1)"><span style="font-size:12px;color:#999;min-width:20px">01</span>Executive Summary</div>
+          <div class="snavi" onclick="scrollToSection(2)"><span style="font-size:12px;color:#999;min-width:20px">02</span>Products &amp; Services</div>
+          <div class="snavi" onclick="scrollToSection(3)"><span style="font-size:12px;color:#999;min-width:20px">03</span>Marketing</div>
+          <div class="snavi" onclick="scrollToSection(4)"><span style="font-size:12px;color:#999;min-width:20px">04</span>Sales</div>
+          <div class="snavi" onclick="scrollToSection(5)"><span style="font-size:12px;color:#999;min-width:20px">05</span>Customers</div>
+          <div class="snavi" onclick="scrollToSection(6)"><span style="font-size:12px;color:#999;min-width:20px">06</span>Employees</div>
+          <div class="snavi" onclick="scrollToSection(7)"><span style="font-size:12px;color:#999;min-width:20px">07</span>Financials</div>
+          <div class="snavi" onclick="scrollToSection(8)"><span style="font-size:12px;color:#999;min-width:20px">08</span>Growth Opportunities</div>
+          <div class="snavi" onclick="scrollToSection(9)"><span style="font-size:12px;color:#999;min-width:20px">09</span>Transaction Details</div>
+          <div class="snavi" onclick="scrollToSection(10)"><span style="font-size:12px;color:#999;min-width:20px">10</span>Deal Team</div>
+          <div class="snavp">
+            <div style="font-weight:600;color:#333">8 / 10 sections complete</div>
+            <div class="pbar"><div class="pfill" style="width:80%"></div></div>
+          </div>
+        </div>
+
+        <!-- Sections -->
+        <div id="form-sections">
+          <!-- S1 -->
+          <div class="fsec" id="fsec-1">
+            <div class="fsh open" onclick="toggleSection(this)">
+              <span class="fsn">01</span>
+              <span class="fst">Executive Summary</span>
+              <span class="chev open">▾</span>
+            </div>
+            <div class="fsb">
+              <div class="sub-h">Business Identification</div>
+              <div class="frow">
+                <div class="fg"><label>Business Legal Name (internal only)</label><input value="Piedmont Carolina Nursery &amp; Landscaping LLC"/></div>
+                <div class="fg"><label>Business Website</label><input value="www.piedmontcarolinanursery.com"/></div>
+              </div>
+              <div class="frow3">
+                <div class="fg"><label>Year Founded <span class="req">*</span></label><input data-field="year_founded" value="2003"/></div>
+                <div class="fg"><label>Year Owner Took Over</label><input value="2003"/></div>
+                <div class="fg"><label>City, State <span class="req">*</span></label><input data-field="business_city_state" value="Piedmont, NC"/><div class="hint">Used for blind location only</div></div>
+              </div>
+              <div class="frow">
+                <div class="fg"><label>Hours of Operation</label><input value="Mon-Sat 7am-6pm, Sun 9am-4pm (seasonal)"/></div>
+                <div class="fg"><label>Business Entity Type</label><input value="S-Corporation"/></div>
+              </div>
+              <div class="fg"><label>General Business Description <span class="req">*</span></label>
+                <textarea rows="3">Full-service nursery and landscaping company serving residential and commercial clients in the Piedmont region of NC. Offers plant sales, landscape design, installation, and maintenance.</textarea></div>
+              <div class="sub-h" style="margin-top:20px">Key Highlights</div>
+              <div class="frow">
+                <div class="fg"><label>Number of Employees <span class="req">*</span></label><input value="12 FT, 8 PT (seasonal)"/></div>
+                <div class="fg"><label>Asking Price <span class="req">*</span></label><input value="1750000"/><div class="hint">Numbers only</div></div>
+              </div>
+              <div class="frow3">
+                <div class="fg"><label>Revenue — Most Recent Full Year <span class="req">*</span></label><input value="2850000"/></div>
+                <div class="fg"><label>SDE <span class="req">*</span></label><input value="678400"/></div>
+                <div class="fg"><label>EBITDA</label><input value="558000"/></div>
+              </div>
+              <div class="frow">
+                <div class="fg"><label>Real Estate Situation</label><textarea rows="2">Owned — 3.2 acres with greenhouse, retail space, and storage. Available for separate purchase at $850,000.</textarea></div>
+                <div class="fg"><label>Financing Available</label><textarea rows="2">SBA 7(a) pre-qualified. Seller willing to carry 10% note.</textarea></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- S2 -->
+          <div class="fsec" id="fsec-2">
+            <div class="fsh" onclick="toggleSection(this)">
+              <span class="fsn">02</span><span class="fst">Products &amp; Services</span><span class="chev">▾</span>
+            </div>
+            <div class="fsb hidden">
+              <div class="fg"><label>Core Products or Services</label>
+                <textarea rows="4">Landscape installation, landscape maintenance contracts, retail plant nursery, hardscape design and installation, seasonal color programs.</textarea></div>
+              <div class="frow">
+                <div class="fg"><label>Pricing Strategy</label><textarea rows="3">Competitive market rates for retail; value-based pricing for commercial contracts; tiered maintenance packages.</textarea></div>
+                <div class="fg"><label>What Makes Offerings Unique?</label><textarea rows="3">20+ years of deep vendor relationships. The only nursery in the region with a climate-controlled greenhouse for year-round availability.</textarea></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- S3 -->
+          <div class="fsec" id="fsec-3">
+            <div class="fsh" onclick="toggleSection(this)">
+              <span class="fsn">03</span><span class="fst">Marketing</span><span class="chev">▾</span>
+            </div>
+            <div class="fsb hidden">
+              <div class="frow">
+                <div class="fg"><label>Branding Strategy</label><textarea rows="3">Local brand built on word-of-mouth referrals and community presence. Active in local garden clubs and HOA relationships.</textarea></div>
+                <div class="fg"><label>Social Reputation / Online Reviews</label><textarea data-field="social_reputation" rows="3">4.8 stars on Google (312 reviews), 4.7 on Yelp (98 reviews). Strong Facebook community following (2,800+).</textarea></div>
+              </div>
+              <div class="fg"><label>Marketing Channels Used</label><textarea rows="2">Google Ads, Facebook/Instagram, Nextdoor, direct mail for seasonal promotions, HOA partnerships.</textarea></div>
+            </div>
+          </div>
+
+          <!-- S4 -->
+          <div class="fsec" id="fsec-4">
+            <div class="fsh" onclick="toggleSection(this)">
+              <span class="fsn">04</span><span class="fst">Sales</span><span class="chev">▾</span>
+            </div>
+            <div class="fsb hidden">
+              <div class="frow">
+                <div class="fg"><label>Sales Process</label><textarea rows="3">Inbound leads → phone consultation → site visit → estimate → proposal → close. Average sales cycle 5-10 days residential.</textarea></div>
+                <div class="fg"><label>Seasonality</label><textarea data-field="seasonality" rows="3">Peak: March-June and September-October. Slower: July-August (heat) and December-February.</textarea></div>
+              </div>
+              <div class="fg"><label>Monthly Recurring Revenue</label><input data-field="mrr_amount" value="Maintenance contracts: ~$65,000/month in recurring revenue"/></div>
+            </div>
+          </div>
+
+          <!-- S5 -->
+          <div class="fsec" id="fsec-5">
+            <div class="fsh" onclick="toggleSection(this)">
+              <span class="fsn">05</span><span class="fst">Customers</span><span class="chev">▾</span>
+            </div>
+            <div class="fsb hidden">
+              <div class="frow">
+                <div class="fg"><label>Total Customers</label><input data-field="total_customers" value="~850 active accounts"/></div>
+                <div class="fg"><label>% Repeat / Long-Term</label><input data-field="repeat_customer_pct" value="68% repeat revenue"/></div>
+              </div>
+              <div class="fg"><label>Customer Segmentation</label><textarea rows="2">55% residential homeowners, 30% commercial/HOAs, 15% municipal/institutional</textarea></div>
+            </div>
+          </div>
+
+          <!-- S6 -->
+          <div class="fsec" id="fsec-6">
+            <div class="fsh" onclick="toggleSection(this)">
+              <span class="fsn">06</span><span class="fst">Employees</span><span class="chev">▾</span>
+            </div>
+            <div class="fsb hidden">
+              <div class="frow">
+                <div class="fg"><label>Total Employees (FT/PT/Seasonal)</label><input value="12 FT, 8 PT seasonal (April-October)"/></div>
+                <div class="fg"><label>HR Systems</label><input value="Gusto (payroll/HR), Jobber (time tracking)"/></div>
+              </div>
+              <div class="fg"><label>Key Employees / Management</label><textarea data-field="key_employees" rows="3">Tom (Asst. Manager, 9 yrs) — daily ops; Maria (Sales Coord., 6 yrs) — commercial accounts; Jose (Lead Horticulturist, 11 yrs) — plant quality</textarea></div>
+            </div>
+          </div>
+
+          <!-- S7 -->
+          <div class="fsec" id="fsec-7">
+            <div class="fsh" onclick="toggleSection(this)">
+              <span class="fsn">07</span><span class="fst">Financials</span><span class="chev">▾</span>
+            </div>
+            <div class="fsb hidden">
+              <div style="overflow-x:auto;margin-bottom:20px">
+                <table style="width:100%;border-collapse:collapse;font-size:13px">
+                  <thead><tr>
+                    <th style="background:var(--dark);color:#fff;padding:8px 12px;text-align:left;font-family:var(--font-d);letter-spacing:.5px;font-size:12px">Metric</th>
+                    <th style="background:var(--dark);color:var(--copper);padding:8px 12px;font-family:var(--font-d)">2024</th>
+                    <th style="background:var(--dark);color:var(--copper);padding:8px 12px;font-family:var(--font-d)">2023</th>
+                    <th style="background:var(--dark);color:var(--copper);padding:8px 12px;font-family:var(--font-d)">2022</th>
+                  </tr></thead>
+                  <tbody id="fin-tbody">
+                  </tbody>
+                </table>
+              </div>
+              <div class="frow">
+                <div class="fg"><label>Financial Record System</label><input data-field="financial_record_system" value="QuickBooks Online, CPA-reviewed annually"/></div>
+                <div class="fg"><label>Accuracy Rating (1–10)</label><input data-field="accuracy_rating" value="9"/></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- S8 -->
+          <div class="fsec" id="fsec-8">
+            <div class="fsh" onclick="toggleSection(this)">
+              <span class="fsn">08</span><span class="fst">Growth Opportunities</span><span class="chev">▾</span>
+            </div>
+            <div class="fsb hidden">
+              <div class="fg"><label>Growth Opportunities (one per line)</label>
+                <textarea data-field="growth_opportunities" rows="8">1. Launch irrigation installation division — equipment purchased, licensing in progress
+2. Expand commercial HOA contracts — only 12% market penetration in target counties
+3. Online plant retail store — ship rare/specialty plants regionally
+4. Landscape lighting as add-on to every install project
+5. Second location 20 miles north — strong demographic match
+6. Outdoor kitchen/hardscape design-build expansion
+7. Corporate grounds maintenance contracts in Research Triangle
+8. Greenhouse wholesale to other garden centers</textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- S9 -->
+          <div class="fsec" id="fsec-9">
+            <div class="fsh" onclick="toggleSection(this)">
+              <span class="fsn">09</span><span class="fst">Transaction Details</span><span class="chev">▾</span>
+            </div>
+            <div class="fsb hidden">
+              <div class="frow">
+                <div class="fg"><label>Asking / Listing Price</label><input value="$1,750,000"/></div>
+                <div class="fg"><label>Down Payment %</label><input value="10% SBA / 20-25% conventional"/></div>
+              </div>
+              <div class="fg"><label>Deal Structure</label><textarea rows="2">Asset purchase. Real estate available separately at $850,000 or seller will lease at $5,500/month.</textarea></div>
+              <div class="fg"><label>Financing Type <span class="req">*</span></label><textarea rows="2">SBA 7(a) pre-qualified. Seller carry available (10%). Conventional financing possible.</textarea></div>
+              <div class="fg"><label>Transition Plan</label><textarea data-field="transition_plan" rows="2">Seller will remain for 12 months as paid consultant. Full training included. Key employees committed to stay.</textarea></div>
+            </div>
+          </div>
+
+          <!-- S10 -->
+          <div class="fsec" id="fsec-10">
+            <div class="fsh" onclick="toggleSection(this)">
+              <span class="fsn">10</span><span class="fst">Deal Team</span><span class="chev">▾</span>
+            </div>
+            <div class="fsb hidden">
+              <p style="font-size:13px;color:#666;margin-bottom:16px">Select team members to include in this deal's CBR.</p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px" id="team-grid"></div>
+              <div class="fg">
+                <label>Seller Brand Color (for CBR accents)</label>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <input type="color" value="#2D5016" style="width:44px;height:36px;padding:2px;cursor:pointer;flex-shrink:0"/>
+                  <input type="text" value="#2D5016" style="max-width:120px"/>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEAL DETAIL -->
+    <div id="view-deal-detail" class="view">
+      <div class="ph">
+        <div>
+          <div class="pt" style="font-size:22px">Nursery - NC - 2025</div>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:4px">
+            <span class="badge ba">Active</span>
+            <span style="font-size:13px;color:#888">Advisor: Alisha</span>
+            <span style="font-size:13px;color:#888">📍 Piedmont, NC</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn-g" onclick="showView('edit-deal')">✎ Edit Interview</button>
+          <button class="btn-g" onclick="showView('dashboard')">← Dashboard</button>
+        </div>
+      </div>
+
+      <!-- Stats bar -->
+      <div class="statbar">
+        <div><div class="stat-lbl">Asking Price</div><div class="stat-val">$1,750,000</div></div>
+        <div><div class="stat-lbl">Revenue (2024)</div><div class="stat-val">$2,850,000</div></div>
+        <div><div class="stat-lbl">SDE (2024)</div><div class="stat-val">$678,400</div></div>
+        <div><div class="stat-lbl">EBITDA (2024)</div><div class="stat-val">$558,000</div></div>
+        <div><div class="stat-lbl">Down Payment</div><div class="stat-val">10% ($175K)</div></div>
+        <div><div class="stat-lbl">Employees</div><div class="stat-val">12 FT / 8 PT</div></div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" onclick="switchOutputTab('blind-ad',this)">📋 Blind Ad <span id="bad-check" style="margin-left:6px;font-size:10px;background:#e8f5e9;color:#2e7d32;border-radius:10px;padding:1px 6px;font-weight:600">✓</span></button>
+        <button class="tab" onclick="switchOutputTab('flyer',this)">🗂️ One-Page Flyer <span id="flyer-check" style="margin-left:6px;font-size:10px;background:#e8f5e9;color:#2e7d32;border-radius:10px;padding:1px 6px;font-weight:600">✓</span></button>
+        <button class="tab" onclick="switchOutputTab('cbr',this)">📊 CBR <span id="cbr-check" style="margin-left:6px;font-size:10px;background:#e8f5e9;color:#2e7d32;border-radius:10px;padding:1px 6px;font-weight:600">✓</span></button>
+      </div>
+
+      <!-- BLIND AD PANEL -->
+      <div id="output-blind-ad" class="opanel">
+        <div class="otb">
+          <button class="btn-p" onclick="regenOutput('blind-ad')">↺ Regenerate Blind Ad</button>
+          <button class="btn-g btn-sm" onclick="copyBlindAd()">Copy to Clipboard</button>
+          <button class="btn-g btn-sm" onclick="downloadBlindAd()">↓ Download .txt</button>
+          <span class="gtime">Last generated: Apr 19, 2025 at 11:42 AM</span>
+        </div>
+        <div id="bad-gen-prog" class="gen-prog hidden">
+          <div class="spinner spinner-dk sp"></div>
+          <div style="margin-top:12px;font-size:14px">Generating blind ad copy…</div>
+          <div style="font-size:12px;color:#aaa;margin-top:6px">This usually takes 10–20 seconds</div>
+        </div>
+        <textarea id="bad-text" class="bad-ta">**Profitable Nursery &amp; Landscaping Business | 20+ Years | Recurring Revenue | Piedmont Region, NC**
+Piedmont Region, NC
+
+Asking Price: $1,750,000
+Cash Flow (SDE): $678,400
+EBITDA: $558,000
+Gross Revenue: $2,850,000
+Established: 2003
+
+**Business Description:**
+This well-established, full-service nursery and landscaping operation has served residential and commercial clients in the Piedmont region of North Carolina for over two decades. The business combines a thriving retail plant nursery with recurring maintenance contracts and high-margin installation projects, creating a diversified revenue stream that insulates against seasonal swings and economic downturns.
+
+The business operates from a 3.2-acre owned property featuring a climate-controlled greenhouse — the only one of its kind in the regional market — which enables year-round plant availability and commands premium pricing on specialty material. This infrastructure represents a significant competitive moat that a new buyer inherits on day one.
+
+Operationally, the business runs through a well-documented system of SOPs with a seasoned management team in place. The owner's day-to-day role is strategic rather than essential; an experienced assistant manager and three crew leaders handle operations, and the business has demonstrated it runs smoothly during the owner's absence. This makes the business an ideal acquisition for a growth-oriented buyer who wants infrastructure without chaos.
+
+Financially, the business has grown consistently at 8–12% annually for five consecutive years, with the commercial division accelerating at 18% YoY. Maintenance contracts generate approximately $65,000/month in predictable recurring revenue — a figure that provides significant downside protection and lender confidence for SBA financing.
+
+**KEY HIGHLIGHTS:**
+- 5 consecutive years of revenue growth (8–12% CAGR)
+- 68% of revenue from repeat and long-term contract customers
+- No single customer exceeds 5% of total revenue — minimal concentration risk
+- 50% gross margins — top of industry range; revenue per employee 23% above industry average
+- Seasoned management team in place — assistant manager (9 yrs), lead horticulturist (11 yrs), sales coordinator (6 yrs)
+- Only climate-controlled greenhouse in regional market — rare competitive moat
+- 8 identified growth opportunities: irrigation services, HOA contracts, online retail, second location
+- QuickBooks Online financials, CPA-reviewed annually; accuracy rated 9/10
+
+**IDEAL BUYER:**
+- Operator or owner-manager background with team leadership experience
+- Industry experience preferred but not required — strong systems and team in place
+- Entrepreneurially minded buyer seeking a profitable, growing, community-embedded business
+- Strategic buyer: regional landscaping company seeking market share, greenhouse capacity, or brand acquisition
+- SBA-qualified with 680+ credit score, 10% down, and 10% liquidity post-close
+
+This will be structured as an Asset Purchase Sale. Real estate (3.2 acres, owned) available for separate acquisition at $850,000 or can be leased at $5,500/month.
+
+**SUPPORT &amp; TRANSITION:**
+The seller will remain as a paid consultant for 12 months post-close and is committed to a full knowledge transfer. All key employees have confirmed their intention to stay with the business under new ownership.
+
+**REASON FOR SELLING:**
+Retirement planning — the owner is 62 and looking to transition over the next 12–18 months.
+
+**REPRESENTATION:**
+This opportunity is being handled by Alisha with The Deal Team | Powered by Peterson Acquisitions. An experienced acquisition advisor may follow up to answer questions and guide next steps.
+
+**NEXT STEPS:**
+Inquire today for full financials and a confidential business summary. All prospective buyers must sign an NDA and demonstrate financial ability to purchase.
+
+**Detailed Information**
+
+Inventory: $175,000
+Included in asking price
+
+Furniture, Fixtures, &amp; Equipment (FF&amp;E): $320,000
+Included in asking price
+
+Employees: 12 Full-time, 8 Part-time (seasonal)
+
+Financing: SBA 7(a) pre-qualified
+Seller willing to carry a 10% note for qualified buyers. Conventional financing also available.
+
+Support &amp; Training: Seller will remain for 12 months as paid consultant with full training included.
+
+Reason for Selling: Retirement planning — owner age 62, planning 12–18 month transition.
+
+**Business Location**
+Location: Piedmont Region, NC
+Real Estate: Owned
+Acreage: 3.2 acres (greenhouse, retail space, and storage buildings)
+</textarea>
+      </div>
+
+      <!-- FLYER PANEL -->
+      <div id="output-flyer" class="opanel hidden">
+        <div class="otb">
+          <button class="btn-p" onclick="regenOutput('flyer')">↺ Regenerate Flyer</button>
+          <button class="btn-d btn-sm" onclick="alert('In the live app, this renders the flyer to a PDF via Puppeteer and downloads it.')">↓ Download PDF</button>
+          <span class="gtime">Last generated: Apr 19, 2025 at 11:44 AM</span>
+        </div>
+        <div id="flyer-gen-prog" class="gen-prog hidden">
+          <div class="spinner spinner-dk sp"></div>
+          <div style="margin-top:12px;font-size:14px">Generating flyer HTML…</div>
+          <div style="font-size:12px;color:#aaa;margin-top:6px">This usually takes 15–30 seconds</div>
+        </div>
+        <div id="flyer-content" class="preview-wrap">
+          <!-- EMBEDDED FLYER -->
+          <div class="flyer-embed" style="font-family:'Inter',Arial,sans-serif">
+            <!-- Header -->
+            <div style="background:#1A1A1A;padding:14px 28px;display:flex;align-items:center;justify-content:space-between">
+              <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:17px;color:#C1622F;letter-spacing:1px">PETERSON ACQUISITIONS</div>
+              <div style="font-family:'Oswald',Arial,sans-serif;font-size:12px;color:#ccc;letter-spacing:.8px;text-align:right">OFFERED EXCLUSIVELY BY PETERSON ACQUISITIONS | THE DEAL TEAM</div>
+            </div>
+            <!-- Hero -->
+            <div style="background:#F5F5F5;padding:24px 28px;border-bottom:3px solid #C1622F">
+              <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:26px;color:#1A1A1A;text-transform:uppercase;letter-spacing:.5px">
+                Established Nursery &amp; Landscaping Business
+              </div>
+              <div style="font-family:'Oswald',Arial,sans-serif;font-size:14px;color:#C1622F;letter-spacing:.5px;margin-top:3px">PIEDMONT REGION, NC &nbsp;|&nbsp; FOUNDED 2003 &nbsp;|&nbsp; SBA PRE-QUALIFIED</div>
+              <div style="font-size:14px;color:#555;margin-top:10px;line-height:1.6;max-width:640px">A 20+ year full-service nursery and landscaping operation with recurring maintenance contracts, the region's only climate-controlled greenhouse, and a proven management team ready for new ownership.</div>
+            </div>
+            <!-- Metrics grid -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;border-bottom:1px solid #e0e0e0">
+              <div style="padding:18px 24px;border-right:1px solid #e0e0e0;text-align:center">
+                <div style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.8px">Gross Revenue</div>
+                <div style="font-family:'Oswald',Arial,sans-serif;font-size:28px;font-weight:700;color:#1A1A1A;margin-top:4px">$2,850,000</div>
+                <div style="font-size:11px;color:#aaa">FY 2024</div>
+              </div>
+              <div style="padding:18px 24px;border-right:1px solid #e0e0e0;text-align:center">
+                <div style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.8px">Cash Flow (SDE)</div>
+                <div style="font-family:'Oswald',Arial,sans-serif;font-size:28px;font-weight:700;color:#C1622F;margin-top:4px">$678,400</div>
+                <div style="font-size:11px;color:#aaa">FY 2024</div>
+              </div>
+              <div style="padding:18px 24px;border-right:1px solid #e0e0e0;text-align:center">
+                <div style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.8px">Asking Price</div>
+                <div style="font-family:'Oswald',Arial,sans-serif;font-size:28px;font-weight:700;color:#1A1A1A;margin-top:4px">$1,750,000</div>
+                <div style="font-size:11px;color:#aaa">Asset Sale</div>
+              </div>
+              <div style="padding:18px 24px;text-align:center">
+                <div style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.8px">Down Payment</div>
+                <div style="font-family:'Oswald',Arial,sans-serif;font-size:28px;font-weight:700;color:#1A1A1A;margin-top:4px">$175,000</div>
+                <div style="font-size:11px;color:#aaa">10% SBA</div>
+              </div>
+            </div>
+            <!-- Main content -->
+            <div style="display:grid;grid-template-columns:60% 40%;gap:0">
+              <div style="padding:22px 28px;border-right:1px solid #e0e0e0">
+                <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:#1A1A1A;margin-bottom:6px">Key Highlights</div>
+                <div style="height:3px;background:#C1622F;width:40px;margin-bottom:14px"></div>
+                <ul style="list-style:none;padding:0;font-size:13px;color:#444;line-height:1.8">
+                  <li style="padding-left:16px;position:relative"><span style="position:absolute;left:0;color:#C1622F;font-weight:700">▸</span>5 consecutive years of revenue growth (8–12% CAGR)</li>
+                  <li style="padding-left:16px;position:relative"><span style="position:absolute;left:0;color:#C1622F;font-weight:700">▸</span>68% of revenue from repeat/contract customers</li>
+                  <li style="padding-left:16px;position:relative"><span style="position:absolute;left:0;color:#C1622F;font-weight:700">▸</span>$65K/month in predictable recurring maintenance revenue</li>
+                  <li style="padding-left:16px;position:relative"><span style="position:absolute;left:0;color:#C1622F;font-weight:700">▸</span>Only climate-controlled greenhouse in the regional market</li>
+                  <li style="padding-left:16px;position:relative"><span style="position:absolute;left:0;color:#C1622F;font-weight:700">▸</span>50% gross margins — top of industry range</li>
+                  <li style="padding-left:16px;position:relative"><span style="position:absolute;left:0;color:#C1622F;font-weight:700">▸</span>Seasoned management team — minimal owner dependency</li>
+                  <li style="padding-left:16px;position:relative"><span style="position:absolute;left:0;color:#C1622F;font-weight:700">▸</span>4.8★ Google (312 reviews), 4.7★ Yelp (98 reviews)</li>
+                  <li style="padding-left:16px;position:relative"><span style="position:absolute;left:0;color:#C1622F;font-weight:700">▸</span>CPA-reviewed financials; SBA 7(a) pre-qualified</li>
+                </ul>
+              </div>
+              <div style="padding:22px 24px">
+                <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:#1A1A1A;margin-bottom:6px">Growth Potential</div>
+                <div style="height:3px;background:#C1622F;width:40px;margin-bottom:14px"></div>
+                <ul style="list-style:none;padding:0;font-size:13px;color:#444;line-height:1.9;margin-bottom:18px">
+                  <li style="padding-left:16px;position:relative"><span style="position:absolute;left:0;color:#2D5016;font-weight:700">▸</span>Irrigation services division (equipment ready)</li>
+                  <li style="padding-left:16px;position:relative"><span style="position:absolute;left:0;color:#2D5016;font-weight:700">▸</span>Expand HOA commercial contracts</li>
+                  <li style="padding-left:16px;position:relative"><span style="position:absolute;left:0;color:#2D5016;font-weight:700">▸</span>Online specialty plant retail (ship regionally)</li>
+                  <li style="padding-left:16px;position:relative"><span style="position:absolute;left:0;color:#2D5016;font-weight:700">▸</span>Second location — strong North Carolina demand</li>
+                </ul>
+                <div style="border-top:1px solid #e0e0e0;padding-top:14px">
+                  <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:#1A1A1A;margin-bottom:8px">Transaction</div>
+                  <div style="font-size:12px;color:#555;line-height:1.8">
+                    <strong>Structure:</strong> Asset Purchase<br/>
+                    <strong>Real Estate:</strong> Owned, sold separately or lease at $5,500/mo<br/>
+                    <strong>Financing:</strong> SBA 7(a) pre-qualified<br/>
+                    <strong>Transition:</strong> Seller stays 12 months
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Footer -->
+            <div style="background:#1A1A1A;padding:12px 28px;display:flex;align-items:center;justify-content:space-between">
+              <div style="font-family:'Oswald',Arial,sans-serif;font-size:12px;color:#C1622F;letter-spacing:.5px">CONFIDENTIAL — ALL INQUIRIES HANDLED WITH DISCRETION | NDA REQUIRED</div>
+              <div style="font-family:'Oswald',Arial,sans-serif;font-size:12px;color:#ccc">TheDealTeam.com | Peterson Acquisitions</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CBR PANEL -->
+      <div id="output-cbr" class="opanel hidden">
+        <div class="otb">
+          <button class="btn-p" onclick="regenOutput('cbr')">↺ Regenerate CBR</button>
+          <button class="btn-d btn-sm" onclick="alert('In the live app, this renders all 30 slides to a landscape PDF via Puppeteer and downloads it.')">↓ Download PDF</button>
+          <span class="gtime">Last generated: Apr 19, 2025 at 11:51 AM</span>
+        </div>
+        <div id="cbr-gen-prog" class="gen-prog hidden">
+          <div class="spinner spinner-dk sp"></div>
+          <div style="margin-top:12px;font-size:14px">Generating Confidential Business Review…</div>
+          <div style="font-size:12px;color:#aaa;margin-top:6px">Generating 30 slides — this takes 30–90 seconds</div>
+          <div class="gen-steps">Cover → TOC → Executive Summary → Products → Marketing → Sales → Customers → Employees → Financials → Growth → Transaction → Deal Team</div>
+        </div>
+        <div id="cbr-content">
+          <div style="background:#1A1A1A;color:#C1622F;padding:8px 16px;font-family:'Oswald',sans-serif;letter-spacing:1px;font-size:11px;display:flex;justify-content:space-between">
+            <span>CBR PREVIEW — CONFIDENTIAL — DO NOT DISTRIBUTE</span>
+            <span style="color:#888">30 slides • Download PDF for print-quality output</span>
+          </div>
+          <!-- SLIDES -->
+          <div style="background:#3a3a3a;padding:16px;display:flex;flex-direction:column;gap:6px" id="cbr-slides">
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page -->
+</div><!-- /app -->
+
+<!-- DELETE MODAL -->
+<div class="modal-bg" id="del-modal">
+  <div class="modal">
+    <div class="modal-t">Delete Deal?</div>
+    <p style="font-size:14px;color:#555">Are you sure you want to delete <strong>Nursery - NC - 2025</strong>? This will permanently remove the deal and all generated files.</p>
+    <div class="modal-btn-row">
+      <button class="btn-g" onclick="document.getElementById('del-modal').classList.remove('open')">Cancel</button>
+      <button class="btn-r" onclick="document.getElementById('del-modal').classList.remove('open')">Delete Permanently</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+
+const TEAM = [
+  {name:'Michael',role:'Lead Broker | Deal Structure | Strategy | Negotiations'},
+  {name:'Robin',role:'Acquisition Advisor | Operations | Due Diligence | Buyer Success'},
+  {name:'Alisha',role:'Acquisition Advisor | Seller Success'},
+  {name:'Lee',role:'Lender Liaison | SBA Lending Expert'},
+  {name:'Lance',role:'Operations | Business Listings | Leads'},
+];
+
+const FIN_DATA = [
+  ['Revenue','$2,850,000','$2,640,000','$2,380,000'],
+  ['COGS','$1,425,000','$1,320,000','$1,190,000'],
+  ['Gross Profit','$1,425,000','$1,320,000','$1,190,000'],
+  ['Operating Expenses','$940,000','$895,000','$862,000'],
+  ['Net Income','$485,000','$425,000','$328,000'],
+  ['Depreciation','$45,000','$42,000','$38,000'],
+  ['Amortization','—','—','—'],
+  ['Interest','$28,000','$31,000','$34,000'],
+  ['EBITDA','$558,000','$498,000','$400,000'],
+  ['Owner Salary Addback','$85,000','$85,000','$80,000'],
+  ['Other Addbacks','$35,400','$20,400','$20,400'],
+  ['SDE / Adj. Cash Flow','$678,400','$603,400','$508,400'],
+];
+const FIN_BOLD = new Set(['Gross Profit','EBITDA','SDE / Adj. Cash Flow']);
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  buildFinTable();
+  buildTeamGrid();
+  buildCbrSlides();
+});
+
+function buildFinTable(){
+  const tb = document.getElementById('fin-tbody');
+  if(!tb) return;
+  FIN_DATA.forEach(row=>{
+    const tr = document.createElement('tr');
+    const isBold = FIN_BOLD.has(row[0]);
+    tr.style.cssText = isBold ? 'font-weight:700;background:#f0f5f0' : '';
+    tr.innerHTML = `
+      <td style="padding:7px 12px;font-size:13px;color:#444;border-bottom:1px solid #f0f0f0">${row[0]}</td>
+      <td style="padding:7px 12px;font-size:13px;color:#1A1A1A;border-bottom:1px solid #f0f0f0">${row[1]}</td>
+      <td style="padding:7px 12px;font-size:13px;color:#1A1A1A;border-bottom:1px solid #f0f0f0">${row[2]}</td>
+      <td style="padding:7px 12px;font-size:13px;color:#1A1A1A;border-bottom:1px solid #f0f0f0">${row[3]}</td>
+    `;
+    tb.appendChild(tr);
+  });
+}
+
+function buildTeamGrid(){
+  const g = document.getElementById('team-grid');
+  if(!g) return;
+  const selected = ['Michael','Robin','Alisha','Lee','Lance'];
+  TEAM.forEach(m=>{
+    const sel = selected.includes(m.name);
+    const d = document.createElement('div');
+    d.style.cssText = `display:flex;align-items:center;gap:12px;padding:12px 16px;border:2px solid ${sel?'#C1622F':'#e0e0e0'};border-radius:6px;cursor:pointer;background:${sel?'#fff0ea':'white'};transition:all .15s`;
+    d.innerHTML = `
+      <div style="width:20px;height:20px;border-radius:4px;border:2px solid ${sel?'#C1622F':'#ccc'};background:${sel?'#C1622F':'white'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        ${sel?'<span style="color:white;font-size:11px;font-weight:700">✓</span>':''}
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:14px;color:#1A1A1A">${m.name}</div>
+        <div style="font-size:12px;color:#666">${m.role}</div>
+      </div>`;
+    d.onclick = ()=>{
+      const isNowSel = d.style.borderColor.includes('193');
+      d.style.borderColor = isNowSel ? '#e0e0e0' : '#C1622F';
+      d.style.background = isNowSel ? 'white' : '#fff0ea';
+    };
+    g.appendChild(d);
+  });
+}
+
+function buildCbrSlides(){
+  const container = document.getElementById('cbr-slides');
+  if(!container) return;
+
+  const slides = [
+    {type:'cover'},
+    {type:'toc'},
+    {type:'divider', title:'EXECUTIVE SUMMARY'},
+    {type:'content', section:'Executive Summary', title:'Business Overview', content: [
+      ['Industry','Nursery &amp; Landscaping'],['Year Founded','2003'],
+      ['Location','Piedmont Region, NC'],['Entity','S-Corporation'],
+      ['Hours','Mon–Sat 7am–6pm, Sun 9am–4pm'],['Licenses','NC Contractor, Pesticide, Business'],
+    ]},
+    {type:'content-text', section:'Executive Summary', title:'Key Highlights', bullets:[
+      '5 consecutive years of revenue growth (8–12% CAGR)',
+      '$2,850,000 Gross Revenue | $678,400 SDE | $558,000 EBITDA (FY 2024)',
+      '68% of revenue from repeat and long-term contract customers',
+      'Only climate-controlled greenhouse in the regional market',
+      '50% gross margins — top of industry benchmarks',
+      'SBA 7(a) pre-qualified | CPA-reviewed financials (accuracy: 9/10)',
+    ]},
+    {type:'divider', title:'PRODUCTS &amp; SERVICES'},
+    {type:'content-text', section:'Products &amp; Services', title:'Products &amp; Services', bullets:[
+      'Landscape Installation (40% of revenue) — residential and commercial',
+      'Maintenance Contracts (30%) — recurring monthly agreements',
+      'Retail Plant Nursery (20%) — rare and specialty plant material',
+      'Hardscape Design &amp; Installation (10%) — patios, walls, outdoor spaces',
+      'Climate-controlled greenhouse enables year-round rare plant availability',
+    ]},
+    {type:'divider', title:'FINANCIAL INFORMATION'},
+    {type:'fin-table'},
+    {type:'divider', title:'GROWTH OPPORTUNITIES'},
+    {type:'growth'},
+    {type:'divider', title:'TRANSACTION DETAILS'},
+    {type:'transaction'},
+    {type:'deal-team'},
+  ];
+
+  slides.forEach((s,i) => {
+    const el = renderSlide(s, i+1);
+    container.appendChild(el);
+  });
+}
+
+function renderSlide(s, num){
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'background:#fff;width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.3)';
+
+  const footer = `<div style="position:absolute;bottom:0;left:0;right:0;padding:8px 20px;display:flex;align-items:center;justify-content:space-between;font-size:10px;color:#aaa;border-top:1px solid #f0f0f0">
+    <img src="" onerror="this.style.display='none'" style="height:20px"/>
+    <span>©2025 Proprietary and Confidential. All Rights Reserved.</span>
+    <span style="color:#888">${num}</span>
+  </div>`;
+
+  if(s.type==='cover'){
+    wrap.style.background = '#1A1A1A';
+    wrap.innerHTML = `
+      <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center">
+        <div style="font-family:'Oswald',sans-serif;font-size:11px;color:#888;letter-spacing:3px;margin-bottom:24px;text-transform:uppercase">Peterson Acquisitions | The Deal Team</div>
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:42px;color:#fff;letter-spacing:2px;text-transform:uppercase;line-height:1.1">CONFIDENTIAL<br/>BUSINESS REVIEW</div>
+        <div style="width:60px;height:3px;background:#C1622F;margin:20px auto"></div>
+        <div style="font-family:'Oswald',sans-serif;font-size:18px;color:#C1622F;letter-spacing:1px;text-transform:uppercase">Nursery &amp; Landscaping Operation</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:13px;color:#888;letter-spacing:1px;margin-top:6px">Piedmont Region, North Carolina</div>
+        <div style="font-size:11px;color:#666;font-style:italic;margin-top:30px;max-width:500px;line-height:1.6">This document contains confidential information provided solely for the use of prospective buyers who have executed a Non-Disclosure Agreement. Distribution is strictly prohibited.</div>
+      </div>
+      <div style="position:absolute;bottom:0;left:0;right:0;background:#C1622F;height:6px"></div>`;
+    return wrap;
+  }
+
+  if(s.type==='divider'){
+    wrap.style.background = '#1A1A1A';
+    wrap.innerHTML = `
+      <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:52px;color:#fff;letter-spacing:3px;text-transform:uppercase;text-align:center;padding:0 60px">${s.title}</div>
+        <div style="width:80px;height:4px;background:#C1622F;margin-top:20px"></div>
+      </div>`;
+    return wrap;
+  }
+
+  if(s.type==='toc'){
+    wrap.innerHTML = `
+      <div style="height:100%;padding:30px 40px;display:flex;flex-direction:column">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:28px;color:#1A1A1A;text-transform:uppercase;letter-spacing:1px">Table of Contents</div>
+        <div style="height:3px;background:#C1622F;width:50px;margin:8px 0 24px"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;flex:1">
+          ${[
+            ['📋','Executive Summary','03'],['🛍️','Products &amp; Services','09'],
+            ['📣','Marketing','11'],['📈','Sales','13'],
+            ['👥','Customers','15'],['👤','Employees','17'],
+            ['💰','Financial Information','20'],['🌱','Growth Opportunities','24'],
+            ['🤝','Transaction Details','26'],
+          ].map(([icon,title,page])=>`
+            <div style="background:#f8f8f8;border-radius:8px;padding:16px;display:flex;align-items:center;gap:10px;border-left:3px solid #C1622F">
+              <div style="font-size:22px">${icon}</div>
+              <div>
+                <div style="font-family:'Oswald',sans-serif;font-weight:600;font-size:13px;color:#1A1A1A;text-transform:uppercase;letter-spacing:.5px">${title}</div>
+                <div style="font-size:11px;color:#aaa;margin-top:1px">Page ${page}</div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+      ${footer}`;
+    return wrap;
+  }
+
+  if(s.type==='content'){
+    wrap.innerHTML = `
+      <div style="height:100%;padding:28px 36px;display:flex;flex-direction:column;padding-bottom:40px">
+        <div style="font-size:11px;color:#aaa;font-family:'Oswald',sans-serif;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">${s.section}</div>
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:24px;color:#1A1A1A;text-transform:uppercase;letter-spacing:.5px">${s.title}</div>
+        <div style="height:3px;background:#C1622F;width:40px;margin:8px 0 18px"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1">
+          ${s.content.map(([k,v])=>`
+            <div style="background:#f8f8f8;border-radius:6px;padding:12px 16px">
+              <div style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.5px">${k}</div>
+              <div style="font-size:15px;font-weight:600;color:#1A1A1A;margin-top:4px">${v}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+      ${footer}`;
+    return wrap;
+  }
+
+  if(s.type==='content-text'){
+    wrap.innerHTML = `
+      <div style="height:100%;padding:28px 36px;display:flex;flex-direction:column;padding-bottom:40px">
+        <div style="font-size:11px;color:#aaa;font-family:'Oswald',sans-serif;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">${s.section}</div>
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:24px;color:#1A1A1A;text-transform:uppercase;letter-spacing:.5px">${s.title}</div>
+        <div style="height:3px;background:#C1622F;width:40px;margin:8px 0 18px"></div>
+        <ul style="list-style:none;padding:0;flex:1;display:flex;flex-direction:column;justify-content:space-around">
+          ${s.bullets.map(b=>`
+            <li style="display:flex;align-items:flex-start;gap:10px;font-size:14px;color:#333;line-height:1.5">
+              <span style="color:#C1622F;font-weight:700;font-size:16px;flex-shrink:0;margin-top:1px">▸</span>${b}
+            </li>`).join('')}
+        </ul>
+      </div>
+      ${footer}`;
+    return wrap;
+  }
+
+  if(s.type==='fin-table'){
+    const years = ['2024','2023','2022'];
+    wrap.innerHTML = `
+      <div style="height:100%;padding:22px 32px;display:flex;flex-direction:column;padding-bottom:40px">
+        <div style="font-size:11px;color:#aaa;font-family:'Oswald',sans-serif;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Financial Information</div>
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:22px;color:#1A1A1A;text-transform:uppercase;letter-spacing:.5px">Cash Flow &amp; Adjusted EBITDA</div>
+        <div style="height:3px;background:#C1622F;width:40px;margin:6px 0 14px"></div>
+        <table style="width:100%;border-collapse:collapse;flex:1;font-size:12px">
+          <thead><tr>
+            <th style="background:#2D5016;color:#fff;padding:7px 12px;text-align:left;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.5px">Metric</th>
+            ${years.map(y=>`<th style="background:#2D5016;color:#fff;padding:7px 12px;text-align:right;font-family:'Oswald',sans-serif;font-size:11px">${y}</th>`).join('')}
+          </tr></thead>
+          <tbody>
+            ${FIN_DATA.map((row,i)=>{
+              const bold = FIN_BOLD.has(row[0]);
+              const bg = bold ? '#f0f5f0' : (i%2===0?'#fff':'#fafafa');
+              const fw = bold ? '700' : '400';
+              return `<tr style="background:${bg}">
+                <td style="padding:5px 12px;color:#444;font-weight:${fw};border-bottom:1px solid #f0f0f0">${row[0]}</td>
+                ${[row[1],row[2],row[3]].map(v=>`<td style="padding:5px 12px;text-align:right;color:#1A1A1A;font-weight:${fw};border-bottom:1px solid #f0f0f0">${v}</td>`).join('')}
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+      ${footer}`;
+    return wrap;
+  }
+
+  if(s.type==='growth'){
+    wrap.style.background = '#2D5016';
+    wrap.innerHTML = `
+      <div style="height:100%;padding:36px 48px;display:flex;flex-direction:column;padding-bottom:40px">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:30px;color:#fff;text-transform:uppercase;letter-spacing:1px">Growth Opportunities</div>
+        <div style="height:3px;background:#C1622F;width:50px;margin:10px 0 16px"></div>
+        <div style="font-size:13px;color:#9bc89b;font-style:italic;margin-bottom:20px">The following opportunities have been identified and are ready for execution by an engaged new owner.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1">
+          ${[
+            ['01','Launch Irrigation Division','Equipment purchased, licensing in progress — immediate add-on revenue'],
+            ['02','Expand HOA Contracts','Only 12% market penetration in target counties — significant runway'],
+            ['03','Online Plant Retail','Ship rare/specialty plants regionally — proven demand, untapped'],
+            ['04','Landscape Lighting','Natural add-on to every installation project — high-margin service'],
+            ['05','Second Location','Strong demographic match 20 miles north — infrastructure ready to duplicate'],
+            ['06','Research Triangle Corporate','Corporate grounds maintenance contracts — recurring, high-value'],
+            ['07','Outdoor Kitchen / Hardscape','Design-build expansion into premium outdoor living segment'],
+            ['08','Greenhouse Wholesale','Supply other garden centers — leverages existing climate-controlled asset'],
+          ].map(([n,t,d])=>`
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;color:#C1622F;min-width:32px;line-height:1">${n}</div>
+              <div>
+                <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;color:#fff;text-transform:uppercase;letter-spacing:.3px">${t}</div>
+                <div style="font-size:11px;color:#9bc89b;margin-top:2px;line-height:1.4">${d}</div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    return wrap;
+  }
+
+  if(s.type==='transaction'){
+    wrap.innerHTML = `
+      <div style="height:100%;padding:28px 36px;display:flex;flex-direction:column;padding-bottom:40px">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:26px;color:#1A1A1A;text-transform:uppercase;letter-spacing:.5px">Transaction Details</div>
+        <div style="height:3px;background:#C1622F;width:40px;margin:8px 0 22px"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;flex:1">
+          <div style="background:#2D5016;border-radius:10px;padding:24px;display:flex;flex-direction:column;gap:8px">
+            <div style="font-family:'Oswald',sans-serif;font-size:12px;color:#9bc89b;text-transform:uppercase;letter-spacing:1px">Listing Price</div>
+            <div style="font-family:'Oswald',sans-serif;font-size:36px;font-weight:700;color:#fff">$1,750,000</div>
+            <div style="font-size:12px;color:#9bc89b">Asset Purchase Sale</div>
+            <div style="font-size:12px;color:#9bc89b">Real estate separate at $850K or lease $5,500/mo</div>
+          </div>
+          <div style="background:#2D5016;border-radius:10px;padding:24px;display:flex;flex-direction:column;gap:8px">
+            <div style="font-family:'Oswald',sans-serif;font-size:12px;color:#9bc89b;text-transform:uppercase;letter-spacing:1px">Deal Structure</div>
+            <div style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#fff;line-height:1.3">SBA 7(a)<br/>Pre-Qualified</div>
+            <div style="font-size:12px;color:#9bc89b">10% down ($175,000)</div>
+            <div style="font-size:12px;color:#9bc89b">Seller carry (10%) available for qualified buyers</div>
+          </div>
+          <div style="background:#2D5016;border-radius:10px;padding:24px;display:flex;flex-direction:column;gap:8px">
+            <div style="font-family:'Oswald',sans-serif;font-size:12px;color:#9bc89b;text-transform:uppercase;letter-spacing:1px">Transition Plan</div>
+            <div style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#fff;line-height:1.3">12-Month<br/>Consulting</div>
+            <div style="font-size:12px;color:#9bc89b">Seller stays on post-close</div>
+            <div style="font-size:12px;color:#9bc89b">Key employees confirmed staying</div>
+          </div>
+        </div>
+      </div>
+      ${footer}`;
+    return wrap;
+  }
+
+  if(s.type==='deal-team'){
+    wrap.innerHTML = `
+      <div style="height:100%;padding:28px 36px;display:flex;flex-direction:column;padding-bottom:40px">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:26px;color:#1A1A1A;text-transform:uppercase;letter-spacing:.5px">The Deal Team</div>
+        <div style="height:3px;background:#C1622F;width:40px;margin:8px 0 22px"></div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;flex:1">
+          ${TEAM.map(m=>`
+            <div style="background:#2D5016;border-radius:8px;padding:18px 16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px">
+              <div style="width:48px;height:48px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-weight:700;font-size:20px;color:#fff">
+                ${m.name[0]}
+              </div>
+              <div>
+                <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:16px;color:#fff">${m.name}</div>
+                <div style="font-size:11px;color:#9bc89b;margin-top:4px;line-height:1.5">${m.role.split(' | ').join('<br/>')}</div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+      ${footer}`;
+    return wrap;
+  }
+
+  // fallback
+  wrap.innerHTML = `<div style="padding:40px;color:#999;font-size:14px">Slide ${num}</div>`;
+  return wrap;
+}
+
+// ─── ROUTING ──────────────────────────────────────────────────────────────────
+
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const el = document.getElementById('view-'+name);
+  if(el) el.classList.add('active');
+  // update nav
+  document.querySelectorAll('.tnav a').forEach(a=>a.classList.remove('active'));
+  const navEl = document.getElementById('nav-'+name);
+  if(navEl) navEl.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ─── LOGIN ────────────────────────────────────────────────────────────────────
+
+function doLogin(){
+  const u = document.getElementById('l-user').value.trim();
+  const p = document.getElementById('l-pass').value;
+  const err = document.getElementById('l-err');
+  if(u==='pacq' && p==='tdt2024'){
+    document.getElementById('login-view').style.display='none';
+    document.getElementById('app').classList.remove('hidden');
+  } else {
+    err.textContent='Invalid username or password';
+    err.classList.remove('hidden');
+  }
+}
+document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+document.getElementById('l-user').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+
+function doLogout(){
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('login-view').style.display='flex';
+  document.getElementById('l-user').value='';
+  document.getElementById('l-pass').value='';
+  document.getElementById('l-err').classList.add('hidden');
+}
+
+// ─── FORM SECTIONS ────────────────────────────────────────────────────────────
+
+function toggleSection(header){
+  const body = header.nextElementSibling;
+  const chev = header.querySelector('.chev');
+  const isOpen = !body.classList.contains('hidden');
+  if(isOpen){
+    body.classList.add('hidden');
+    header.classList.remove('open');
+    chev.classList.remove('open');
+  } else {
+    body.classList.remove('hidden');
+    header.classList.add('open');
+    chev.classList.add('open');
+  }
+}
+
+function scrollToSection(n){
+  const el = document.getElementById('fsec-'+n);
+  if(!el) return;
+  // Open it
+  const header = el.querySelector('.fsh');
+  const body = el.querySelector('.fsb');
+  const chev = el.querySelector('.chev');
+  body.classList.remove('hidden');
+  header.classList.add('open');
+  chev.classList.add('open');
+  setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'start'}),50);
+}
+
+// ─── OUTPUT TABS ──────────────────────────────────────────────────────────────
+
+function switchOutputTab(name, btn){
+  ['blind-ad','flyer','cbr'].forEach(t=>{
+    const el = document.getElementById('output-'+t);
+    if(el) el.classList.toggle('hidden', t!==name);
+  });
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ─── MOCK AI GENERATION ───────────────────────────────────────────────────────
+
+function regenOutput(type){
+  const progId = {'blind-ad':'bad-gen-prog','flyer':'flyer-gen-prog','cbr':'cbr-gen-prog'}[type];
+  const contentIds = {'blind-ad':'bad-text','flyer':'flyer-content','cbr':'cbr-content'};
+  const prog = document.getElementById(progId);
+  const content = document.getElementById(contentIds[type]);
+  if(!prog || !content) return;
+  // Hide content, show spinner
+  content.style.display = 'none';
+  prog.classList.remove('hidden');
+  const duration = type==='cbr' ? 4000 : type==='flyer' ? 2500 : 1800;
+  setTimeout(()=>{
+    prog.classList.add('hidden');
+    content.style.display = '';
+    // Flash a "regenerated" indicator
+    const tb = content.closest('.opanel')?.querySelector('.otb');
+    if(tb){
+      const flash = document.createElement('span');
+      flash.style.cssText = 'font-size:12px;color:#2e7d32;font-weight:600;animation:none';
+      flash.textContent = '✓ Regenerated just now';
+      tb.appendChild(flash);
+      setTimeout(()=>flash.remove(), 3000);
+    }
+  }, duration);
+}
+
+function copyBlindAd(){
+  const ta = document.getElementById('bad-text');
+  navigator.clipboard.writeText(ta.value).then(()=>{
+    const btn = event.target;
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    btn.style.color = '#2e7d32';
+    btn.style.borderColor = '#2e7d32';
+    setTimeout(()=>{btn.textContent=orig;btn.style.color='';btn.style.borderColor=''},2000);
+  });
+}
+
+function downloadBlindAd(){
+  const text = document.getElementById('bad-text').value;
+  const blob = new Blob([text],{type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='Nursery_NC_2025_blind_ad.txt';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function createNewDeal(){
+  const name = document.getElementById('nd-name').value.trim();
+  const advisor = document.getElementById('nd-advisor').value;
+  if(!name){ alert('Please enter a deal name'); return; }
+  document.getElementById('edit-title').textContent = name;
+  showView('edit-deal');
+}
+
+// ─── DOCUMENT EXTRACTOR (DEMO MOCK) ──────────────────────────────────────────
+
+let extMode = 'upload';
+let extSelectedFile = null;
+let extDeselected = new Set();
+let extResults = null;
+
+const MOCK_EXTRACTED = [
+  {key:'year_founded',label:'Year Founded',val:'2003',filled:true},
+  {key:'business_city_state',label:'City, State',val:'Piedmont, NC',filled:true},
+  {key:'reason_for_selling',label:'Reason for Selling',val:'Retirement planning — owner is 62 and planning a 12–18 month transition.',filled:true},
+  {key:'origin_story',label:'Origin Story',val:'The owner founded the business in 2003 after completing a horticulture degree and identifying a significant gap in the regional market for a full-service nursery with year-round plant availability.',filled:false},
+  {key:'typical_day',label:'Typical Day',val:'Owner arrives at 6:30 AM, reviews crew assignments and order queue, meets with commercial clients mid-morning, handles vendor relationships and purchasing in the afternoon, and reviews weekly financials on Fridays.',filled:false},
+  {key:'vision_mission',label:'Vision / Mission',val:'To be the premier nursery and landscaping provider in the Piedmont region by delivering exceptional quality plant material and reliable service to every client.',filled:true},
+  {key:'core_values',label:'Core Values',val:'Quality, integrity, community relationships, and environmental sustainability.',filled:false},
+  {key:'advice_for_buyer',label:'Advice for Buyer',val:'Build personal relationships with the key employees early — they are the institutional knowledge of this business and the reason customers keep coming back.',filled:false},
+  {key:'warning_for_buyer',label:'Warning for Buyer',val:'The business is highly seasonal; you must have adequate working capital reserves to cover the slower winter months without stress.',filled:false},
+  {key:'key_systems',label:'Key Systems / SOPs',val:'QuickBooks Online for accounting, Jobber for crew scheduling and time tracking, proprietary inventory management spreadsheets, and documented SOPs for all crew operations and plant care protocols.',filled:true},
+  {key:'social_reputation',label:'Social / Reviews',val:'4.8 stars on Google (312 reviews), 4.7 stars on Yelp (98 reviews), and a Facebook community page with 2,800+ followers.',filled:true},
+  {key:'seasonality',label:'Seasonality',val:'Peak season runs March through June and September through October. Revenue slows significantly in July and August due to summer heat, and December through February is the slowest period.',filled:false},
+  {key:'mrr_amount',label:'MRR Amount',val:'$65,000/month',filled:false},
+  {key:'total_customers',label:'Total Customers',val:'Approximately 850 active customer accounts',filled:true},
+  {key:'repeat_customer_pct',label:'Repeat Customer %',val:'68% of annual revenue comes from repeat customers and long-term maintenance contract holders.',filled:true},
+  {key:'key_employees',label:'Key Employees',val:'Tom — Assistant Manager, 9 years tenure, oversees all daily operations\nMaria — Sales Coordinator, 6 years tenure, manages all commercial accounts\nJose — Lead Horticulturist, 11 years tenure, responsible for plant quality and greenhouse management',filled:true},
+  {key:'post_sale_transitions',label:'Post-Sale Transitions',val:'Tom (Assistant Manager) and Maria (Sales Coordinator) have both confirmed they intend to stay under new ownership. Owner will remain as a paid consultant for 12 months post-close.',filled:false},
+  {key:'growth_opportunities',label:'Growth Opportunities',val:'1. Launch an irrigation installation service division — equipment has been purchased and licensing is in progress\n2. Expand commercial HOA maintenance contracts — currently only 12% market penetration in target counties\n3. Launch an online specialty plant retail store to ship rare plants regionally\n4. Add landscape lighting as a standard add-on to every installation project\n5. Open a second location 20 miles north where demographics are strong',filled:true},
+  {key:'transition_plan',label:'Transition Plan',val:'Seller will remain with the business for 12 months post-close as a paid transition consultant. Full training on all systems, vendor relationships, and key accounts will be provided.',filled:true},
+  {key:'fin_year1_label',label:'Year 1 — Label',val:'2024',filled:true},
+  {key:'fin_year1_revenue',label:'Year 1 — Revenue',val:'2850000',filled:true},
+  {key:'fin_year1_sde',label:'Year 1 — SDE',val:'678400',filled:true},
+  {key:'fin_year1_ebitda',label:'Year 1 — EBITDA',val:'558000',filled:true},
+  {key:'fin_year2_label',label:'Year 2 — Label',val:'2023',filled:false},
+  {key:'fin_year2_revenue',label:'Year 2 — Revenue',val:'2640000',filled:false},
+  {key:'fin_year2_sde',label:'Year 2 — SDE',val:'603400',filled:false},
+  {key:'rev_segment1_name',label:'Segment 1 Name',val:'Landscape Installation',filled:true},
+  {key:'rev_segment1_pct',label:'Segment 1 %',val:'40',filled:true},
+  {key:'rev_segment2_name',label:'Segment 2 Name',val:'Maintenance Contracts',filled:true},
+  {key:'rev_segment2_pct',label:'Segment 2 %',val:'30',filled:true},
+  {key:'fiscal_year_end',label:'Fiscal Year End',val:'December 31',filled:false},
+  {key:'financial_record_system',label:'Financial System',val:'QuickBooks Online, reviewed annually by CPA (Morris & Associates, Greensboro NC)',filled:false},
+  {key:'accuracy_rating',label:'Accuracy Rating',val:'9',filled:false},
+];
+
+function toggleExtractor(){
+  const body = document.getElementById('extractor-body');
+  const chev = document.getElementById('ext-chev');
+  const hdr = document.getElementById('extractor-hdr');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  chev.style.transform = open ? 'rotate(-90deg)' : 'none';
+  hdr.style.borderBottom = open ? 'none' : '1px solid #e8d5c4';
+}
+
+function setExtractMode(mode){
+  extMode = mode;
+  document.getElementById('ext-upload-zone').style.display = mode==='upload' ? 'block' : 'none';
+  document.getElementById('ext-paste-zone').style.display = mode==='paste' ? 'block' : 'none';
+  document.getElementById('tab-upload').style.background = mode==='upload' ? '#C1622F' : '#fff';
+  document.getElementById('tab-upload').style.color = mode==='upload' ? '#fff' : '#555';
+  document.getElementById('tab-paste').style.background = mode==='paste' ? '#C1622F' : '#fff';
+  document.getElementById('tab-paste').style.color = mode==='paste' ? '#fff' : '#555';
+}
+
+function handleExtractFile(f){
+  if(!f) return;
+  if(!f.name.endsWith('.docx') && !f.name.endsWith('.txt')){
+    showExtError('Only .docx and .txt files are supported. For PDFs, use Paste Text instead.');
+    return;
+  }
+  extSelectedFile = f;
+  hideExtError();
+  const zone = document.getElementById('ext-drop-label');
+  zone.innerHTML = `<div style="font-size:28px;margin-bottom:6px">✅</div>
+    <div style="font-weight:600;color:#2e7d32;font-size:14px">${f.name}</div>
+    <div style="font-size:12px;color:#888;margin-top:3px">${(f.size/1024).toFixed(0)} KB — click to change</div>`;
+  document.getElementById('ext-upload-zone').style.borderColor = '#2e7d32';
+  document.getElementById('ext-upload-zone').style.background = '#f0fdf4';
+}
+
+function handleExtractDrop(e){
+  e.preventDefault();
+  handleExtractFile(e.dataTransfer.files[0]);
+}
+
+function showExtError(msg){
+  const el = document.getElementById('ext-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+function hideExtError(){
+  document.getElementById('ext-error').style.display = 'none';
+}
+
+function runMockExtraction(){
+  const pasteVal = document.getElementById('ext-paste-zone').value.trim();
+  if(extMode==='upload' && !extSelectedFile){ showExtError('Please select a file first.'); return; }
+  if(extMode==='paste' && pasteVal.length < 20){ showExtError('Please paste at least a few sentences of interview content.'); return; }
+  hideExtError();
+  document.getElementById('ext-input-btns').style.display = 'none';
+  document.getElementById('ext-loading').style.display = 'block';
+  setTimeout(()=>{
+    document.getElementById('ext-loading').style.display = 'none';
+    showExtResults();
+  }, 2200);
+}
+
+function showExtResults(){
+  extDeselected = new Set();
+  extResults = MOCK_EXTRACTED;
+  document.getElementById('ext-count-label').textContent = `${extResults.length} fields extracted`;
+  renderChecklist();
+  document.getElementById('ext-results').style.display = 'block';
+}
+
+function renderChecklist(){
+  const list = document.getElementById('ext-checklist');
+  const overwrite = document.getElementById('ext-overwrite').checked;
+  list.innerHTML = extResults.map((item,i)=>{
+    const checked = !extDeselected.has(item.key);
+    const isLast = i === extResults.length-1;
+    let badge = '';
+    if(item.filled && !overwrite) badge = `<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:#fff8e1;color:#b8860b;font-weight:600">will skip</span>`;
+    else if(item.filled && overwrite) badge = `<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:#fff0ea;color:#C1622F;font-weight:600">will overwrite</span>`;
+    else badge = `<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:#e8f5e9;color:#2e7d32;font-weight:600">new</span>`;
+    const shortVal = item.val.length > 90 ? item.val.slice(0,90)+'…' : item.val;
+    return `<label onclick="toggleExtField('${item.key}')" style="display:flex;align-items:flex-start;gap:10px;padding:8px 14px;cursor:pointer;background:${checked?'#fff':'#fafafa'};border-bottom:${isLast?'none':'1px solid #f0f0f0'};opacity:${checked?1:.5};transition:opacity .15s,background .15s">
+      <div style="width:18px;height:18px;border-radius:3px;flex-shrink:0;margin-top:1px;border:2px solid ${checked?'#C1622F':'#ccc'};background:${checked?'#C1622F':'#fff'};display:flex;align-items:center;justify-content:center">
+        ${checked?'<span style="color:#fff;font-size:11px;font-weight:700;line-height:1">✓</span>':''}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:12px;font-weight:600;color:#444">${item.label}</span>${badge}
+        </div>
+        <div style="font-size:12px;color:#666;margin-top:2px;word-break:break-word">${shortVal}</div>
+      </div>
+    </label>`;
+  }).join('');
+  updateSelCount();
+}
+
+function toggleExtField(key){
+  extDeselected.has(key) ? extDeselected.delete(key) : extDeselected.add(key);
+  renderChecklist();
+}
+
+function updateSelCount(){
+  const sel = extResults.length - extDeselected.size;
+  document.getElementById('ext-sel-count').textContent = `${sel} of ${extResults.length} fields selected`;
+}
+
+document.addEventListener('change', e=>{
+  if(e.target.id==='ext-overwrite') renderChecklist();
+});
+
+function applyExtraction(){
+  const overwrite = document.getElementById('ext-overwrite').checked;
+  let applied = 0, skipped = 0;
+  extResults.forEach(item=>{
+    if(extDeselected.has(item.key)) return;
+    if(!overwrite && item.filled){ skipped++; return; }
+    const el = document.querySelector(`[data-field="${item.key}"]`);
+    if(el){
+      el.value = item.val;
+      // Reveal collapsed section
+      const fsb = el.closest('.fsb');
+      if(fsb && fsb.classList.contains('hidden')){
+        fsb.classList.remove('hidden');
+        const fsh = fsb.previousElementSibling;
+        if(fsh){ fsh.classList.add('open'); const c=fsh.querySelector('.chev'); if(c) c.classList.add('open'); }
+      }
+      // Flash highlight
+      el.style.transition='background 0.4s';
+      el.style.background='#fff8e1';
+      setTimeout(()=>{ el.style.background=''; el.style.transition=''; }, 2500);
+    }
+    applied++;
+  });
+  const msgEl = document.getElementById('ext-apply-msg');
+  if(applied===0){
+    msgEl.textContent = `No fields applied — all ${skipped} extracted fields already had values. Enable "Overwrite existing" to replace them.`;
+    msgEl.style.background='#fff8f0'; msgEl.style.color='#a04010'; msgEl.style.borderLeft='4px solid #C1622F';
+  } else {
+    msgEl.textContent = `✓ ${applied} field${applied!==1?'s':''} applied to the form${skipped?` (${skipped} skipped — already filled)`:''}. Scroll down to review the updated fields.`;
+    msgEl.style.background='#f0fdf4'; msgEl.style.color='#2e7d32'; msgEl.style.borderLeft='4px solid #2e7d32';
+  }
+  msgEl.style.display='block';
+  document.getElementById('ext-apply-btn').textContent='✓ Applied';
+  document.getElementById('ext-apply-btn').disabled=true;
+}
+
+function resetExtractor(){
+  extSelectedFile=null; extDeselected=new Set(); extResults=null;
+  document.getElementById('ext-results').style.display='none';
+  document.getElementById('ext-loading').style.display='none';
+  document.getElementById('ext-input-btns').style.display='flex';
+  document.getElementById('ext-apply-msg').style.display='none';
+  document.getElementById('ext-apply-btn').textContent='✓ Apply to Form';
+  document.getElementById('ext-apply-btn').disabled=false;
+  document.getElementById('ext-drop-label').innerHTML=`<div style="font-size:32px;margin-bottom:8px">📄</div>
+    <div style="font-weight:600;color:#555;font-size:14px">Drop your interview doc here, or click to browse</div>
+    <div style="font-size:12px;color:#aaa;margin-top:4px">Supports .docx (Google Doc export) and .txt · Max 20MB</div>`;
+  document.getElementById('ext-upload-zone').style.borderColor='#d0d0d0';
+  document.getElementById('ext-upload-zone').style.background='#fafafa';
+  document.getElementById('ext-paste-zone').value='';
+  hideExtError();
+}
+</script>
+</body>
+</html>

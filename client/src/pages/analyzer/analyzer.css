@@ -1,0 +1,55 @@
+/* Analyzer-scoped styles — do not import globally */
+/* body and html selectors are scoped to #analyzer-root */
+  *{box-sizing:border-box;}
+  #analyzer-root{width:100%;overflow-x:hidden;}
+  #analyzer-root{background:#0f1117;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;width:100%;}
+  input[type=range]{accent-color:#10b981;width:100%;}
+  .sidebar-btn{transition:all 0.12s;border-left:3px solid transparent;}
+  .sidebar-btn:hover{background:#1a2232;}
+  .sidebar-btn.active{background:#0a2416;border-left-color:#2eb860;color:#2eb860;}
+  .card{background:#161b27;border:1px solid #1e2d45;border-radius:8px;}
+  .input-field{background:#0d1117;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;padding:6px 10px;width:100%;font-size:13px;}
+  .input-field:focus{outline:none;border-color:#2eb860;box-shadow:0 0 0 2px rgba(46,184,96,0.18);}
+  .input-field:disabled{opacity:0.35;cursor:not-allowed;}
+  .calc-field{background:#061a0d;border:1px solid #1a5e35;border-radius:6px;color:#2eb860;padding:6px 10px;font-size:13px;font-family:monospace;width:100%;}
+  /* Green emphasis for positive numbers */
+  .text-green-400{color:#2eb860!important;}
+  .text-green-300{color:#5cd686!important;}
+  /* Accent color overrides for Tailwind blue classes */
+  .text-blue-300,.text-blue-400{color:#6de09a!important;}
+  .bg-blue-600,.bg-blue-700{background-color:#2eb860!important;}
+  .bg-blue-800{background-color:#228a4a!important;}
+  .bg-blue-900{background-color:#0c2a18!important;}
+  .hover\:bg-blue-600:hover,.hover\:bg-blue-700:hover{background-color:#27a050!important;}
+  .hover\:bg-blue-800:hover{background-color:#1a7a3e!important;}
+  .hover\:bg-blue-900:hover{background-color:#061208!important;}
+  .hover\:text-blue-300:hover{color:#6de09a!important;}
+  .border-blue-900{border-color:#0c2a18!important;}
+  .accent-blue-500{accent-color:#2eb860!important;}
+  .lbl{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;display:block;}
+  .mono{font-family:'Courier New',monospace;}
+  ::-webkit-scrollbar{width:5px;height:5px;}
+  ::-webkit-scrollbar-track{background:#0d1117;}
+  ::-webkit-scrollbar-thumb{background:#2d3748;border-radius:3px;}
+  @media print{
+    @page{margin:.75in;}
+    .no-print{display:none!important;}
+    *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+    body{background:#fff!important;color:#111!important;}
+    /* Fix layout — remove viewport clipping so all sections paginate */
+    #root{height:auto!important;overflow:visible!important;}
+    #root>div{background:#fff!important;display:block!important;height:auto!important;overflow:visible!important;}
+    #root>div>div{overflow:visible!important;height:auto!important;max-height:none!important;}
+    /* Clear ALL dark backgrounds — inline styles included */
+    *{background:transparent!important;background-color:transparent!important;}
+    .card{background:#fff!important;border:1px solid #d1d5db!important;box-shadow:none!important;break-inside:avoid;page-break-inside:avoid;margin-bottom:12pt!important;}
+    /* Make all report text dark readable — overridden by specific color classes below */
+    .report-body *{color:#111!important;}
+    .rpt-green{color:#059669!important;}
+    .rpt-red{color:#dc2626!important;}
+    .rpt-amber{color:#b45309!important;}
+    .rpt-purple{color:#6d28d9!important;}
+    .rpt-muted{color:#4b5563!important;}
+    .mono{font-family:'Courier New',monospace!important;}
+    .border-gray-700,.border-gray-800{border-color:#e5e7eb!important;}
+  }
