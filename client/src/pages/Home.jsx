@@ -54,11 +54,7 @@ export default function Home() {
 
   const handleLaunch = (tool) => {
     if (!tool.live) return;
-    if (tool.id === 'marketing') {
-      window.location.href = '/pacq-app';
-    } else {
-      navigate(tool.href);
-    }
+    navigate(tool.href);
   };
 
   return (
