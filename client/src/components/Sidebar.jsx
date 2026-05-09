@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
+import { LOGO_SRC } from '../assets/logo';
 
 // ─── Navigation Registry ──────────────────────────────────────────────────────
 const PORTAL_SECTIONS = [
@@ -72,37 +73,31 @@ export default function Sidebar({ collapsed, onToggle, onSignOut }) {
       }}>
         {!collapsed && (
           <Link to="/" style={{ textDecoration: 'none' }}>
-            <div>
-              <div style={{
-                fontFamily: 'Oswald, sans-serif',
-                fontWeight: 700,
-                fontSize: 15,
-                color: '#e2e8f0',
-                letterSpacing: 2.5,
-                textTransform: 'uppercase',
-                lineHeight: 1.15,
-              }}>
-                Dealmaker
-              </div>
-              <div style={{
-                fontFamily: 'Oswald, sans-serif',
-                fontWeight: 700,
-                fontSize: 15,
-                color: '#2eb860',
-                letterSpacing: 2.5,
-                textTransform: 'uppercase',
-                lineHeight: 1.15,
-              }}>
-                Portal
-              </div>
-              <div style={{
-                fontSize: 9,
-                color: '#2d3f57',
-                letterSpacing: 1.5,
-                textTransform: 'uppercase',
-                marginTop: 5,
-              }}>
-                Peterson Acquisitions
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <img src={LOGO_SRC} alt="PA" style={{ height: 34, width: 'auto', flexShrink: 0 }} />
+              <div>
+                <div style={{
+                  fontFamily: 'Oswald, sans-serif',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  color: '#e2e8f0',
+                  letterSpacing: 1.5,
+                  textTransform: 'uppercase',
+                  lineHeight: 1.2,
+                }}>
+                  Dealmaker
+                </div>
+                <div style={{
+                  fontFamily: 'Oswald, sans-serif',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  color: '#C1622F',
+                  letterSpacing: 1.5,
+                  textTransform: 'uppercase',
+                  lineHeight: 1.2,
+                }}>
+                  Portal
+                </div>
               </div>
             </div>
           </Link>

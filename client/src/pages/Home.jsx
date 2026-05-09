@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { LOGO_SRC } from '../assets/logo';
 
 const TOOLS = [
   {
@@ -61,24 +62,36 @@ export default function Home() {
   };
 
   return (
-    <div style={{ padding: '40px 40px', maxWidth: 1100, margin: '0 auto' }}>
+    <div style={{ padding: '40px 40px', maxWidth: 1200, margin: '0 auto' }}>
 
-      {/* Header */}
-      <div style={{ marginBottom: 40 }}>
-        <div style={{
-          fontFamily: 'Oswald, sans-serif',
-          fontWeight: 700,
-          fontSize: 26,
-          color: '#e2e8f0',
-          letterSpacing: 1,
-          textTransform: 'uppercase',
-        }}>
-          Dealmaker Portal
+      {/* Header with logo */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 44 }}>
+        <img src={LOGO_SRC} alt="Peterson Acquisitions" style={{ height: 52, width: 'auto' }} />
+        <div>
+          <div style={{
+            fontFamily: 'Oswald, sans-serif',
+            fontWeight: 700,
+            fontSize: 13,
+            color: '#e2e8f0',
+            letterSpacing: 3,
+            textTransform: 'uppercase',
+            lineHeight: 1.2,
+          }}>
+            Peterson Acquisitions
+          </div>
+          <div style={{
+            fontFamily: 'Oswald, sans-serif',
+            fontWeight: 600,
+            fontSize: 11,
+            color: '#C1622F',
+            letterSpacing: 3,
+            textTransform: 'uppercase',
+            lineHeight: 1.2,
+            marginTop: 2,
+          }}>
+            The Deal Team
+          </div>
         </div>
-        <div style={{ fontSize: 14, color: '#64748b', marginTop: 4 }}>
-          Peterson Acquisitions — The Deal Team
-        </div>
-        <div style={{ width: 40, height: 2, background: '#2eb860', marginTop: 14, borderRadius: 1 }} />
       </div>
 
       {/* Section label */}
@@ -94,10 +107,10 @@ export default function Home() {
         Tools
       </div>
 
-      {/* Tool grid */}
+      {/* Tool grid — 3 columns on wide, 2 on medium */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+        gridTemplateColumns: 'repeat(3, 1fr)',
         gap: 16,
       }}>
         {TOOLS.map(tool => (
@@ -108,13 +121,13 @@ export default function Home() {
               background: '#1e293b',
               border: `1px solid ${tool.live ? '#2d3748' : '#1a2235'}`,
               borderRadius: 10,
-              padding: '24px 24px',
+              padding: '24px',
               cursor: tool.live ? 'pointer' : 'default',
               opacity: tool.live ? 1 : 0.45,
               transition: 'border-color 0.15s, transform 0.15s, box-shadow 0.15s',
               display: 'flex',
               flexDirection: 'column',
-              gap: 12,
+              gap: 10,
               position: 'relative',
             }}
             onMouseEnter={e => {
@@ -130,7 +143,6 @@ export default function Home() {
               e.currentTarget.style.boxShadow = 'none';
             }}
           >
-            {/* Coming soon badge */}
             {!tool.live && (
               <div style={{
                 position: 'absolute',
@@ -151,14 +163,12 @@ export default function Home() {
               </div>
             )}
 
-            {/* Icon */}
-            <div style={{ fontSize: 28, lineHeight: 1 }}>{tool.icon}</div>
+            <div style={{ fontSize: 26, lineHeight: 1 }}>{tool.icon}</div>
 
-            {/* Label */}
             <div style={{
               fontFamily: 'Oswald, sans-serif',
               fontWeight: 600,
-              fontSize: 16,
+              fontSize: 15,
               color: '#e2e8f0',
               letterSpacing: 0.5,
               textTransform: 'uppercase',
@@ -166,7 +176,6 @@ export default function Home() {
               {tool.label}
             </div>
 
-            {/* Description */}
             <div style={{
               fontSize: 13,
               color: '#64748b',
@@ -177,10 +186,9 @@ export default function Home() {
               {tool.description}
             </div>
 
-            {/* Launch button */}
             {tool.live && (
               <div style={{
-                marginTop: 4,
+                marginTop: 6,
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
