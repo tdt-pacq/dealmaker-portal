@@ -656,8 +656,9 @@ async function findFile(name, parentId) {
 }
 
 async function readJsonFile(fileId) {
-  const res = await driveReq('GET', `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
-  return res.json();
+  // driveReq already parses JSON responses — do NOT call .json() again.
+  // Also need supportsAllDrives=true to read files from shared drives.
+  return driveReq('GET', `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&supportsAllDrives=true`);
 }
 
 async function writeJsonFile(name, obj, parentId, existingId) {
@@ -690,7 +691,7 @@ async function uploadImage(name, base64DataUrl, parentId, existingId) {
 }
 
 async function fetchImageAsDataUrl(fileId) {
-  const res = await driveReq('GET', `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
+  const res = await driveReq('GET', `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&supportsAllDrives=true`);
   const buf = await res.arrayBuffer();
   const bytes = new Uint8Array(buf);
   let bin = '';
@@ -728,7 +729,13 @@ async function initDriveFolder() {
   console.log('[Drive] deals.json file ID:', dealsFileId);
   if (dealsFileId) {
     _driveFileIds['deals.json'] = dealsFileId;
-    try { _dealsCache = await readJsonFile(dealsFileId); } catch { _dealsCache = []; }
+    try {
+      _dealsCache = await readJsonFile(dealsFileId);
+      if (!Array.isArray(_dealsCache)) _dealsCache = [];
+    } catch(e) {
+      console.error('[Drive] readJsonFile error:', e);
+      throw new Error('Could not read deals.json: ' + e.message);
+    }
     console.log('[Drive] Loaded', _dealsCache.length, 'deals');
   } else {
     // Not in PACQ Deals — search Drive-wide (auto-migrates files from wrong folder)
