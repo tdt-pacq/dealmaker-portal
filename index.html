@@ -480,10 +480,18 @@ function doGoogleLogin() {
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.addScope(DRIVE_SCOPE);
   provider.setCustomParameters({ hd: ALLOWED_DOMAIN });
-  // Use redirect instead of popup — popups are blocked in iframe contexts
-  firebase.auth().signInWithRedirect(provider).catch(() => {
+  // Use popup — we're a full page (not iframe), so popup works fine and avoids
+  // Firebase 10's cross-origin getRedirectResult iframe issue on non-firebaseapp domains.
+  firebase.auth().signInWithPopup(provider).then(result => {
+    if (result.credential && result.credential.accessToken) {
+      driveToken = result.credential.accessToken;
+      sessionStorage.setItem('_driveToken', driveToken);
+      sessionStorage.setItem('_driveTokenExp', Date.now() + 3500000);
+    }
+    // onAuthStateChanged will fire next and boot the app
+  }).catch(e => {
     loading.style.display = 'none';
-    err.textContent = 'Sign-in failed. Please try again.';
+    err.textContent = e.code === 'auth/popup-closed-by-user' ? 'Sign-in cancelled.' : 'Sign-in failed. Please try again.';
     err.classList.remove('hidden');
   });
 }
@@ -512,14 +520,23 @@ async function connectDrive() {
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.addScope(DRIVE_SCOPE);
   provider.setCustomParameters({ hd: ALLOWED_DOMAIN });
-  // Use redirect (not popup) — popups are blocked in non-top-level browsing contexts.
-  // getRedirectResult() on the next page load captures the new Drive token.
-  sessionStorage.setItem('_driveReconnect', '1');
-  firebase.auth().currentUser.reauthenticateWithRedirect(provider).catch(e => {
-    sessionStorage.removeItem('_driveReconnect');
+  try {
+    const result = await firebase.auth().currentUser.reauthenticateWithPopup(provider);
+    if (result.credential && result.credential.accessToken) {
+      driveToken = result.credential.accessToken;
+      sessionStorage.setItem('_driveToken', driveToken);
+      sessionStorage.setItem('_driveTokenExp', Date.now() + 3500000);
+      const banner = document.getElementById('drive-connect-banner');
+      if (banner) banner.remove();
+      renderDealsListLoading('Loading from Drive…');
+      await initDriveFolder();
+      renderDealsList();
+      renderAdvisorOptions();
+    }
+  } catch(e) {
     if (btn) { btn.textContent = 'Connect to Drive'; btn.disabled = false; }
     showDriveError('Could not connect to Drive — ' + (e.message || 'please try again'));
-  });
+  }
 }
 
 async function bootApp(useDrive) {
