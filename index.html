@@ -134,21 +134,30 @@ label{display:block;font-size:13px;font-weight:500;color:#94a3b8;margin-bottom:4
 
   <div class="page">
     <div class="ph">
-      <div class="pt">Marketing Generator</div>
+      <div class="pt">Marketing <span style="color:#2eb860">Generator</span></div>
       <div class="ps">Upload documents and photos, enter deal details, then generate all outputs in one pass.</div>
     </div>
 
     <!-- DEALS -->
     <div class="card" id="deals-card">
-      <div class="ch">
-        <span class="ct">Deals</span>
-        <div style="display:flex;align-items:center;gap:10px">
+      <div class="ch" style="cursor:pointer;user-select:none" onclick="toggleDealsPanel()">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="ct">Deals</span>
+          <span id="deals-toggle-arrow" style="color:#2eb860;font-size:13px;transition:transform 0.2s;display:inline-block">▾</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px" onclick="event.stopPropagation()">
           <span id="current-deal-badge" style="font-size:11px;color:#64748b"></span>
           <button class="btn-g btn-sm" onclick="saveDeal()" id="save-deal-btn" style="display:none">Save to Drive</button>
           <button class="btn-p btn-sm" onclick="startNewDeal()">+ New Deal</button>
         </div>
       </div>
-      <div id="deals-list" style="max-height:320px;overflow-y:auto"></div>
+      <div id="deals-panel">
+        <div style="padding:10px 12px 6px;border-bottom:1px solid #1a2235">
+          <input type="text" id="deal-search" placeholder="Search deals…" oninput="filterDeals(this.value)"
+            style="font-size:13px;padding:7px 12px;background:#0d1117;border:1px solid #334155;border-radius:4px;color:#e2e8f0;width:100%;box-sizing:border-box"/>
+        </div>
+        <div id="deals-list" style="max-height:280px;overflow-y:auto"></div>
+      </div>
     </div>
 
     <!-- DOCUMENTS -->
@@ -1095,15 +1104,57 @@ function startNewDeal() {
   document.querySelector('.ph').scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
-function renderDealsList() {
+let _dealsPanelOpen = true;
+function toggleDealsPanel() {
+  _dealsPanelOpen = !_dealsPanelOpen;
+  const panel = document.getElementById('deals-panel');
+  const arrow = document.getElementById('deals-toggle-arrow');
+  if (panel) panel.style.display = _dealsPanelOpen ? 'block' : 'none';
+  if (arrow) arrow.style.transform = _dealsPanelOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
+}
+
+function filterDeals(query) {
+  const q = query.toLowerCase().trim();
   const el = document.getElementById('deals-list');
   if (!el) return;
   const deals = loadDeals();
-  if (!deals.length) {
-    el.innerHTML = `<div style="padding:20px;text-align:center;color:#64748b;font-size:13px;font-style:italic">No saved deals yet — fill in the form below and generate to create your first deal.</div>`;
+  const filtered = q ? deals.filter(d => (d.name||'').toLowerCase().includes(q)) : deals;
+  if (!filtered.length) {
+    el.innerHTML = `<div style="padding:16px;text-align:center;color:#64748b;font-size:13px;font-style:italic">${q ? 'No deals match "'+q+'"' : 'No saved deals yet.'}</div>`;
     return;
   }
-  el.innerHTML = deals.map(d => {
+  el.innerHTML = filtered.map(d => {
+    const isActive  = d.status !== 'archived';
+    const isCurrent = d.id === currentDealId;
+    const date = new Date(d.updatedAt || d.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const badge = isActive
+      ? `<span style="background:rgba(46,184,96,0.15);color:#2eb860;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:700">Active</span>`
+      : `<span style="background:rgba(100,116,139,0.2);color:#64748b;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:700">Archived</span>`;
+    const bg = isCurrent ? 'background:rgba(46,184,96,0.06);' : '';
+    const bl = isCurrent ? 'border-left:3px solid #2eb860;' : 'border-left:3px solid transparent;';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid #1a2235;${bg}${bl}">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:13px;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.name)}${isCurrent?` <span style="font-size:10px;color:#2eb860;font-weight:400">(current)</span>`:''}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px">${badge} &nbsp;${esc(date)}${d.price?' · $'+esc(d.price):''}</div>
+      </div>
+      <button class="btn-g btn-sm" onclick="loadDeal('${d.id}')">Open</button>
+      <button class="btn-g btn-sm" onclick="archiveDeal('${d.id}')">${isActive?'Archive':'Restore'}</button>
+      <button onclick="deleteDeal('${d.id}')" style="background:none;border:none;color:#475569;cursor:pointer;font-size:16px;padding:4px 6px;border-radius:4px" title="Delete">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function renderDealsList() {
+  const el = document.getElementById('deals-list');
+  if (!el) return;
+  const query = (document.getElementById('deal-search')?.value || '').toLowerCase().trim();
+  const deals = loadDeals();
+  const filtered = query ? deals.filter(d => (d.name||'').toLowerCase().includes(query)) : deals;
+  if (!filtered.length) {
+    el.innerHTML = `<div style="padding:20px;text-align:center;color:#64748b;font-size:13px;font-style:italic">${query ? 'No deals match "'+query+'"' : 'No saved deals yet — fill in the form below and generate to create your first deal.'}</div>`;
+    return;
+  }
+  el.innerHTML = filtered.map(d => {
     const isActive  = d.status !== 'archived';
     const isCurrent = d.id === currentDealId;
     const date = new Date(d.updatedAt || d.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
