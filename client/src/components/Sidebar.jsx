@@ -19,7 +19,7 @@ const PORTAL_SECTIONS = [
       { id: 'discovery',   label: 'Discovery Prep',        icon: '🔍', basePath: '/discovery',   live: false },
       { id: 'analyzer',    label: 'Market Price Analyzer', icon: '📊', basePath: '/analyzer',    live: true  },
       { id: 'engagements', label: 'Engagements',           icon: '🤝', basePath: '/engagements', live: false },
-      { id: 'marketing',   label: 'Deal Marketing',        icon: '📄', basePath: '/marketing',   live: true, href: '/pacq-app' },
+      { id: 'marketing',   label: 'Deal Marketing',        icon: '📄', basePath: '/marketing',   live: true  },
     ],
   },
   {

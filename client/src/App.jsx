@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { getAuth, setAuth, clearAuth } from './api';
 import Sidebar from './components/Sidebar';
 
+const DealMarketingApp = lazy(() => import('./pages/marketing/DealMarketingApp'));
 const AnalyzerApp = lazy(() => import('./pages/analyzer/AnalyzerApp'));
 
 
@@ -186,10 +187,11 @@ export default function App() {
             </div>
           }>
             <Routes>
-              <Route path="/" element={<Navigate to="/analyzer" replace />} />
+              <Route path="/" element={<Navigate to="/marketing" replace />} />
+              <Route path="/marketing/*" element={<DealMarketingApp />} />
               <Route path="/analyzer" element={<AnalyzerApp />} />
               <Route path="/analyzer/*" element={<AnalyzerApp />} />
-              <Route path="*" element={<Navigate to="/analyzer" replace />} />
+              <Route path="*" element={<Navigate to="/marketing" replace />} />
             </Routes>
           </Suspense>
         </main>

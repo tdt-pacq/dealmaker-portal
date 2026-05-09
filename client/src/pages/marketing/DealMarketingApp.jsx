@@ -1,11 +1,18 @@
-import { useEffect } from 'react';
-
-// Navigate the full page to the Deal Marketing app.
-// We can't iframe it — Chrome's Private Network Access policy blocks OAuth redirects
-// from public pages (Firebase's auth handler) back to localhost/private network addresses.
+// Embed the Deal Marketing app in an iframe inside the portal shell.
+// Same-origin iframe (both served from dealmaker-portal.onrender.com) so
+// signInWithPopup works fine — no Chrome PNA issue on a public domain.
 export default function DealMarketingApp() {
-  useEffect(() => {
-    window.location.href = '/pacq-app';
-  }, []);
-  return null;
+  return (
+    <iframe
+      src="/pacq-app"
+      title="Deal Marketing"
+      style={{
+        flex: 1,
+        border: 'none',
+        width: '100%',
+        height: '100%',
+        display: 'block',
+      }}
+    />
+  );
 }

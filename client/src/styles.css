@@ -109,7 +109,8 @@ label .required { color: var(--accent); margin-left: 2px; }
 /* Portal shell layout */
 .portal-shell {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .portal-content {
@@ -118,6 +119,7 @@ label .required { color: var(--accent); margin-left: 2px; }
   background: var(--bg);
   display: flex;
   flex-direction: column;
+  overflow: auto;
 }
 
 .page-content {
