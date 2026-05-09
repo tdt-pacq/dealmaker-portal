@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Peterson Acquisitions Dealmaker Portal",
   "scripts": {
-    "install:all": "npm install --prefix server && npm install --prefix client",
+    "install:all": "npm install --prefix server && npm install --include=dev --prefix client",
     "build": "npm run install:all && npm run build --prefix client",
     "start": "node server/index.js",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
