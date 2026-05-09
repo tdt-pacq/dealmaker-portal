@@ -547,12 +547,15 @@ async function bootApp(useDrive) {
     try { await initDriveFolder(); }
     catch(e) { showDriveError('Could not load from Drive: ' + e.message); }
   } else {
-    // Inject a Connect banner above the deals list (only once)
+    // Inject a prominent Connect banner above the deals list (only once)
     const el = document.getElementById('deals-list');
     if (el && !document.getElementById('drive-connect-banner')) el.insertAdjacentHTML('beforebegin', `
-      <div id="drive-connect-banner" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(251,191,36,0.08);border-bottom:1px solid rgba(251,191,36,0.2);font-size:12px;color:#94a3b8">
-        <span style="flex:1">Google Drive not connected — deals won't sync across devices.</span>
-        <button id="drive-connect-btn" class="btn-p btn-sm" onclick="connectDrive()">Connect to Drive</button>
+      <div id="drive-connect-banner" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:rgba(46,184,96,0.08);border:1px solid rgba(46,184,96,0.3);border-radius:6px;margin-bottom:10px">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:2px">Connect Google Drive to load your saved deals</div>
+          <div style="font-size:12px;color:#94a3b8">Your deals are stored in Google Drive. Click Connect to access them.</div>
+        </div>
+        <button id="drive-connect-btn" class="btn-p btn-sm" onclick="connectDrive()" style="white-space:nowrap;flex-shrink:0">Connect to Drive</button>
       </div>`);
   }
   renderDealsList();
@@ -620,7 +623,7 @@ async function driveReq(method, url, body, contentType) {
     sessionStorage.removeItem('_driveTokenExp');
     const listEl = document.getElementById('deals-list');
     if (listEl && !document.getElementById('drive-connect-banner')) {
-      listEl.insertAdjacentHTML('beforebegin', `<div id="drive-connect-banner" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:6px;font-size:12px;margin-bottom:8px"><span>Drive session expired — reconnect to sync deals.</span><button class="btn-p btn-sm" onclick="connectDrive()">Reconnect Drive</button></div>`);
+      listEl.insertAdjacentHTML('beforebegin', `<div id="drive-connect-banner" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:rgba(46,184,96,0.08);border:1px solid rgba(46,184,96,0.3);border-radius:6px;margin-bottom:10px"><div><div style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:2px">Drive session expired</div><div style="font-size:12px;color:#94a3b8">Reconnect to load your saved deals.</div></div><button class="btn-p btn-sm" onclick="connectDrive()" style="white-space:nowrap;flex-shrink:0">Reconnect Drive</button></div>`);
     }
     throw new Error('token_expired');
   }
