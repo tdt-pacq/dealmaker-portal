@@ -217,8 +217,8 @@ const YearSec = ({yd,onChange,onImport}) => {
   const rmAB=id=>onChange({...yd,addBacks:(yd.addBacks||[]).filter(a=>a.id!==id)});
   const upAB=(id,k,v)=>onChange({...yd,addBacks:(yd.addBacks||[]).map(a=>a.id===id?{...a,[k]:v}:a)});
   return (
-    <div className="card mb-4">
-      <div className="flex items-center justify-between px-4 py-4 cursor-pointer select-none hover:bg-gray-900 rounded-lg"
+    <div className="card" style={{marginBottom:10}}>
+      <div className="flex items-center justify-between px-4 py-3 cursor-pointer select-none hover:bg-gray-900 rounded-lg"
         onClick={()=>set('expanded',!yd.expanded)}>
         <div className="flex items-center gap-3">
           <span className="text-gray-500 text-xs" style={{transition:'transform .15s',display:'inline-block',transform:yd.expanded?'rotate(90deg)':'rotate(0deg)'}}>▶</span>
