@@ -26,12 +26,6 @@
     }
     body { background: var(--bg); color: var(--text); font-family: var(--font-b); font-size: 14px; line-height: 1.6; min-height: 100vh; }
 
-    /* ── Topbar (hidden when embedded in portal iframe) ── */
-    .topbar { background: var(--dark); padding: 0 24px; height: 56px; display: flex; align-items: center; gap: 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 0 var(--border); }
-    .in-iframe .topbar { display: none !important; }
-    .brand-t { font-family: var(--font-d); font-weight: 700; font-size: 17px; color: var(--text); letter-spacing: .5px; line-height: 1; }
-    .brand-s { font-family: var(--font-d); font-size: 10px; color: var(--green); letter-spacing: 1.5px; text-transform: uppercase; line-height: 1; }
-    .tool-badge { margin-left: auto; font-family: var(--font-d); font-weight: 600; font-size: 11px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; padding: 4px 10px; border: 1px solid var(--border); border-radius: 4px; }
 
     /* ── Page ── */
     .page { max-width: 900px; margin: 0 auto; padding: 28px 24px 60px; }
@@ -164,15 +158,6 @@
   </style>
 </head>
 <body>
-
-<!-- TOPBAR -->
-<div class="topbar">
-  <div>
-    <div class="brand-t">Peterson Acquisitions</div>
-    <div class="brand-s">The Deal Team</div>
-  </div>
-  <div class="tool-badge">Discovery Prep</div>
-</div>
 
 <!-- PAGE -->
 <div class="page">
@@ -988,9 +973,6 @@ async function downloadWord() {
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
-
-// Hide own topbar when running inside the portal iframe
-if (window.self !== window.top) document.body.classList.add('in-iframe');
 
 setState('idle');
 </script>
