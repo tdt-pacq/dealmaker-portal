@@ -357,7 +357,7 @@ async function runJob(jobId, businessName, websiteUrl, sellerName, state) {
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{ role: 'user', content: userPrompt }],
       }),
-      signal: AbortSignal.timeout(150000),
+      signal: AbortSignal.timeout(270000),
     });
 
     if (!upstream.ok) {

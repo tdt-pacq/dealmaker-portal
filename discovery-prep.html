@@ -757,9 +757,14 @@ async function callAPI(bizName, url, seller, state) {
 
   const { jobId } = await startResp.json();
 
-  // Poll every 3 seconds — max 2 minutes (40 attempts)
-  for (let i = 0; i < 40; i++) {
-    await new Promise(r => setTimeout(r, 3000));
+  // Poll every 4 seconds — max 5 minutes (75 attempts)
+  const loadingMsg = document.getElementById('loading-msg');
+  const start = Date.now();
+  for (let i = 0; i < 75; i++) {
+    await new Promise(r => setTimeout(r, 4000));
+    // Update elapsed time in the loading message
+    const elapsed = Math.round((Date.now() - start) / 1000);
+    if (loadingMsg) loadingMsg.textContent = `Researching — ${elapsed}s elapsed. Live web search takes 60–120 seconds…`;
     const pollResp = await fetch(`/api/discovery/${jobId}`, { headers: authHeaders });
     if (!pollResp.ok) throw new Error(`Poll error ${pollResp.status}`);
     const job = await pollResp.json();
@@ -767,7 +772,7 @@ async function callAPI(bizName, url, seller, state) {
     if (job.status === 'error') throw new Error(job.error || 'Processing failed. Please retry.');
   }
 
-  throw new Error('Research timed out after 2 minutes. Please retry.');
+  throw new Error('Research timed out after 5 minutes. Please retry.');
 }
 
 // ─── REPORT DISPLAY ───────────────────────────────────────────────────────────
@@ -828,7 +833,7 @@ async function handleGenerate() {
   lastFormData   = { bizName, url, seller, state };
 
   document.getElementById('loading-msg').textContent =
-    `Researching ${bizName} — this takes 30–60 seconds…`;
+    `Researching ${bizName} — live web search takes 60–120 seconds…`;
 
   setState('loading');
 
