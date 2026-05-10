@@ -24,7 +24,7 @@ const TOOLS = [
     icon: '🔍',
     label: 'Discovery Prep',
     description: 'Research any seller business and generate a complete advisor prep report with live web search.',
-    href: '/discovery-prep.html',
+    href: '/discovery',
     live: true,
   },
   {

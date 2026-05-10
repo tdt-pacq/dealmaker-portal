@@ -7,6 +7,7 @@ import Topbar from './components/Topbar';
 const Home = lazy(() => import('./pages/Home'));
 const DealMarketingApp = lazy(() => import('./pages/marketing/DealMarketingApp'));
 const AnalyzerApp = lazy(() => import('./pages/analyzer/AnalyzerApp'));
+const DiscoveryPrepApp = lazy(() => import('./pages/discovery/DiscoveryPrepApp'));
 
 
 function LoginScreen({ onLogin, error }) {
@@ -193,6 +194,7 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/marketing/*" element={<DealMarketingApp />} />
+                <Route path="/discovery" element={<DiscoveryPrepApp />} />
                 <Route path="/analyzer" element={<AnalyzerApp />} />
                 <Route path="/analyzer/*" element={<AnalyzerApp />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
