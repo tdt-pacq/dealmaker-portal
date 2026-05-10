@@ -326,8 +326,7 @@ One Question That Could Make or Break This Deal:
 // ─── ROUTE ────────────────────────────────────────────────────────────────────
 
 router.post('/', async (req, res) => {
-  // Extend socket timeout — Anthropic web search calls take 30–90 seconds
-  if (req.socket) req.socket.setTimeout(120000);
+  if (req.socket) req.socket.setTimeout(180000);
 
   const { businessName, websiteUrl, sellerName, state } = req.body;
   if (!businessName || !websiteUrl || !state) {
@@ -345,6 +344,25 @@ router.post('/', async (req, res) => {
     .replace('[SELLER_NAME]', sellerName || 'Unknown')
     .replace('[STATE]', state);
 
+  // Use SSE so the connection stays open during the 30–90 s Anthropic web search call.
+  // Without this Render's proxy cuts the connection after ~30 s of silence.
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // disable nginx proxy buffering
+  res.flushHeaders();
+
+  // Ping every 15 s — keeps proxy alive, client ignores comment lines
+  const ping = setInterval(() => {
+    try { res.write(': ping\n\n'); } catch (_) { clearInterval(ping); }
+  }, 15000);
+
+  const send = (payload) => {
+    clearInterval(ping);
+    try { res.write(`data: ${JSON.stringify(payload)}\n\n`); } catch (_) {}
+    res.end();
+  };
+
   try {
     const upstream = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -360,36 +378,26 @@ router.post('/', async (req, res) => {
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{ role: 'user', content: userPrompt }],
       }),
-      signal: AbortSignal.timeout(110000),
+      signal: AbortSignal.timeout(150000),
     });
 
     if (!upstream.ok) {
       const err = await upstream.json().catch(() => ({}));
-      return res.status(upstream.status).json({
-        error: err.error?.message || `Anthropic API error ${upstream.status}`,
-      });
+      return send({ error: err.error?.message || `Anthropic API error ${upstream.status}` });
     }
 
     const data = await upstream.json();
+    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
 
-    // Web search returns mixed content blocks — filter for text blocks only
-    const text = (data.content || [])
-      .filter(b => b.type === 'text')
-      .map(b => b.text)
-      .join('');
+    if (!text) return send({ error: 'No text content in API response. Please retry.' });
 
-    if (!text) {
-      return res.status(500).json({ error: 'No text content in API response. Please retry.' });
-    }
-
-    res.json({ text });
+    send({ text });
 
   } catch (err) {
-    if (err.name === 'TimeoutError' || err.name === 'AbortError') {
-      res.status(504).json({ error: 'Research timed out after 110 seconds. Please retry — web search calls occasionally run long.' });
-    } else {
-      res.status(500).json({ error: err.message || 'Unexpected server error.' });
-    }
+    const msg = (err.name === 'TimeoutError' || err.name === 'AbortError')
+      ? 'Research timed out. Please retry — web search calls occasionally run long.'
+      : (err.message || 'Unexpected server error.');
+    send({ error: msg });
   }
 });
 

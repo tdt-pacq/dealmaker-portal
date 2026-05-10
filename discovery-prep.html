@@ -736,8 +736,9 @@ function setState(state) {
 // ─── API CALL ─────────────────────────────────────────────────────────────────
 
 async function callAPI(bizName, url, seller, state) {
-  // Route through the portal's Express server — uses the server's ANTHROPIC_API_KEY env var.
-  // Read Basic auth credentials from sessionStorage (set when user logged into the portal).
+  // Route through Express — server uses ANTHROPIC_API_KEY env var (no key in client).
+  // Response is SSE: server sends ": ping" comments every 15s to keep Render's proxy
+  // alive, then a final "data: {...}" line with the result or error.
   const auth = sessionStorage.getItem('pacq_auth');
   const headers = { 'content-type': 'application/json' };
   if (auth) headers['Authorization'] = `Basic ${auth}`;
@@ -745,23 +746,40 @@ async function callAPI(bizName, url, seller, state) {
   const resp = await fetch('/api/discovery', {
     method: 'POST',
     headers,
-    body: JSON.stringify({
-      businessName: bizName,
-      websiteUrl:   url,
-      sellerName:   seller || '',
-      state,
-    }),
+    body: JSON.stringify({ businessName: bizName, websiteUrl: url, sellerName: seller || '', state }),
   });
 
-  if (resp.status === 401) throw new Error('Authentication required. Please sign in to the portal before using Discovery Prep.');
+  if (resp.status === 401) throw new Error('Authentication required. Please sign in to the portal first.');
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
     throw new Error(err.error || `Server error ${resp.status}`);
   }
 
-  const data = await resp.json();
-  if (!data.text) throw new Error('No content returned from server. Please retry.');
-  return data.text;
+  // Read SSE stream — ignore comment/ping lines, resolve on data line
+  return new Promise((resolve, reject) => {
+    const reader  = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    function read() {
+      reader.read().then(({ done, value }) => {
+        if (done) return reject(new Error('Connection closed before report was received. Please retry.'));
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // keep any incomplete trailing line
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const payload = JSON.parse(line.slice(6));
+            if (payload.error) return reject(new Error(payload.error));
+            if (payload.text)  return resolve(payload.text);
+          } catch (_) { /* malformed line — keep reading */ }
+        }
+        read();
+      }).catch(reject);
+    }
+    read();
+  });
 }
 
 // ─── REPORT DISPLAY ───────────────────────────────────────────────────────────
