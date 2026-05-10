@@ -47,6 +47,10 @@ BUSINESS NAME: [BUSINESS_NAME]
 WEBSITE: [WEBSITE_URL]
 SELLER NAME: [SELLER_NAME]
 STATE: [STATE]
+NAICS CODE: [NAICS_CODE]
+INDUSTRY DESCRIPTION: [INDUSTRY_DESCRIPTION]
+
+Note: Any fields above marked "Not provided" means the advisor does not have that information yet. Research what you can from the available inputs. If a NAICS code or industry description is provided, use it to anchor the industry analysis even if the business name is unknown. If neither business name nor website is provided, generate the report as an industry-level brief focused on buyer appetite, lender appetite, and discovery questions for that industry type.
 
 Search the web for all available intel on this business including their website, reviews, news, social presence, and any other public information. Also research the industry this business operates in including NAICS classification, buyer demand, SBA lender appetite, and market trends.
 
@@ -333,14 +337,16 @@ function makeJobId() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
-async function runJob(jobId, businessName, websiteUrl, sellerName, state) {
+async function runJob(jobId, businessName, websiteUrl, sellerName, state, naicsCode, industryDescription) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
   const userPrompt = USER_PROMPT_TEMPLATE
-    .replace('[BUSINESS_NAME]', businessName)
-    .replace('[WEBSITE_URL]', websiteUrl)
-    .replace('[SELLER_NAME]', sellerName || 'Unknown')
-    .replace('[STATE]', state);
+    .replace('[BUSINESS_NAME]', businessName || 'Not provided')
+    .replace('[WEBSITE_URL]', websiteUrl || 'Not provided')
+    .replace('[SELLER_NAME]', sellerName || 'Not provided')
+    .replace('[STATE]', state || 'Not provided')
+    .replace('[NAICS_CODE]', naicsCode || 'Not provided')
+    .replace('[INDUSTRY_DESCRIPTION]', industryDescription || 'Not provided');
 
   try {
     const upstream = await fetch('https://api.anthropic.com/v1/messages', {
@@ -391,9 +397,11 @@ async function runJob(jobId, businessName, websiteUrl, sellerName, state) {
 
 // POST /api/discovery — start a job, return job ID immediately
 router.post('/', (req, res) => {
-  const { businessName, websiteUrl, sellerName, state } = req.body;
-  if (!businessName || !websiteUrl || !state) {
-    return res.status(400).json({ error: 'businessName, websiteUrl, and state are required.' });
+  const { businessName, websiteUrl, sellerName, state, naicsCode, industryDescription } = req.body;
+
+  // At least one field must be provided
+  if (!businessName && !websiteUrl && !state && !naicsCode && !industryDescription) {
+    return res.status(400).json({ error: 'At least one field is required to generate a report.' });
   }
   if (!process.env.ANTHROPIC_API_KEY) {
     return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured on server.' });
@@ -403,7 +411,7 @@ router.post('/', (req, res) => {
   jobs.set(jobId, { status: 'processing', createdAt: Date.now() });
 
   // Fire-and-forget — runs in background while client polls
-  runJob(jobId, businessName, websiteUrl, sellerName, state);
+  runJob(jobId, businessName, websiteUrl, sellerName, state, naicsCode, industryDescription);
 
   res.json({ jobId });
 });

@@ -170,21 +170,21 @@
     <div class="cb">
       <div class="frow2" style="margin-bottom:16px">
         <div>
-          <label>Business Name <span class="req">*</span></label>
+          <label>Business Name <span style="color:var(--text3);font-weight:400">(optional)</span></label>
           <input type="text" id="f-biz" placeholder="e.g. Acme Plumbing LLC" oninput="checkReady()"/>
         </div>
         <div>
-          <label>Website URL <span class="req">*</span></label>
+          <label>Website URL <span style="color:var(--text3);font-weight:400">(optional)</span></label>
           <input type="text" id="f-url" placeholder="e.g. acmeplumbing.com" oninput="checkReady()"/>
         </div>
       </div>
-      <div class="frow2" style="margin-bottom:22px">
+      <div class="frow2" style="margin-bottom:16px">
         <div>
           <label>Seller Name <span style="color:var(--text3);font-weight:400">(optional)</span></label>
-          <input type="text" id="f-seller" placeholder="e.g. John Smith"/>
+          <input type="text" id="f-seller" placeholder="e.g. John Smith" oninput="checkReady()"/>
         </div>
         <div>
-          <label>State <span class="req">*</span></label>
+          <label>State <span style="color:var(--text3);font-weight:400">(optional)</span></label>
           <select id="f-state" onchange="checkReady()">
             <option value="">Select a state…</option>
             <option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option>
@@ -203,9 +203,19 @@
           </select>
         </div>
       </div>
+      <div class="frow2" style="margin-bottom:22px">
+        <div>
+          <label>NAICS Code <span style="color:var(--text3);font-weight:400">(optional)</span></label>
+          <input type="text" id="f-naics" placeholder="e.g. 238220" oninput="checkReady()"/>
+        </div>
+        <div>
+          <label>Industry Description <span style="color:var(--text3);font-weight:400">(optional)</span></label>
+          <input type="text" id="f-industry" placeholder="e.g. Plumbing, Heating, A/C Contractors" oninput="checkReady()"/>
+        </div>
+      </div>
       <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
         <button class="btn-p btn-lg" id="gen-btn" onclick="handleGenerate()" disabled>Generate Report →</button>
-        <span style="font-size:12px;color:var(--text3)">Takes 30–90 seconds with live web research</span>
+        <span style="font-size:12px;color:var(--text3)">Takes 60–120 seconds with live web research</span>
       </div>
     </div>
   </div>
@@ -706,10 +716,14 @@ function renderContent(text) {
 // ─── STATE MACHINE ────────────────────────────────────────────────────────────
 
 function isFormReady() {
+  // At least one field must have a value — all fields are optional individually
   return (
-    document.getElementById('f-biz').value.trim() !== '' &&
-    document.getElementById('f-url').value.trim() !== '' &&
-    document.getElementById('f-state').value !== ''
+    document.getElementById('f-biz').value.trim() !== '' ||
+    document.getElementById('f-url').value.trim() !== '' ||
+    document.getElementById('f-seller').value.trim() !== '' ||
+    document.getElementById('f-state').value !== '' ||
+    document.getElementById('f-naics').value.trim() !== '' ||
+    document.getElementById('f-industry').value.trim() !== ''
   );
 }
 
@@ -735,9 +749,9 @@ function setState(state) {
 
 // ─── API CALL ─────────────────────────────────────────────────────────────────
 
-async function callAPI(bizName, url, seller, state) {
+async function callAPI(bizName, url, seller, state, naics, industry) {
   // Route through Express — server uses ANTHROPIC_API_KEY env var (no key in client).
-  // Polling pattern: POST returns a jobId immediately, client polls GET every 3s.
+  // Polling pattern: POST returns a jobId immediately, client polls GET every 4s.
   // This survives Render's 30s proxy timeout since each poll is a short request.
   const auth = sessionStorage.getItem('pacq_auth');
   const authHeaders = auth ? { 'Authorization': `Basic ${auth}` } : {};
@@ -746,7 +760,7 @@ async function callAPI(bizName, url, seller, state) {
   const startResp = await fetch('/api/discovery', {
     method: 'POST',
     headers: { 'content-type': 'application/json', ...authHeaders },
-    body: JSON.stringify({ businessName: bizName, websiteUrl: url, sellerName: seller || '', state }),
+    body: JSON.stringify({ businessName: bizName, websiteUrl: url, sellerName: seller || '', state, naicsCode: naics || '', industryDescription: industry || '' }),
   });
 
   if (startResp.status === 401) throw new Error('Authentication required. Please sign in to the portal first.');
@@ -824,21 +838,24 @@ function showReport(report, bizName) {
 // ─── HANDLERS ─────────────────────────────────────────────────────────────────
 
 async function handleGenerate() {
-  const bizName = document.getElementById('f-biz').value.trim();
-  const url     = document.getElementById('f-url').value.trim();
-  const seller  = document.getElementById('f-seller').value.trim();
-  const state   = document.getElementById('f-state').value;
+  const bizName  = document.getElementById('f-biz').value.trim();
+  const url      = document.getElementById('f-url').value.trim();
+  const seller   = document.getElementById('f-seller').value.trim();
+  const state    = document.getElementById('f-state').value;
+  const naics    = document.getElementById('f-naics').value.trim();
+  const industry = document.getElementById('f-industry').value.trim();
 
-  currentBizName = bizName;
-  lastFormData   = { bizName, url, seller, state };
+  currentBizName = bizName || industry || naics || 'Business';
+  lastFormData   = { bizName, url, seller, state, naics, industry };
 
+  const label = bizName || industry || 'business';
   document.getElementById('loading-msg').textContent =
-    `Researching ${bizName} — live web search takes 60–120 seconds…`;
+    `Researching ${label} — live web search takes 60–120 seconds…`;
 
   setState('loading');
 
   try {
-    const rawText = await callAPI(bizName, url, seller, state);
+    const rawText = await callAPI(bizName, url, seller, state, naics, industry);
     currentReport = parseReport(rawText);
     showReport(currentReport, bizName);
     setState('result');
@@ -850,11 +867,13 @@ async function handleGenerate() {
 
 function handleRetry() {
   if (!lastFormData) { setState('idle'); return; }
-  const { bizName, url, seller, state } = lastFormData;
-  document.getElementById('f-biz').value    = bizName;
-  document.getElementById('f-url').value    = url;
-  document.getElementById('f-seller').value = seller;
-  document.getElementById('f-state').value  = state;
+  const { bizName, url, seller, state, naics, industry } = lastFormData;
+  document.getElementById('f-biz').value      = bizName;
+  document.getElementById('f-url').value      = url;
+  document.getElementById('f-seller').value   = seller;
+  document.getElementById('f-state').value    = state;
+  document.getElementById('f-naics').value    = naics || '';
+  document.getElementById('f-industry').value = industry || '';
   checkReady();
   handleGenerate();
 }
