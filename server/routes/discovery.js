@@ -323,45 +323,24 @@ One Question That Could Make or Break This Deal:
 [The single most important question for this specific business and seller situation, with a brief explanation of why]
 </additional_questions>`;
 
-// ─── ROUTE ────────────────────────────────────────────────────────────────────
+// ─── JOB STORE (in-memory) ────────────────────────────────────────────────────
+// Each job: { status: 'processing'|'complete'|'error', text?, error?, createdAt }
+// Auto-cleaned after 10 minutes.
 
-router.post('/', async (req, res) => {
-  if (req.socket) req.socket.setTimeout(180000);
+const jobs = new Map();
 
-  const { businessName, websiteUrl, sellerName, state } = req.body;
-  if (!businessName || !websiteUrl || !state) {
-    return res.status(400).json({ error: 'businessName, websiteUrl, and state are required.' });
-  }
+function makeJobId() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
 
+async function runJob(jobId, businessName, websiteUrl, sellerName, state) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured on server.' });
-  }
 
   const userPrompt = USER_PROMPT_TEMPLATE
     .replace('[BUSINESS_NAME]', businessName)
     .replace('[WEBSITE_URL]', websiteUrl)
     .replace('[SELLER_NAME]', sellerName || 'Unknown')
     .replace('[STATE]', state);
-
-  // Use SSE so the connection stays open during the 30–90 s Anthropic web search call.
-  // Without this Render's proxy cuts the connection after ~30 s of silence.
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.setHeader('X-Accel-Buffering', 'no'); // disable nginx proxy buffering
-  res.flushHeaders();
-
-  // Ping every 15 s — keeps proxy alive, client ignores comment lines
-  const ping = setInterval(() => {
-    try { res.write(': ping\n\n'); } catch (_) { clearInterval(ping); }
-  }, 15000);
-
-  const send = (payload) => {
-    clearInterval(ping);
-    try { res.write(`data: ${JSON.stringify(payload)}\n\n`); } catch (_) {}
-    res.end();
-  };
 
   try {
     const upstream = await fetch('https://api.anthropic.com/v1/messages', {
@@ -383,22 +362,57 @@ router.post('/', async (req, res) => {
 
     if (!upstream.ok) {
       const err = await upstream.json().catch(() => ({}));
-      return send({ error: err.error?.message || `Anthropic API error ${upstream.status}` });
+      jobs.set(jobId, { status: 'error', error: err.error?.message || `Anthropic API error ${upstream.status}`, createdAt: Date.now() });
+      return;
     }
 
     const data = await upstream.json();
     const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
 
-    if (!text) return send({ error: 'No text content in API response. Please retry.' });
+    if (!text) {
+      jobs.set(jobId, { status: 'error', error: 'No text content in API response. Please retry.', createdAt: Date.now() });
+      return;
+    }
 
-    send({ text });
+    jobs.set(jobId, { status: 'complete', text, createdAt: Date.now() });
 
   } catch (err) {
     const msg = (err.name === 'TimeoutError' || err.name === 'AbortError')
-      ? 'Research timed out. Please retry — web search calls occasionally run long.'
-      : (err.message || 'Unexpected server error.');
-    send({ error: msg });
+      ? 'Research timed out. Please retry.'
+      : (err.message || 'Unexpected error during research.');
+    jobs.set(jobId, { status: 'error', error: msg, createdAt: Date.now() });
   }
+
+  // Auto-clean after 10 minutes
+  setTimeout(() => jobs.delete(jobId), 600000);
+}
+
+// ─── ROUTES ───────────────────────────────────────────────────────────────────
+
+// POST /api/discovery — start a job, return job ID immediately
+router.post('/', (req, res) => {
+  const { businessName, websiteUrl, sellerName, state } = req.body;
+  if (!businessName || !websiteUrl || !state) {
+    return res.status(400).json({ error: 'businessName, websiteUrl, and state are required.' });
+  }
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured on server.' });
+  }
+
+  const jobId = makeJobId();
+  jobs.set(jobId, { status: 'processing', createdAt: Date.now() });
+
+  // Fire-and-forget — runs in background while client polls
+  runJob(jobId, businessName, websiteUrl, sellerName, state);
+
+  res.json({ jobId });
+});
+
+// GET /api/discovery/:jobId — poll job status
+router.get('/:jobId', (req, res) => {
+  const job = jobs.get(req.params.jobId);
+  if (!job) return res.status(404).json({ error: 'Job not found. It may have expired — please start a new report.' });
+  res.json(job);
 });
 
 module.exports = router;
