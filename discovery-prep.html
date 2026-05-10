@@ -203,15 +203,9 @@
           </select>
         </div>
       </div>
-      <div class="frow2" style="margin-bottom:22px">
-        <div>
-          <label>NAICS Code <span style="color:var(--text3);font-weight:400">(optional)</span></label>
-          <input type="text" id="f-naics" placeholder="e.g. 238220" oninput="checkReady()"/>
-        </div>
-        <div>
-          <label>Industry Description <span style="color:var(--text3);font-weight:400">(optional)</span></label>
-          <input type="text" id="f-industry" placeholder="e.g. Plumbing, Heating, A/C Contractors" oninput="checkReady()"/>
-        </div>
+      <div style="margin-bottom:22px">
+        <label>NAICS Code / Industry Description <span style="color:var(--text3);font-weight:400">(optional)</span></label>
+        <input type="text" id="f-industry" placeholder="e.g. 238220  or  Plumbing, Heating &amp; A/C Contractors" oninput="checkReady()" style="width:100%"/>
       </div>
       <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
         <button class="btn-p btn-lg" id="gen-btn" onclick="handleGenerate()" disabled>Generate Report →</button>
@@ -722,7 +716,6 @@ function isFormReady() {
     document.getElementById('f-url').value.trim() !== '' ||
     document.getElementById('f-seller').value.trim() !== '' ||
     document.getElementById('f-state').value !== '' ||
-    document.getElementById('f-naics').value.trim() !== '' ||
     document.getElementById('f-industry').value.trim() !== ''
   );
 }
@@ -749,7 +742,7 @@ function setState(state) {
 
 // ─── API CALL ─────────────────────────────────────────────────────────────────
 
-async function callAPI(bizName, url, seller, state, naics, industry) {
+async function callAPI(bizName, url, seller, state, industry) {
   // Route through Express — server uses ANTHROPIC_API_KEY env var (no key in client).
   // Polling pattern: POST returns a jobId immediately, client polls GET every 4s.
   // This survives Render's 30s proxy timeout since each poll is a short request.
@@ -760,7 +753,7 @@ async function callAPI(bizName, url, seller, state, naics, industry) {
   const startResp = await fetch('/api/discovery', {
     method: 'POST',
     headers: { 'content-type': 'application/json', ...authHeaders },
-    body: JSON.stringify({ businessName: bizName, websiteUrl: url, sellerName: seller || '', state, naicsCode: naics || '', industryDescription: industry || '' }),
+    body: JSON.stringify({ businessName: bizName, websiteUrl: url, sellerName: seller || '', state, industryDescription: industry || '' }),
   });
 
   if (startResp.status === 401) throw new Error('Authentication required. Please sign in to the portal first.');
@@ -842,11 +835,10 @@ async function handleGenerate() {
   const url      = document.getElementById('f-url').value.trim();
   const seller   = document.getElementById('f-seller').value.trim();
   const state    = document.getElementById('f-state').value;
-  const naics    = document.getElementById('f-naics').value.trim();
   const industry = document.getElementById('f-industry').value.trim();
 
-  currentBizName = bizName || industry || naics || 'Business';
-  lastFormData   = { bizName, url, seller, state, naics, industry };
+  currentBizName = bizName || industry || 'Business';
+  lastFormData   = { bizName, url, seller, state, industry };
 
   const label = bizName || industry || 'business';
   document.getElementById('loading-msg').textContent =
@@ -855,7 +847,7 @@ async function handleGenerate() {
   setState('loading');
 
   try {
-    const rawText = await callAPI(bizName, url, seller, state, naics, industry);
+    const rawText = await callAPI(bizName, url, seller, state, industry);
     currentReport = parseReport(rawText);
     showReport(currentReport, bizName);
     setState('result');
@@ -867,12 +859,11 @@ async function handleGenerate() {
 
 function handleRetry() {
   if (!lastFormData) { setState('idle'); return; }
-  const { bizName, url, seller, state, naics, industry } = lastFormData;
+  const { bizName, url, seller, state, industry } = lastFormData;
   document.getElementById('f-biz').value      = bizName;
   document.getElementById('f-url').value      = url;
   document.getElementById('f-seller').value   = seller;
   document.getElementById('f-state').value    = state;
-  document.getElementById('f-naics').value    = naics || '';
   document.getElementById('f-industry').value = industry || '';
   checkReady();
   handleGenerate();
