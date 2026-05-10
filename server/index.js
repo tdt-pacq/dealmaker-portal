@@ -10,6 +10,7 @@ const dealsRouter = require('./routes/deals');
 const generateRouter = require('./routes/generate');
 const exportRouter = require('./routes/export');
 const extractRouter = require('./routes/extract');
+const discoveryRouter = require('./routes/discovery');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -34,6 +35,7 @@ app.use('/api/deals', dealsRouter);
 app.use('/api/generate', generateRouter);
 app.use('/api/export', exportRouter);
 app.use('/api/extract', extractRouter);
+app.use('/api/discovery', discoveryRouter);
 
 // Serve generated output files (auth required)
 app.use('/output', basicAuth, express.static(path.join(__dirname, '..', 'output')));

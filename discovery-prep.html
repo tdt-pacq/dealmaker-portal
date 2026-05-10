@@ -265,14 +265,11 @@
 <script>
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
-const DEFAULT_API_KEY = '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';
-function getApiKey() { return localStorage.getItem('pacq_api_key') || DEFAULT_API_KEY; }
-
 let currentReport = null;
 let currentBizName = '';
 let lastFormData = null;
 
-// ─── PROMPTS ──────────────────────────────────────────────────────────────────
+// ─── NOTE: Prompts and API key live server-side in server/routes/discovery.js ──
 
 const SYSTEM_PROMPT = `You are the Deal Team Discovery Intelligence Engine. The Deal Team is the number 1 SBA acquisition advisory firm at Peterson Acquisitions, operating the proprietary QSI system.
 
@@ -753,46 +750,32 @@ function setState(state) {
 // ─── API CALL ─────────────────────────────────────────────────────────────────
 
 async function callAPI(bizName, url, seller, state) {
-  const userPrompt = USER_PROMPT_TEMPLATE
-    .replace('[BUSINESS_NAME]', bizName)
-    .replace('[WEBSITE_URL]', url)
-    .replace('[SELLER_NAME]', seller || 'Unknown')
-    .replace('[STATE]', state);
+  // Route through the portal's Express server — uses the server's ANTHROPIC_API_KEY env var.
+  // Read Basic auth credentials from sessionStorage (set when user logged into the portal).
+  const auth = sessionStorage.getItem('pacq_auth');
+  const headers = { 'content-type': 'application/json' };
+  if (auth) headers['Authorization'] = `Basic ${auth}`;
 
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+  const resp = await fetch('/api/discovery', {
     method: 'POST',
-    headers: {
-      'x-api-key': getApiKey(),
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-      'content-type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 8000,
-      system: SYSTEM_PROMPT,
-      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-      messages: [{ role: 'user', content: userPrompt }],
+      businessName: bizName,
+      websiteUrl:   url,
+      sellerName:   seller || '',
+      state,
     }),
   });
 
+  if (resp.status === 401) throw new Error('Authentication required. Please sign in to the portal before using Discovery Prep.');
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
-    throw new Error(err.error?.message || `API error ${resp.status}`);
+    throw new Error(err.error || `Server error ${resp.status}`);
   }
 
   const data = await resp.json();
-
-  // Web search returns mixed content blocks (tool_use, tool_result, text).
-  // Filter for text blocks only and concatenate — do NOT use content[0].text.
-  const fullText = (data.content || [])
-    .filter(b => b.type === 'text')
-    .map(b => b.text)
-    .join('');
-
-  if (!fullText) throw new Error('No text content in response. The model may have only returned tool calls — please retry.');
-
-  return fullText;
+  if (!data.text) throw new Error('No content returned from server. Please retry.');
+  return data.text;
 }
 
 // ─── REPORT DISPLAY ───────────────────────────────────────────────────────────
