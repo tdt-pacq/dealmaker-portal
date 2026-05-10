@@ -45,6 +45,10 @@ app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().
 const rootHtml = path.join(__dirname, '..', 'index.html');
 app.get('/pacq-app', (req, res) => res.sendFile(rootHtml));
 
+// Serve Discovery Prep standalone app (no basic auth — standalone tool with its own key)
+const discoveryHtml = path.join(__dirname, '..', 'discovery-prep.html');
+app.get('/discovery-prep.html', (req, res) => res.sendFile(discoveryHtml));
+
 // Serve root-level assets (images, fonts, etc. referenced by index.html)
 const rootAssets = path.join(__dirname, '..', 'assets');
 if (fs.existsSync(rootAssets)) {
