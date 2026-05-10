@@ -5,7 +5,7 @@ export default function Topbar() {
   return (
     <div style={{
       background: '#0a0e18',
-      height: 64,
+      height: 80,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -13,7 +13,7 @@ export default function Topbar() {
       flexShrink: 0,
       zIndex: 100,
     }}>
-      <img src={LOGO_SRC} alt="Peterson Acquisitions" style={{ height: 44, width: 'auto' }} />
+      <img src={LOGO_SRC} alt="Peterson Acquisitions" style={{ height: 66, width: 'auto' }} />
     </div>
   );
 }

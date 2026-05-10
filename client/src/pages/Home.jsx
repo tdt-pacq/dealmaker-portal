@@ -1,6 +1,5 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LOGO_SRC } from '../assets/logo';
 
 const TOOLS = [
   {
@@ -65,11 +64,6 @@ export default function Home() {
 
   return (
     <div style={{ padding: '40px 40px', maxWidth: 1200, margin: '0 auto' }}>
-
-      {/* Header with logo */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 44 }}>
-        <img src={LOGO_SRC} alt="Peterson Acquisitions" style={{ height: 80, width: 'auto' }} />
-      </div>
 
       {/* Section label */}
       <div style={{
