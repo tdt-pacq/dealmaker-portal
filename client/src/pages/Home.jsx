@@ -23,8 +23,9 @@ const TOOLS = [
     id: 'discovery',
     icon: '🔍',
     label: 'Discovery Prep',
-    description: 'Seller interview guides and pre-listing checklists.',
-    live: false,
+    description: 'Research any seller business and generate a complete advisor prep report with live web search.',
+    href: '/discovery-prep.html',
+    live: true,
   },
   {
     id: 'engagements',
@@ -54,7 +55,12 @@ export default function Home() {
 
   const handleLaunch = (tool) => {
     if (!tool.live) return;
-    navigate(tool.href);
+    // External paths (e.g. /discovery-prep.html) need a full page load, not SPA navigation
+    if (tool.href && tool.href.includes('.html')) {
+      window.location.href = tool.href;
+    } else {
+      navigate(tool.href);
+    }
   };
 
   return (
