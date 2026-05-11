@@ -43,7 +43,7 @@ export default function Sidebar({ collapsed, onToggle, onSignOut }) {
     location.pathname === basePath || location.pathname.startsWith(basePath + '/');
 
   return (
-    <aside style={{
+    <aside data-portal-sidebar style={{
       width: collapsed ? 56 : 220,
       minHeight: '100vh',
       background: '#0a0e18',

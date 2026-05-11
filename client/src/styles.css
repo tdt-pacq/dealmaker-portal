@@ -565,3 +565,41 @@ label .required { color: var(--accent); margin-left: 2px; }
   .field-row, .field-row-3 { grid-template-columns: 1fr; }
   .page-content { padding: 16px; }
 }
+
+/* ── Print — hide portal chrome, release overflow clipping so full report paginates ── */
+@media print {
+  /* Hide sidebar and topbar */
+  [data-portal-sidebar],
+  [data-portal-topbar] {
+    display: none !important;
+  }
+
+  /* Release the shell's viewport-clipping layout so content flows naturally */
+  .portal-shell {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* The flex column wrapper around Topbar + main */
+  .portal-shell > div {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .portal-content,
+  main.portal-content {
+    display: block !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    flex: none !important;
+  }
+
+  /* Make the root and body flow freely */
+  html, body, #root {
+    height: auto !important;
+    overflow: visible !important;
+  }
+}

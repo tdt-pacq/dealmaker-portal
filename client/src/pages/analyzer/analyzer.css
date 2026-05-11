@@ -36,14 +36,24 @@
     .no-print{display:none!important;}
     *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
     body{background:#fff!important;color:#111!important;}
-    /* Fix layout — remove viewport clipping so all sections paginate */
-    #root{height:auto!important;overflow:visible!important;}
-    #root>div{background:#fff!important;display:block!important;height:auto!important;overflow:visible!important;}
-    #root>div>div{overflow:visible!important;height:auto!important;max-height:none!important;}
-    /* Clear ALL dark backgrounds — inline styles included */
+
+    /* ── Release ALL overflow/height clipping from portal shell and analyzer containers ── */
+    html,body,#root{height:auto!important;overflow:visible!important;min-height:0!important;}
+    /* Portal shell containers */
+    #root>div,#root>div>div,#root>div>div>div{
+      display:block!important;height:auto!important;max-height:none!important;
+      overflow:visible!important;flex:none!important;
+    }
+    /* Analyzer's own flex wrappers */
+    div[style*="overflow"]{overflow:visible!important;}
+    div[style*="height:100"]{height:auto!important;}
+    div[style*="minHeight:0"]{min-height:0!important;}
+
+    /* Clear ALL dark backgrounds */
     *{background:transparent!important;background-color:transparent!important;}
     .card{background:#fff!important;border:1px solid #d1d5db!important;box-shadow:none!important;break-inside:avoid;page-break-inside:avoid;margin-bottom:12pt!important;}
-    /* Make all report text dark readable — overridden by specific color classes below */
+
+    /* Make all report text dark and readable */
     .report-body *{color:#111!important;}
     .rpt-green{color:#059669!important;}
     .rpt-red{color:#dc2626!important;}
@@ -52,4 +62,7 @@
     .rpt-muted{color:#4b5563!important;}
     .mono{font-family:'Courier New',monospace!important;}
     .border-gray-700,.border-gray-800{border-color:#e5e7eb!important;}
+
+    /* Ensure the report main content area fills page width */
+    .report-body{width:100%!important;max-width:100%!important;padding:0!important;}
   }

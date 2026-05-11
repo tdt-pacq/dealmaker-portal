@@ -183,7 +183,7 @@ export default function App() {
           onSignOut={handleLogout}
         />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-          <Topbar />
+          <div data-portal-topbar><Topbar /></div>
           <main className="portal-content">
             <Suspense fallback={
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b' }}>
