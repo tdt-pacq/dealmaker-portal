@@ -37,17 +37,30 @@
     *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
     body{background:#fff!important;color:#111!important;}
 
-    /* ── Release ALL overflow/height clipping from portal shell and analyzer containers ── */
+    /* ── Release ALL overflow/height clipping ── */
     html,body,#root{height:auto!important;overflow:visible!important;min-height:0!important;}
+
     /* Portal shell containers */
-    #root>div,#root>div>div,#root>div>div>div{
+    .portal-shell,.portal-content,main.portal-content{
       display:block!important;height:auto!important;max-height:none!important;
       overflow:visible!important;flex:none!important;
     }
-    /* Analyzer's own flex wrappers */
-    div[style*="overflow"]{overflow:visible!important;}
-    div[style*="height:100"]{height:auto!important;}
-    div[style*="minHeight:0"]{min-height:0!important;}
+    .portal-shell>div{
+      display:block!important;height:auto!important;overflow:visible!important;
+    }
+
+    /* Analyzer's three clipping containers — targeted by class */
+    .az-shell{
+      display:block!important;height:auto!important;overflow:visible!important;
+    }
+    .az-main{
+      display:block!important;height:auto!important;overflow:visible!important;
+      flex:none!important;
+    }
+    .az-scroll{
+      overflow:visible!important;height:auto!important;max-height:none!important;
+      flex:none!important;
+    }
 
     /* Clear ALL dark backgrounds */
     *{background:transparent!important;background-color:transparent!important;}

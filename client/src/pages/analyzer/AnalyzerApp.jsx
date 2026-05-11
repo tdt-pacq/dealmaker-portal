@@ -3039,7 +3039,7 @@ function App() {
   );
   if(!user) return <SignInScreen denied={authDenied}/>;
   return (
-    <div style={{display:'flex',height:'100vh',background:'#0f1117',overflow:'hidden'}}>
+    <div className="az-shell" style={{display:'flex',height:'100vh',background:'#0f1117',overflow:'hidden'}}>
       {/* Sidebar */}
       <div className="no-print" style={{width:220,flexShrink:0,display:'flex',flexDirection:'column',background:'#0d1117',borderRight:'1px solid #1e293b',overflowY:'auto'}}>
         <div style={{padding:'16px 16px 12px',borderBottom:'1px solid #1e293b'}}>
@@ -3099,11 +3099,11 @@ function App() {
         <div style={{padding:'6px 14px',fontSize:10,color:'#334155'}}>v1.0 — QSI™ Market Price Analyzer</div>
       </div>
       {/* Content */}
-      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div className="az-main" style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
         <div className="no-print" style={{background:'#0d1117',padding:'8px 24px',borderBottom:'1px solid #1e293b',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
           <img src={LOGO_SRC} style={{height:66,objectFit:'contain',mixBlendMode:'screen'}}/>
         </div>
-      <div style={{flex:1,overflowY:'auto',padding:24}}>
+      <div className="az-scroll" style={{flex:1,overflowY:'auto',padding:24}}>
         {tab==='input'&&<T1 state={state} set={setState} primeRate={primeRate} importTaxReturn={importTaxReturn}/>}
         {tab==='dashboard'&&<T2 state={state}/>}
         {tab==='sde'&&<T3 state={state}/>}
