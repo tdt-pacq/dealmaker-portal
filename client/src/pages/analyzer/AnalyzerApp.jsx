@@ -3100,9 +3100,6 @@ function App() {
       </div>
       {/* Content */}
       <div className="az-main" style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
-        <div className="no-print" style={{background:'#0d1117',padding:'8px 24px',borderBottom:'1px solid #1e293b',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <img src={LOGO_SRC} style={{height:66,objectFit:'contain',mixBlendMode:'screen'}}/>
-        </div>
       <div className="az-scroll" style={{flex:1,overflowY:'auto',padding:24}}>
         {tab==='input'&&<T1 state={state} set={setState} primeRate={primeRate} importTaxReturn={importTaxReturn}/>}
         {tab==='dashboard'&&<T2 state={state}/>}
