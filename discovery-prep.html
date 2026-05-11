@@ -89,6 +89,22 @@
     .export-bar { display: flex; align-items: center; gap: 10px; padding: 14px 0; margin-bottom: 8px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
     .export-meta { margin-left: auto; font-size: 12px; color: var(--text3); }
 
+    /* ── Section checkboxes ── */
+    .sec-check {
+      appearance: none; -webkit-appearance: none;
+      width: 15px; height: 15px; border-radius: 3px;
+      border: 1.5px solid var(--border3); background: #0d1117;
+      cursor: pointer; flex-shrink: 0; position: relative;
+      transition: border-color .15s, background .15s;
+    }
+    .sec-check:checked { background: var(--green); border-color: var(--green); }
+    .sec-check:checked::after {
+      content: ''; position: absolute; left: 3px; top: 0px;
+      width: 5px; height: 9px; border: 2px solid #fff;
+      border-top: none; border-left: none; transform: rotate(45deg);
+    }
+    .sec-check:hover:not(:checked) { border-color: var(--green); }
+
     /* ── Section cards ── */
     .section-card { background: var(--card); border-radius: 8px; border: 1px solid var(--border2); overflow: hidden; margin-bottom: 10px; }
     .section-hd { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--card-hd); cursor: pointer; user-select: none; transition: background .14s; }
@@ -242,6 +258,11 @@
     <div class="export-bar">
       <button class="btn-g btn-sm" onclick="downloadPDF()">📄 Download PDF</button>
       <button class="btn-g btn-sm" onclick="downloadWord()">📝 Download Word</button>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:6px">
+        <span style="font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.5px;text-transform:uppercase">Sections:</span>
+        <button class="btn-ghost btn-sm" style="padding:3px 8px;font-size:11px" onclick="toggleAllSections(true)">All</button>
+        <button class="btn-ghost btn-sm" style="padding:3px 8px;font-size:11px" onclick="toggleAllSections(false)">None</button>
+      </div>
       <span class="export-meta" id="export-meta"></span>
     </div>
     <div id="report-sections"></div>
@@ -809,9 +830,13 @@ function showReport(report, bizName) {
     const firstOpen = idx === 0;
     const card = document.createElement('div');
     card.className = 'section-card';
+    card.id = 'card-' + sec.key;
     card.innerHTML = `
       <div class="section-hd" onclick="toggleSection('${sec.key}')">
         <div class="section-hd-left">
+          <input type="checkbox" class="sec-check" id="chk-${sec.key}" checked
+            onclick="event.stopPropagation()" onchange="onSectionCheck('${sec.key}', this.checked)"
+            title="Include in export"/>
           <span class="section-num">${sec.num}</span>
           <span class="section-title">${sec.label}</span>
         </div>
@@ -876,15 +901,49 @@ function handleNewReport() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ─── SECTION INCLUDE TOGGLES ─────────────────────────────────────────────────
+
+function onSectionCheck(key, checked) {
+  const card = document.getElementById('card-' + key);
+  if (card) card.style.opacity = checked ? '1' : '0.4';
+}
+
+function toggleAllSections(checked) {
+  SECTION_DEFS.forEach(sec => {
+    const chk = document.getElementById('chk-' + sec.key);
+    if (chk) { chk.checked = checked; onSectionCheck(sec.key, checked); }
+  });
+}
+
+function includedSections() {
+  return SECTION_DEFS.filter(sec => {
+    const chk = document.getElementById('chk-' + sec.key);
+    return chk ? chk.checked : true;
+  });
+}
+
 // ─── PDF EXPORT ───────────────────────────────────────────────────────────────
 
 function downloadPDF() {
-  // Force all sections open before printing
+  // Show only checked sections; force their bodies open
   SECTION_DEFS.forEach(sec => {
-    document.getElementById('body-'  + sec.key).classList.add('open');
-    document.getElementById('arrow-' + sec.key).classList.add('open');
+    const card = document.getElementById('card-' + sec.key);
+    const chk  = document.getElementById('chk-'  + sec.key);
+    const included = chk ? chk.checked : true;
+    if (card) card.style.setProperty('display', included ? '' : 'none', 'important');
+    if (included) {
+      document.getElementById('body-'  + sec.key).classList.add('open');
+      document.getElementById('arrow-' + sec.key).classList.add('open');
+    }
   });
   window.print();
+  // Restore after print dialog closes
+  setTimeout(() => {
+    SECTION_DEFS.forEach(sec => {
+      const card = document.getElementById('card-' + sec.key);
+      if (card) card.style.removeProperty('display');
+    });
+  }, 1000);
 }
 
 // ─── WORD EXPORT ──────────────────────────────────────────────────────────────
@@ -974,7 +1033,7 @@ async function downloadWord() {
     new Paragraph({ text: '', spacing: { after: 280 } }),
   ];
 
-  SECTION_DEFS.forEach(sec => {
+  includedSections().forEach(sec => {
     children.push(h1(`${sec.num}. ${sec.label}`));
     children.push(...sectionToDocx(currentReport[sec.key]));
     children.push(new Paragraph({ text: '', spacing: { after: 160 } }));
