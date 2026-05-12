@@ -206,25 +206,47 @@ label{display:block;font-size:13px;font-weight:500;color:#94a3b8;margin-bottom:4
             <div class="pdf-err hidden" id="err-mpa"></div>
           </div>
         </div>
-        <div style="margin-top:12px">
-          <label>Bank Term Sheet <span style="font-size:11px;color:#64748b;font-weight:400">(optional — SBA bank name &amp; loan terms)</span></label>
-          <div style="display:flex;align-items:center;gap:12px">
-            <div class="pdf-zone" id="zone-termsheet" style="flex:1;max-width:260px"
-                 onclick="zoneClick('termsheet')"
-                 ondragover="dragOver(event,this)"
-                 ondragleave="dragLeave(this)"
-                 ondrop="dropPdf(event,'termsheet')">
-              <input type="file" id="file-termsheet" accept=".pdf" style="display:none"
-                     onchange="handlePdf(this.files[0],'termsheet')"/>
-              <div class="pdf-inner" id="inner-termsheet">
-                <div style="font-size:24px">🏦</div>
-                <div style="font-weight:600;color:#94a3b8;font-size:12px">Drop or click to upload</div>
-                <div style="font-size:11px;color:#64748b;margin-top:2px">Bank Term Sheet</div>
+        <div style="margin-top:12px;display:flex;gap:24px;flex-wrap:wrap">
+          <div style="flex:1;min-width:240px">
+            <label>Bank Term Sheet <span style="font-size:11px;color:#64748b;font-weight:400">(optional — SBA bank name &amp; loan terms)</span></label>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="pdf-zone" id="zone-termsheet" style="flex:1;max-width:260px"
+                   onclick="zoneClick('termsheet')"
+                   ondragover="dragOver(event,this)"
+                   ondragleave="dragLeave(this)"
+                   ondrop="dropPdf(event,'termsheet')">
+                <input type="file" id="file-termsheet" accept=".pdf" style="display:none"
+                       onchange="handlePdf(this.files[0],'termsheet')"/>
+                <div class="pdf-inner" id="inner-termsheet">
+                  <div style="font-size:24px">🏦</div>
+                  <div style="font-weight:600;color:#94a3b8;font-size:12px">Drop or click to upload</div>
+                  <div style="font-size:11px;color:#64748b;margin-top:2px">Bank Term Sheet</div>
+                </div>
               </div>
+              <div style="font-size:11px;color:#64748b;line-height:1.6">If uploaded, the bank name, rate,<br/>loan terms and payment will be<br/>extracted for the SBA section.</div>
             </div>
-            <div style="font-size:11px;color:#64748b;line-height:1.6">If uploaded, the bank name, rate,<br/>loan terms and payment will be<br/>extracted for the SBA section.</div>
+            <div class="pdf-err hidden" id="err-termsheet"></div>
           </div>
-          <div class="pdf-err hidden" id="err-termsheet"></div>
+          <div style="flex:1;min-width:240px">
+            <label>Discovery Prep Report <span style="font-size:11px;color:#64748b;font-weight:400">(optional — seller &amp; industry intel)</span></label>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="pdf-zone" id="zone-discovery" style="flex:1;max-width:260px"
+                   onclick="zoneClick('discovery')"
+                   ondragover="dragOver(event,this)"
+                   ondragleave="dragLeave(this)"
+                   ondrop="dropPdf(event,'discovery')">
+                <input type="file" id="file-discovery" accept=".pdf" style="display:none"
+                       onchange="handlePdf(this.files[0],'discovery')"/>
+                <div class="pdf-inner" id="inner-discovery">
+                  <div style="font-size:24px">🔍</div>
+                  <div style="font-weight:600;color:#94a3b8;font-size:12px">Drop or click to upload</div>
+                  <div style="font-size:11px;color:#64748b;margin-top:2px">Discovery Prep Report</div>
+                </div>
+              </div>
+              <div style="font-size:11px;color:#64748b;line-height:1.6">If uploaded, seller intel,<br/>industry context, and buyer<br/>profile will enrich outputs.</div>
+            </div>
+            <div class="pdf-err hidden" id="err-discovery"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -566,7 +588,7 @@ async function bootApp(useDrive) {
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 
-const pdfTexts  = { interview: null, ea: null, mpa: null, termsheet: null };
+const pdfTexts  = { interview: null, ea: null, mpa: null, termsheet: null, discovery: null };
 const imageData = { bizPhotos: [], bizPhotoIds: [], advisorPhoto: null, advisorPhotoId: null };
 let currentDealId    = null;
 let _lastFlyerZones  = null;
@@ -1052,15 +1074,16 @@ function startNewDeal() {
   _lastFlyerZones          = null;
   _lastCimSections       = null;
   _lastBrandColors       = { primary: '#1A1A1A', accent: '#C1622F', companyName: '' };
-  pdfTexts.interview = pdfTexts.ea = pdfTexts.mpa = pdfTexts.termsheet = null;
+  pdfTexts.interview = pdfTexts.ea = pdfTexts.mpa = pdfTexts.termsheet = pdfTexts.discovery = null;
 
-  const labels = { interview:'Interview Doc', ea:'Engagement Agreement', mpa:'QSI MPA Report' };
-  ['interview','ea','mpa'].forEach(k => {
+  const labels = { interview:'Interview Doc', ea:'Engagement Agreement', mpa:'QSI MPA Report', termsheet:'Bank Term Sheet', discovery:'Discovery Prep Report' };
+  const icons  = { interview:'📄', ea:'📄', mpa:'📄', termsheet:'🏦', discovery:'🔍' };
+  ['interview','ea','mpa','termsheet','discovery'].forEach(k => {
     const zone = document.getElementById('zone-' + k);
     const inner = document.getElementById('inner-' + k);
     if (zone) zone.className = 'pdf-zone';
-    if (inner) inner.innerHTML = `<div style="font-size:28px">📄</div>
-      <div style="font-weight:600;color:#94a3b8;font-size:13px">Drop or click to upload</div>
+    if (inner) inner.innerHTML = `<div style="font-size:${k==='termsheet'||k==='discovery'?'24':'28'}px">${icons[k]}</div>
+      <div style="font-weight:600;color:#94a3b8;font-size:${k==='termsheet'||k==='discovery'?'12':'13'}px">Drop or click to upload</div>
       <div style="font-size:11px;color:#64748b;margin-top:2px">${labels[k]}</div>`;
     const fileEl = document.getElementById('file-' + k);
     if (fileEl) fileEl.value = '';
@@ -1447,11 +1470,13 @@ function replacePdf(key) {
   const zone  = document.getElementById('zone-' + key);
   const inner = document.getElementById('inner-' + key);
   zone.classList.remove('ready', 'error', 'parsing');
-  const labels = { interview:'Interview Doc', ea:'Engagement Agreement', mpa:'QSI MPA Report' };
+  const labels = { interview:'Interview Doc', ea:'Engagement Agreement', mpa:'QSI MPA Report', termsheet:'Bank Term Sheet', discovery:'Discovery Prep Report' };
+  const icons  = { interview:'📄', ea:'📄', mpa:'📄', termsheet:'🏦', discovery:'🔍' };
+  const sm     = key === 'termsheet' || key === 'discovery';
   inner.innerHTML = `
-    <div style="font-size:28px">📄</div>
-    <div style="font-weight:600;color:#94a3b8;font-size:13px">Drop or click to upload</div>
-    <div style="font-size:11px;color:#64748b;margin-top:2px">${labels[key]}</div>`;
+    <div style="font-size:${sm?'24':'28'}px">${icons[key]||'📄'}</div>
+    <div style="font-weight:600;color:#94a3b8;font-size:${sm?'12':'13'}px">Drop or click to upload</div>
+    <div style="font-size:11px;color:#64748b;margin-top:2px">${labels[key]||key}</div>`;
   document.getElementById('err-' + key).classList.add('hidden');
   document.getElementById('file-' + key).value = '';
   updateGenBtn();
@@ -1580,12 +1605,13 @@ FINANCIAL ACCURACY:
 - The QSI MPA is authoritative for all financial performance data, SDE, DSCR, and valuation analysis.
 - Where EA and MPA conflict on price, the EA governs.
 - The Confirmed Asking Price entered by the advisor overrides all other price figures in all outputs.
+- If a Discovery Prep Report is provided, use it to enrich the business description, highlight seller differentiators, sharpen the ideal buyer profile, and strengthen the industry narrative. Do not use it for financial figures — MPA governs those.
 
 OUTPUT FORMAT:
 Return all five outputs wrapped in XML tags exactly as specified in the user prompt. Do not add preamble, commentary, or explanation outside the tags.`;
 
-function buildUserPrompt(price, advisorName, advisorEmail, advisorPhone, website, interviewText, eaText, mpaText, termSheetText) {
-  return `Using the three business documents below, generate all five Deal Team outputs. Follow all brand voice, confidentiality, and formatting rules exactly.
+function buildUserPrompt(price, advisorName, advisorEmail, advisorPhone, website, interviewText, eaText, mpaText, termSheetText, discoveryText) {
+  return `Using the business documents below, generate all five Deal Team outputs. Follow all brand voice, confidentiality, and formatting rules exactly.
 
 CONFIRMED ASKING PRICE (EA-VERIFIED): $${price}
 COMPANY WEBSITE: ${website || 'Not provided'}
@@ -1605,6 +1631,9 @@ ${mpaText}
 ${termSheetText ? `
 DOCUMENT 4 - BANK TERM SHEET (optional — use for SBA section):
 ${termSheetText}
+` : ''}${discoveryText ? `
+DOCUMENT ${termSheetText ? '5' : '4'} - DISCOVERY PREP REPORT (optional — use for seller intel, industry context, buyer profile, and marketing angle):
+${discoveryText}
 ` : ''}
 Return all five outputs in this exact XML structure:
 
@@ -2034,7 +2063,7 @@ async function runGeneration() {
   try {
     const userPrompt = buildUserPrompt(
       price, advisorName, advisorEmail, advisorPhone, website,
-      pdfTexts.interview, pdfTexts.ea, pdfTexts.mpa, pdfTexts.termsheet
+      pdfTexts.interview, pdfTexts.ea, pdfTexts.mpa, pdfTexts.termsheet, pdfTexts.discovery
     );
     const raw = await callClaude(SYSTEM_PROMPT, userPrompt, 16000);
 
