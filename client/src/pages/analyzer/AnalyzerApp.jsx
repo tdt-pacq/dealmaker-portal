@@ -2827,9 +2827,6 @@ function App() {
   const [user,setUser]=useState(null);
   const [authLoading,setAuthLoading]=useState(true);
   const [authDenied,setAuthDenied]=useState(false);
-  const [apiKey,setApiKey]=useState(()=>localStorage.getItem('anthropic_key')||'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');
-  const [apiKeyInput,setApiKeyInput]=useState('');
-  const [showApiKey,setShowApiKey]=useState(false);
   const [extracting,setExtracting]=useState(false);
   const [reviewData,setReviewData]=useState(null);
   useEffect(()=>{
@@ -2929,20 +2926,20 @@ function App() {
     input.click();
   };
   const extractFromPDF=async(b64,prompt)=>{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    // Route through Express server — uses ANTHROPIC_API_KEY env var, no key in client
+    const auth=sessionStorage.getItem('pacq_auth');
+    const headers={'Content-Type':'application/json'};
+    if(auth) headers['Authorization']=`Basic ${auth}`;
+    const resp=await fetch('/api/extract/pdf',{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-opus-4-7',max_tokens:2048,messages:[{role:'user',content:[
-        {type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},
-        {type:'text',text:prompt}
-      ]}]})
+      headers,
+      body:JSON.stringify({pdfBase64:b64,prompt}),
     });
-    if(!resp.ok) throw new Error(await resp.text());
+    if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error||`Server error ${resp.status}`);}
     const json=await resp.json();
-    return JSON.parse(json.content[0].text);
+    return JSON.parse(json.result);
   };
   const importTaxReturn=yi=>{
-    if(!apiKey){alert('Enter your Anthropic API key first (⚙ API Key in sidebar).');return;}
     const input=document.createElement('input');
     input.type='file';input.accept='.pdf';
     input.onchange=async e=>{
@@ -2955,7 +2952,6 @@ function App() {
     input.click();
   };
   const importIndustryReport=()=>{
-    if(!apiKey){alert('Enter your Anthropic API key first (⚙ API Key in sidebar).');return;}
     const input=document.createElement('input');
     input.type='file';input.accept='.pdf';
     input.onchange=async e=>{
@@ -2968,7 +2964,6 @@ function App() {
     input.click();
   };
   const importBalanceSheet=yi=>{
-    if(!apiKey){alert('Enter your Anthropic API key first (⚙ API Key in sidebar).');return;}
     const input=document.createElement('input');
     input.type='file';input.accept='.pdf';
     input.onchange=async e=>{
@@ -3090,11 +3085,6 @@ function App() {
             onMouseEnter={e=>{e.target.style.filter='brightness(1.2)';}} onMouseLeave={e=>{e.target.style.filter='';}}>
             Sign Out ({user?.email})
           </button>
-          <button onClick={()=>{setApiKeyInput(apiKey);setShowApiKey(true);}}
-            style={{display:'block',width:'100%',fontSize:10,background:'#1e293b',color:'#64748b',border:'1px solid #1e293b',borderRadius:5,padding:'5px 8px',cursor:'pointer',textAlign:'center'}}
-            onMouseEnter={e=>{e.target.style.filter='brightness(1.3)';}} onMouseLeave={e=>{e.target.style.filter='';}}>
-            ⚙ API Key{apiKey?` (set)`:''}
-          </button>
         </div>
         <div style={{padding:'6px 14px',fontSize:10,color:'#334155'}}>v1.0 — QSI™ Market Price Analyzer</div>
       </div>
@@ -3116,21 +3106,6 @@ function App() {
       </div>
       </div>
       {showLoad&&<LoadModal onClose={()=>setShowLoad(false)} onLoad={load} user={user}/>}
-      {showApiKey&&(
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:2000}}>
-          <div style={{background:'#161b27',border:'1px solid #1e2d45',borderRadius:10,padding:24,width:380}}>
-            <div style={{fontWeight:700,fontSize:14,color:'#e2e8f0',marginBottom:4}}>Anthropic API Key</div>
-            <div style={{fontSize:11,color:'#94a3b8',marginBottom:14}}>Used for PDF tax return extraction. Stored locally in your browser only.</div>
-            <input className="input-field" value={apiKeyInput} onChange={e=>setApiKeyInput(e.target.value)} placeholder="sk-ant-api03-..."/>
-            <div style={{display:'flex',gap:8,marginTop:14}}>
-              <button style={{background:'#1a5e35',color:'#6de09a',border:'none',borderRadius:5,padding:'7px 16px',fontSize:12,fontWeight:600,cursor:'pointer'}}
-                onClick={()=>{const k=apiKeyInput.trim();setApiKey(k);localStorage.setItem('anthropic_key',k);setShowApiKey(false);}}>Save</button>
-              <button style={{background:'#1e293b',color:'#94a3b8',border:'none',borderRadius:5,padding:'7px 16px',fontSize:12,cursor:'pointer'}}
-                onClick={()=>setShowApiKey(false)}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
       {extracting&&(
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:2000}}>
           <div style={{background:'#161b27',border:'1px solid #1e2d45',borderRadius:10,padding:32,textAlign:'center'}}>
@@ -3139,7 +3114,7 @@ function App() {
           </div>
         </div>
       )}
-      {reviewData&&<ReviewModal reviewData={reviewData} apiKey={apiKey} onApply={applyReview} onCancel={()=>setReviewData(null)}/>}
+      {reviewData&&<ReviewModal reviewData={reviewData} onApply={applyReview} onCancel={()=>setReviewData(null)}/>}
     </div>
   );
 }

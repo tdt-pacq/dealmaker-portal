@@ -296,6 +296,53 @@ router.post('/interview', upload.single('file'), async (req, res) => {
   }
 });
 
+// POST /api/extract/pdf — proxy PDF base64 + prompt to Anthropic (used by MPA analyzer)
+// Accepts { pdfBase64: string, prompt: string } — returns { result: string }
+router.post('/pdf', async (req, res) => {
+  const { pdfBase64, prompt } = req.body || {};
+  if (!pdfBase64 || !prompt) {
+    return res.status(400).json({ error: 'pdfBase64 and prompt are required.' });
+  }
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured on server.' });
+  }
+  try {
+    const upstream = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 2048,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdfBase64 } },
+            { type: 'text', text: prompt },
+          ],
+        }],
+      }),
+      signal: AbortSignal.timeout(120000),
+    });
+    if (!upstream.ok) {
+      const err = await upstream.json().catch(() => ({}));
+      return res.status(upstream.status).json({ error: err.error?.message || `Anthropic error ${upstream.status}` });
+    }
+    const data = await upstream.json();
+    const text = (data.content || []).find(b => b.type === 'text')?.text || '';
+    res.json({ result: text });
+  } catch (err) {
+    const msg = (err.name === 'TimeoutError' || err.name === 'AbortError')
+      ? 'Extraction timed out. Please retry.'
+      : (err.message || 'Unexpected error during extraction.');
+    res.status(500).json({ error: msg });
+  }
+});
+
 // Multer error handler for this router
 router.use((err, _req, res, _next) => {
   if (err.code === 'LIMIT_FILE_SIZE') {
