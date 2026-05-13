@@ -2319,7 +2319,7 @@ function renderFlyer(zones, colors, imgs, advisor) {
         <div style="width:36px;height:36px;border-radius:50%;background:${a};color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Oswald',Arial,sans-serif;font-size:14px;font-weight:700;flex-shrink:0">${i}</div>
         <div style="padding-top:2px">
           <div style="font-weight:700;font-size:10px;color:#1A1A1A;line-height:1.3" ${ce}>${esc(lbl)}</div>
-          <div style="font-size:10px;color:#94a3b8;margin-top:2px" ${ce}>${esc(val)}</div>
+          <div style="font-size:10px;color:#333333;margin-top:2px" ${ce}>${esc(val)}</div>
         </div>
       </div>`);
   }
@@ -2331,7 +2331,7 @@ function renderFlyer(zones, colors, imgs, advisor) {
     if (title) analysisItems.push(`
       <div style="margin-bottom:10px">
         <div style="font-weight:700;font-size:10px;color:#1A1A1A;margin-bottom:3px" ${ce}>${esc(title)}</div>
-        <div style="font-size:10px;color:#94a3b8;line-height:1.65" ${ce}>${esc(body)}</div>
+        <div style="font-size:10px;color:#222222;line-height:1.65" ${ce}>${esc(body)}</div>
       </div>`);
   }
 
@@ -2342,7 +2342,7 @@ function renderFlyer(zones, colors, imgs, advisor) {
     ['PRICE_BOX_FFE_LABEL','PRICE_BOX_FFE_VALUE'],
   ].map(([lk,vk]) => `
     <div style="border-bottom:1px solid #f0f0f0;padding:5px 0">
-      <div style="font-size:9px;color:#999" ${ce}>${esc(zv(lk))}</div>
+      <div style="font-size:9px;color:#444444;text-transform:uppercase;letter-spacing:.5px" ${ce}>${esc(zv(lk))}</div>
       <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:14px;color:#1A1A1A" ${ce}>${esc(zv(vk))}</div>
     </div>`).join('');
 
@@ -2395,7 +2395,7 @@ body{font-family:'Inter',Arial,sans-serif;background:#ccc}
     <!-- LEFT COLUMN -->
     <div style="flex:1;min-width:0;padding-right:4px">
       ${secHd('Overview')}
-      <div style="font-size:11px;line-height:1.75;color:#e2e8f0;margin-bottom:15px;text-align:justify" ${ce}>${esc(zv('OVERVIEW_PARAGRAPH'))}</div>
+      <div style="font-size:11px;line-height:1.75;color:#111111;margin-bottom:15px;text-align:justify" ${ce}>${esc(zv('OVERVIEW_PARAGRAPH'))}</div>
 
       ${secHd('Key Features')}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:14px">
@@ -2413,10 +2413,10 @@ body{font-family:'Inter',Arial,sans-serif;background:#ccc}
         <div style="font-family:'Oswald',Arial,sans-serif;font-weight:700;font-size:32px;color:${p};line-height:1" ${ce}>${esc(zv('PRICE_BOX_ASKING_PRICE'))}</div>
       </div>
       <div style="margin-bottom:12px">${metricRows}</div>
-      <div style="font-size:10px;color:#666;line-height:2.1;border-top:1px solid #f0f0f0;padding-top:8px">
-        <div><span style="color:#64748b">Hours: </span><strong ${ce}>${esc(zv('HOURS_OF_OPERATION'))}</strong></div>
-        <div><span style="color:#64748b">Employees: </span><strong ${ce}>${esc(zv('EMPLOYEES'))}</strong></div>
-        <div><span style="color:#64748b">Est.: </span><strong ${ce}>${esc(zv('BUSINESS_STARTED'))}</strong></div>
+      <div style="font-size:10px;color:#111111;line-height:2.1;border-top:1px solid #f0f0f0;padding-top:8px">
+        <div><span style="color:#444444">Hours: </span><strong ${ce}>${esc(zv('HOURS_OF_OPERATION'))}</strong></div>
+        <div><span style="color:#444444">Employees: </span><strong ${ce}>${esc(zv('EMPLOYEES'))}</strong></div>
+        <div><span style="color:#444444">Est.: </span><strong ${ce}>${esc(zv('BUSINESS_STARTED'))}</strong></div>
       </div>
     </div>
   </div>
@@ -2525,14 +2525,14 @@ function renderCim(sections, colors, imgs, advisor) {
   }
 
   function paras(text) {
-    if (!text) return `<p style="color:#64748b;font-style:italic;font-size:11px">[Content to be added]</p>`;
+    if (!text) return `<p style="color:#555555;font-style:italic;font-size:11px">[Content to be added]</p>`;
     return text.split(/\n\n+/).filter(t => t.trim()).map(t =>
-      `<p style="font-size:11px;line-height:1.9;color:#e2e8f0;margin-bottom:13px" ${ce}>${esc(t.trim())}</p>`
+      `<p style="font-size:11px;line-height:1.9;color:#111111;margin-bottom:13px" ${ce}>${esc(t.trim())}</p>`
     ).join('');
   }
 
   function lineItems(text) {
-    if (!text) return `<p style="color:#64748b;font-style:italic;font-size:11px">[To be provided]</p>`;
+    if (!text) return `<p style="color:#555555;font-style:italic;font-size:11px">[To be provided]</p>`;
     return text.split('\n').filter(l => l.trim()).map(l => {
       const colon = l.indexOf(':');
       if (colon > 0 && colon < 28) {
@@ -2540,10 +2540,10 @@ function renderCim(sections, colors, imgs, advisor) {
         const val = l.substring(colon + 1).trim();
         return `<div style="display:flex;gap:8px;font-size:11px;padding:4px 0;border-bottom:1px solid #f5f5f5">
           <span style="font-weight:600;color:${p};white-space:nowrap;min-width:140px">${esc(lbl)}</span>
-          <span style="color:#e2e8f0" ${ce}>${esc(val)}</span>
+          <span style="color:#111111" ${ce}>${esc(val)}</span>
         </div>`;
       }
-      return `<div style="font-size:11px;color:#e2e8f0;padding:4px 0;border-bottom:1px solid #f5f5f5" ${ce}>${esc(l.trim())}</div>`;
+      return `<div style="font-size:11px;color:#111111;padding:4px 0;border-bottom:1px solid #f5f5f5" ${ce}>${esc(l.trim())}</div>`;
     }).join('');
   }
 
@@ -2555,7 +2555,7 @@ function renderCim(sections, colors, imgs, advisor) {
       const value = l.substring(idx + 1).trim();
       return `<tr style="background:${i%2===0?'#fff':'#fafafa'}">
         <td style="font-weight:700;font-size:10px;color:${p};padding:7px 12px;border-bottom:1px solid #f0f0f0;white-space:nowrap;width:38%;vertical-align:top">${esc(label)}</td>
-        <td style="font-size:10px;color:#e2e8f0;padding:7px 12px;border-bottom:1px solid #f0f0f0" ${ce}>${esc(value)}</td>
+        <td style="font-size:10px;color:#111111;padding:7px 12px;border-bottom:1px solid #f0f0f0" ${ce}>${esc(value)}</td>
       </tr>`;
     });
     return `<table style="width:100%;border-collapse:collapse;border:1px solid #f0f0f0;border-radius:4px;overflow:hidden">${rows.join('')}</table>`;
@@ -2598,11 +2598,11 @@ function renderCim(sections, colors, imgs, advisor) {
             const lbl = l.substring(0, colon).trim();
             const val = l.substring(colon + 1).trim();
             return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f5f5f5">
-              <span style="font-size:10.5px;color:#666;font-weight:500">${esc(lbl)}</span>
+              <span style="font-size:10.5px;color:#333333;font-weight:500">${esc(lbl)}</span>
               <span style="font-family:'Oswald',Arial,sans-serif;font-weight:700;color:${p};font-size:13px" ${ce}>${esc(val)}</span>
             </div>`;
           }
-          return `<div style="font-size:10px;color:#64748b;padding:2px 0" ${ce}>${esc(l.trim())}</div>`;
+          return `<div style="font-size:10px;color:#333333;padding:2px 0" ${ce}>${esc(l.trim())}</div>`;
         }).join('') + '</div>';
     }
     return `<div style="border:1px solid #e8e8e8;border-radius:4px;overflow:hidden">
@@ -2709,7 +2709,7 @@ function renderCim(sections, colors, imgs, advisor) {
           <div style="width:10px;height:10px;background:${a};border-radius:50%;flex-shrink:0"></div>
           <div style="font-family:'Oswald',Arial,sans-serif;font-weight:600;font-size:13px;color:${p}" ${ce}>${esc(titles[n])}</div>
         </div>
-        <div style="font-size:11px;color:#94a3b8;line-height:1.7" ${ce}>${esc(descs[n]||'')}</div>
+        <div style="font-size:11px;color:#222222;line-height:1.7" ${ce}>${esc(descs[n]||'')}</div>
       </div>`).join('');
   }
 
@@ -2887,10 +2887,10 @@ function renderCim(sections, colors, imgs, advisor) {
   pages.push(page(`
     ${secHead('Next Steps','Leveraging QSI™ to Acquire Your Business')}
     <div style="border-left:4px solid ${a};padding:16px 20px;margin:16px 0;background:#fafafa;border-radius:0 4px 4px 0">
-      <div style="font-size:14px;color:#e2e8f0;font-style:italic;line-height:1.8">"The fastest path to building wealth in small business is through the strategic acquisition of an established, cash flowing privately held company. QSI™ is the blueprint for stacking the odds in your favor."</div>
+      <div style="font-size:14px;color:#111111;font-style:italic;line-height:1.8">"The fastest path to building wealth in small business is through the strategic acquisition of an established, cash flowing privately held company. QSI™ is the blueprint for stacking the odds in your favor."</div>
       <div style="font-size:11px;font-weight:700;color:${p};margin-top:10px">— MICHAEL R. MOORE, PETERSON ACQUISITIONS</div>
     </div>
-    <p style="font-size:11px;color:#94a3b8;line-height:1.85;margin-top:14px">Recognized as the #1 business brokerage in the country due to our proprietary "Quantum Stack Investing" methodology, we have mastered the process of building wealth through the acquisition of privately held businesses. Our unique approach delivers a success rate four times the industry average.</p>
+    <p style="font-size:11px;color:#222222;line-height:1.85;margin-top:14px">Recognized as the #1 business brokerage in the country due to our proprietary "Quantum Stack Investing" methodology, we have mastered the process of building wealth through the acquisition of privately held businesses. Our unique approach delivers a success rate four times the industry average.</p>
   `));
 
   const savedAdvisors = loadAdvisors();
