@@ -2979,16 +2979,12 @@ function esc(s) {
 // ─── CLAUDE API ───────────────────────────────────────────────────────────────
 
 async function callClaude(system, user, maxTokens) {
-  const key = getApiKey();
-  if (!key) throw new Error('No API key configured.');
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+  const auth = sessionStorage.getItem('pacq_auth');
+  const headers = { 'content-type': 'application/json' };
+  if (auth) headers['Authorization'] = 'Basic ' + auth;
+  const resp = await fetch('/api/generate/proxy-messages', {
     method: 'POST',
-    headers: {
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-      'content-type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
       max_tokens: maxTokens,

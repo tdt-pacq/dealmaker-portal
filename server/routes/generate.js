@@ -281,4 +281,19 @@ IMPORTANT: Output ONLY the complete HTML document starting with <!DOCTYPE html>.
   }
 });
 
+// POST /api/generate/proxy-messages
+// Transparent proxy for legacy index.html Deal Marketing app.
+// Accepts the same body as Anthropic /v1/messages, forwards with server-side API key.
+router.post('/proxy-messages', async (req, res) => {
+  const client = getClient();
+  try {
+    const { model, max_tokens, system, messages } = req.body;
+    const message = await client.messages.create({ model, max_tokens, system, messages });
+    res.json(message);
+  } catch (err) {
+    console.error('Proxy messages error:', err);
+    res.status(500).json({ error: { message: err.message } });
+  }
+});
+
 module.exports = router;
