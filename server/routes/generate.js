@@ -148,7 +148,8 @@ CRITICAL RULES:
 - ALL content must be BLIND (no business name, owner name, or specific street address).
 - NEVER invent or fabricate financial figures — use only what is provided.
 - The page must be exactly 8.5x11 inches portrait, designed for PDF printing.
-- Use ONLY the brand colors specified.`,
+- Use ONLY the brand colors specified.
+- TEXT CONTRAST IS CRITICAL: All body text on white or light backgrounds MUST be #111111 (near-black). Never use gray lighter than #444444 for any readable text. Section headers must be #1A1A1A. Metric values must be #1A1A1A bold. Bullet text must be #111111. This is a print document — low-contrast light text is unacceptable.`,
       messages: [{
         role: 'user',
         content: `Generate the HTML/CSS for a single-page, print-ready business listing flyer.
@@ -158,16 +159,21 @@ Brand system:
 - Header bar: #1A1A1A with white text
 - Accent color: #C1622F (copper)
 - Section divider bars: 3px solid #C1622F
+- Body text: #111111 (REQUIRED — must be near-black for print readability)
+- Section headers: #1A1A1A bold Oswald uppercase
+- Metric numbers: #1A1A1A bold large
+- Bullet/body copy: #111111 Inter
+- Secondary/caption text: #444444 (darkest allowed for non-primary text)
 - Fonts: Oswald (headers/bold), Inter (body) — include this Google Fonts link: <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 - Page size: 8.5in x 11in
 
 Layout (top to bottom):
 1. HEADER BAR (black, ~60px tall): "OFFERED EXCLUSIVELY BY PETERSON ACQUISITIONS | THE DEAL TEAM" in white Oswald uppercase, right-aligned. Left side: "PETERSON ACQUISITIONS" in copper.
-2. HERO SECTION (light gray #F5F5F5, ~120px): BLIND headline (industry + region, no business name) in large Oswald bold uppercase. Below: 2-sentence compelling overview.
-3. KEY METRICS GRID (2x2, ~140px total): Four copper-outlined boxes: "GROSS REVENUE", "CASH FLOW (SDE)", "ASKING PRICE", "DOWN PAYMENT". Large bold number, label below.
+2. HERO SECTION (light gray #F0F0F0, ~120px): BLIND headline (industry + region, no business name) in large Oswald bold uppercase #1A1A1A. Below: 2-sentence compelling overview in #111111 Inter.
+3. KEY METRICS GRID (2x2, ~140px total): Four copper-outlined boxes: "GROSS REVENUE", "CASH FLOW (SDE)", "ASKING PRICE", "DOWN PAYMENT". Large bold #1A1A1A number, #444444 label below.
 4. MAIN CONTENT (two columns, 60/40 split, ~280px):
-   LEFT (60%): "KEY HIGHLIGHTS" header with copper bar. 6-8 bullet points from highlights and competitive advantages.
-   RIGHT (40%): "GROWTH POTENTIAL" header with copper bar. 3-4 growth bullets. Below: transaction info (financing, deal structure, transition summary).
+   LEFT (60%): "KEY HIGHLIGHTS" header with copper bar. 6-8 bullet points #111111 from highlights and competitive advantages.
+   RIGHT (40%): "GROWTH POTENTIAL" header with copper bar. 3-4 growth bullets #111111. Below: transaction info (financing, deal structure, transition summary) in #111111.
 5. FOOTER BAR (black, ~50px): "CONFIDENTIAL — ALL INQUIRIES HANDLED WITH DISCRETION | NDA REQUIRED" in copper Oswald. Right: "TheDeaITeam.com | Peterson Acquisitions" in white.
 
 Business data: ${JSON.stringify(interviewData, null, 2)}
@@ -212,7 +218,8 @@ CRITICAL RULES:
 - Use ONLY data provided. If a field is blank, write "To be provided upon NDA execution" or omit gracefully.
 - Output ONLY a single, complete, valid HTML document. No preamble, no explanation, no markdown.
 - Use page-break-after: always on each .slide for clean PDF pagination.
-- The document must be landscape 1920x1080px per slide.`,
+- The document must be landscape 1920x1080px per slide.
+- TEXT CONTRAST IS MANDATORY: All body text on white or light-colored slide backgrounds MUST be #111111. Never use any gray lighter than #444444 for readable body copy. Metric values and data figures must be #1A1A1A bold. Table body text must be #111111. This is a print/presentation document — light gray text on white is completely unacceptable and illegible.`,
       messages: [{
         role: 'user',
         content: `Generate a complete multi-page Confidential Business Review (CBR) as a single HTML document.
@@ -223,7 +230,8 @@ Brand system:
 - Accent copper: #C1622F
 - Brand/seller color: ${brandColor}
 - White: #FFFFFF
-- Body font: Inter 16px #333333
+- Body font: Inter 16px #111111 (REQUIRED — near-black for all body text on light backgrounds)
+- Secondary/caption text: #444444 maximum — never lighter than this on white/light backgrounds
 - Header font: Oswald bold uppercase
 - Load fonts: <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 - Every content slide footer: "©${new Date().getFullYear()} Proprietary and Confidential. All Rights Reserved." centered small gray text | Peterson Acquisitions bottom-left | page number bottom-right
