@@ -348,7 +348,9 @@ router.post('/pdf', pdfUpload.single('file'), async (req, res) => {
       return res.status(upstream.status).json({ error: err.error?.message || `Anthropic error ${upstream.status}` });
     }
     const data = await upstream.json();
-    const text = (data.content || []).find(b => b.type === 'text')?.text || '';
+    const raw = (data.content || []).find(b => b.type === 'text')?.text || '';
+    // Strip markdown code fences Claude sometimes wraps JSON in (```json ... ``` or ``` ... ```)
+    const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
     res.json({ result: text });
   } catch (err) {
     const msg = (err.name === 'TimeoutError' || err.name === 'AbortError')
