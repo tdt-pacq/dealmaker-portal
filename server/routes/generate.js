@@ -170,11 +170,13 @@ Brand system:
 Layout (top to bottom):
 1. HEADER BAR (black, ~60px tall): "OFFERED EXCLUSIVELY BY PETERSON ACQUISITIONS | THE DEAL TEAM" in white Oswald uppercase, right-aligned. Left side: "PETERSON ACQUISITIONS" in copper.
 2. HERO SECTION (light gray #F0F0F0, ~120px): BLIND headline (industry + region, no business name) in large Oswald bold uppercase #1A1A1A. Below: 2-sentence compelling overview in #111111 Inter.
-3. KEY METRICS GRID (2x2, ~140px total): Four copper-outlined boxes: "GROSS REVENUE", "CASH FLOW (SDE)", "ASKING PRICE", "DOWN PAYMENT". Large bold #1A1A1A number, #444444 label below.
+3. KEY METRICS GRID (2x2, ~140px total): Four copper-outlined boxes: "GROSS REVENUE", "CASH FLOW (SDE)", "ASKING PRICE", "DOWN PAYMENT". Large bold #1A1A1A number, #444444 label below. IMPORTANT: Use ONLY the most recent completed fiscal year figures — fields fin_year1_revenue and fin_year1_sde (or revenue_year1 / sde_year1 if the fin_year table is blank). Include the year label (fin_year1_year or revenue_year1_label) as a small caption under each metric so the reader knows which year is shown. Never use YTD, partial-year, or projected figures for these boxes.
 4. MAIN CONTENT (two columns, 60/40 split, ~280px):
    LEFT (60%): "KEY HIGHLIGHTS" header with copper bar. 6-8 bullet points #111111 from highlights and competitive advantages.
    RIGHT (40%): "GROWTH POTENTIAL" header with copper bar. 3-4 growth bullets #111111. Below: transaction info (financing, deal structure, transition summary) in #111111.
 5. FOOTER BAR (black, ~50px): "CONFIDENTIAL — ALL INQUIRIES HANDLED WITH DISCRETION | NDA REQUIRED" in copper Oswald. Right: "TheDeaITeam.com | Peterson Acquisitions" in white.
+
+FINANCIAL DATA RULE: All revenue, SDE, EBITDA, and cash flow figures displayed on this flyer MUST come from the most recent completed fiscal year (Year 1 = fin_year1_* fields, or revenue_year1 / sde_year1 / ebitda_year1 at the top level). Do NOT use YTD, trailing partial-year, or any projected/future figures. If only one year of data exists, use it and label it with its year.
 
 Business data: ${JSON.stringify(interviewData, null, 2)}
 Advisor: ${deal.advisor_name}
@@ -246,7 +248,7 @@ Required slides IN ORDER:
 5. OWNER BACKGROUND: Origin story, owner skills, typical day, vision/mission. (Do NOT name the owner)
 6. BUSINESS MODEL: Bullet list of how business operates, compensation method, SOPs, IP, entity.
 7. INDUSTRY OVERVIEW: 2-col. Left: key highlights, trends. Right: challenges, opportunities, profit drivers.
-8. KEY HIGHLIGHTS: 3-col info grid with icons — Revenue, SDE, EBITDA, Asking Price, Employees, Est. Year, FFE Value, Real Estate, Down Payment.
+8. KEY HIGHLIGHTS: 3-col info grid with icons — Revenue, SDE, EBITDA, Asking Price, Employees, Est. Year, FFE Value, Real Estate, Down Payment. IMPORTANT: Revenue, SDE, and EBITDA figures here MUST come from the most recent completed fiscal year only (fin_year1_* fields). Display the year label (fin_year1_year) as a small caption under each financial metric so it is clear which tax year is shown.
 9. SECTION DIVIDER: "PRODUCTS & SERVICES"
 10. PRODUCTS & SERVICES: 2-col. Left: core products/services list with descriptions. Right: pricing strategy, delivery process, unique offerings, diversification.
 11. SECTION DIVIDER: "MARKETING"
@@ -259,7 +261,7 @@ Required slides IN ORDER:
 18. ORG CHART: Visual CSS org chart. Owner at top → key direct reports → crew/staff. Use flexbox columns.
 19. EMPLOYEE OVERVIEW: Total breakdown FT/PT/seasonal, benefits, compensation, HR systems, post-sale transitions.
 20. SECTION DIVIDER: "FINANCIAL INFORMATION"
-21. FINANCIAL TABLE: 4-year income summary table. Header row: ${brandColor} bg white text. Alternating white/#F0F5F0 rows. Bold rows for Gross Profit, EBITDA, SDE. Columns: Metric | Year1 | Year2 | Year3 | Year4. Rows: Revenue, COGS, Gross Profit, Operating Expenses, Net Income, Depreciation, Interest, EBITDA, Owner Salary Addback, Other Addbacks, SDE.
+21. FINANCIAL TABLE: 4-year income summary table. Header row: ${brandColor} bg white text. Alternating white/#F0F5F0 rows. Bold rows for Gross Profit, EBITDA, SDE. Columns: Metric | Year1 | Year2 | Year3 | Year4 — replace "Year1/2/3/4" header labels with the actual year values from fin_year1_year, fin_year2_year, fin_year3_year, fin_year4_year fields (e.g. "2024", "2023", "2022", "2021"). Year 1 (fin_year1_*) is the most recent completed tax year and appears first. Omit columns where no data exists. Rows: Revenue, COGS, Gross Profit, Operating Expenses, Net Income, Depreciation, Interest, EBITDA, Owner Salary Addback, Other Addbacks, SDE. RULE: Only use completed fiscal year data from the fin_year* fields — never infer or use YTD/partial-year figures.
 22. REVENUE SEGMENTS: Pie chart visualization using CSS conic-gradient. Show segment names and percentages. Legend below chart.
 23. ASSETS: FFE description and value, land/real estate, inventory, total appraised assets table.
 24. SECTION DIVIDER: "GROWTH OPPORTUNITIES"
