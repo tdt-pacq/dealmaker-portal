@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const mammoth = require('mammoth');
 const Anthropic = require('@anthropic-ai/sdk');
-const pdfParse = require('pdf-parse');
+const pdfParse = require('pdf-parse/lib/pdf-parse.js');
 
 const router = express.Router();
 
