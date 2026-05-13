@@ -218,56 +218,56 @@ const YearSec = ({yd,onChange,onImport}) => {
   const upAB=(id,k,v)=>onChange({...yd,addBacks:(yd.addBacks||[]).map(a=>a.id===id?{...a,[k]:v}:a)});
   return (
     <div className="card" style={{marginBottom:40}}>
-      <div className="flex items-center justify-between px-4 py-3 cursor-pointer select-none hover:bg-gray-900 rounded-lg"
+      <div className="flex items-center justify-between px-5 py-4 cursor-pointer select-none hover:bg-gray-900 rounded-lg"
         onClick={()=>set('expanded',!yd.expanded)}>
-        <div className="flex items-center gap-3">
-          <span className="text-gray-500 text-xs" style={{transition:'transform .15s',display:'inline-block',transform:yd.expanded?'rotate(90deg)':'rotate(0deg)'}}>▶</span>
-          <span className="font-semibold text-blue-300 text-sm">{yd.year}</span>
-          <select className="input-field text-xs py-1 w-28" value={yd.entityType}
+        <div className="flex items-center gap-4">
+          <span className="text-gray-500 text-sm" style={{transition:'transform .15s',display:'inline-block',transform:yd.expanded?'rotate(90deg)':'rotate(0deg)'}}>▶</span>
+          <span className="font-bold text-blue-300 text-base">{yd.year}</span>
+          <select className="input-field py-1.5" style={{fontSize:13,width:120}} value={yd.entityType}
             onClick={e=>e.stopPropagation()} onChange={e=>{e.stopPropagation();set('entityType',e.target.value);}}>
             {['1120-S','1065','1120','Schedule C'].map(t=><option key={t}>{t}</option>)}
           </select>
         </div>
-        <div className="flex items-center gap-3">
-          {onImport&&<button onClick={e=>{e.stopPropagation();onImport();}} style={{fontSize:10,padding:'3px 8px',background:'#1e293b',color:'#94a3b8',border:'1px solid #334155',borderRadius:4,cursor:'pointer',whiteSpace:'nowrap'}}> Import PDF</button>}
+        <div className="flex items-center gap-4">
+          {onImport&&<button onClick={e=>{e.stopPropagation();onImport();}} style={{fontSize:12,padding:'5px 12px',background:'#1e293b',color:'#94a3b8',border:'1px solid #334155',borderRadius:4,cursor:'pointer',whiteSpace:'nowrap'}}>Import PDF</button>}
           <div className="text-right">
-            <span className="text-xs text-gray-500 mr-2">SDE</span>
-            <span className={`mono font-bold text-sm ${c.sde>=0?'text-green-400':'text-red-400'}`}>{fmtD(c.sde)}</span>
+            <span className="text-sm text-gray-500 mr-2">SDE</span>
+            <span className={`mono font-bold text-base ${c.sde>=0?'text-green-400':'text-red-400'}`}>{(pn(yd.revenue)||c.sde)?fmtD(c.sde):'—'}</span>
           </div>
         </div>
       </div>
       {yd.expanded&&(
-        <div className="px-4 pb-4 pt-2 border-t border-gray-800 space-y-2">
-          <div className="grid grid-cols-2 gap-3">
+        <div className="px-5 pb-6 pt-4 border-t border-gray-800 space-y-3">
+          <div className="grid grid-cols-2 gap-4">
             <div><span className="lbl">Total Sales / Revenue</span><NI value={yd.revenue} onChange={v=>set('revenue',v)}/></div>
             <div><span className="lbl">COGS<PctBadge v={c.cogs} rev={c.rev}/></span><NI value={yd.cogs} onChange={v=>set('cogs',v)}/></div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div><span className="lbl">Gross Profit (auto)<PctBadge v={c.gp} rev={c.rev}/></span><CF v={c.gp}/></div>
             <div><span className="lbl">Operating Expenses (OpX)<PctBadge v={c.opx} rev={c.rev}/></span><NI value={yd.opx} onChange={v=>set('opx',v)}/></div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <span className="lbl">Other Income <span style={{fontSize:9,color:'#475569'}}>(Line 5 / Stmt 1)</span></span>
+              <span className="lbl">Other Income <span style={{fontSize:11,color:'#475569'}}>(Line 5 / Stmt 1)</span></span>
               <NI value={yd.otherIncome} placeholder="0" onChange={v=>set('otherIncome',v)}/>
             </div>
             <div/>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div><span className="lbl">Ordinary Income (auto)</span><CF v={c.noi} neg/></div>
             <div><span className="lbl">Interest</span><NI value={yd.interest} onChange={v=>set('interest',v)}/></div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div><span className="lbl">Depreciation</span><NI value={yd.depreciation} onChange={v=>set('depreciation',v)}/></div>
             <div><span className="lbl">Amortization</span><NI value={yd.amortization} onChange={v=>set('amortization',v)}/></div>
           </div>
           {!isPT(yd.entityType)&&(
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               <div><span className="lbl">Taxes (C-Corp)</span><NI value={yd.taxes} onChange={v=>set('taxes',v)}/></div>
               <div/>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div><span className="lbl">EBITDA (auto)</span><CF v={c.ebitda}/></div>
             <div><span className="lbl">Owner's Compensation<PctBadge v={c.oc} rev={c.rev}/></span><NI value={yd.ownerComp} onChange={v=>{
               const comp=pn(v);
@@ -283,11 +283,11 @@ const YearSec = ({yd,onChange,onImport}) => {
           </div>
           <div><span className="lbl">Adjusted EBITDA (auto)</span><CF v={c.adjE}/></div>
           {/* Rent / RE Add-back */}
-          <div className="mt-2 pt-2 border-t border-gray-800">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Rent / Real Estate Add-Back</span>
+          <div className="mt-3 pt-3 border-t border-gray-800">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Rent / Real Estate Add-Back</span>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <span className="lbl">Rent Expense (from return)</span>
                 <NI value={yd.rent} onChange={v=>{
@@ -301,33 +301,33 @@ const YearSec = ({yd,onChange,onImport}) => {
               </div>
             </div>
             {(pn(yd.rent)+pn(yd.rentAdj))!==0&&(
-              <div className="grid grid-cols-2 gap-3 mt-1">
+              <div className="grid grid-cols-2 gap-4 mt-2">
                 <div><span className="lbl">Total RE Add-Back (auto)</span><CF v={pn(yd.rent)+pn(yd.rentAdj)}/></div>
               </div>
             )}
           </div>
           {/* Add-Backs */}
-          <div className="mt-2 border-t border-gray-800 pt-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Normalizations / Add-Backs<PctBadge v={c.ab} rev={c.rev}/></span>
-              <button onClick={addAB} className="text-xs bg-blue-900 hover:bg-blue-800 text-blue-300 px-2 py-1 rounded">+ Add Item</button>
+          <div className="mt-3 border-t border-gray-800 pt-3">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Normalizations / Add-Backs<PctBadge v={c.ab} rev={c.rev}/></span>
+              <button onClick={addAB} className="text-sm bg-blue-900 hover:bg-blue-800 text-blue-300 px-3 py-1.5 rounded">+ Add Item</button>
             </div>
             {(yd.addBacks||[]).map(ab=>(
-              <div key={ab.id} className="grid grid-cols-5 gap-2 mb-1.5 items-center">
-                <input className="input-field col-span-3 text-xs" placeholder="Description" value={ab.label} onChange={e=>upAB(ab.id,'label',e.target.value)}/>
+              <div key={ab.id} className="grid grid-cols-5 gap-2 mb-2 items-center">
+                <input className="input-field col-span-3" style={{fontSize:13}} placeholder="Description" value={ab.label} onChange={e=>upAB(ab.id,'label',e.target.value)}/>
                 <NI value={ab.amount} onChange={v=>upAB(ab.id,'amount',v)} placeholder="0"/>
-                <button onClick={()=>rmAB(ab.id)} className="text-red-500 hover:text-red-400 text-center text-sm">✕</button>
+                <button onClick={()=>rmAB(ab.id)} className="text-red-500 hover:text-red-400 text-center text-base">✕</button>
               </div>
             ))}
             {(yd.addBacks||[]).length>0&&(
-              <div className="grid grid-cols-2 gap-3 mt-1">
+              <div className="grid grid-cols-2 gap-4 mt-2">
                 <div><span className="lbl">Total Add-Backs (auto)</span><CF v={c.ab}/></div>
               </div>
             )}
           </div>
-          <div className="mt-2 pt-2 border-t border-blue-900">
+          <div className="mt-3 pt-3 border-t border-blue-900">
             <span className="lbl text-blue-400">SDE — Seller's Discretionary Earnings</span>
-            <div className={`calc-field text-base font-bold mono ${c.sde>=0?'text-green-400':'text-red-400'}`}>{fmtD(c.sde)}</div>
+            <div className={`calc-field text-lg font-bold mono ${c.sde>=0?'text-green-400':'text-red-400'}`}>{fmtD(c.sde)}</div>
           </div>
         </div>
       )}
@@ -346,59 +346,59 @@ const Analysis = ({state,set,primeRate}) => {
   const pmt=loan=>r===0?loan/n:loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
   const dpFrac=(100-(dpPct||10))/100;
   return (
-    <div className="card p-4">
-      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 pb-2 border-b border-gray-700">Analysis</h3>
+    <div className="card p-5">
+      <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 pb-2 border-b border-gray-700">Analysis</h3>
       {!hasData?(
         <div>
-          <p className="text-gray-500 text-xs italic mb-3">Enter tax return data to see valuation analysis</p>
-          <div className="bg-gray-900 rounded p-3 text-xs text-gray-400 mono leading-5">Revenue − COGS − OpX<br/>+ ITDA + Owner's Comp<br/>+ Add-Backs = SDE</div>
+          <p className="text-gray-500 text-sm italic mb-3">Enter tax return data to see valuation analysis</p>
+          <div className="bg-gray-900 rounded p-4 text-sm text-gray-400 mono leading-6">Revenue − COGS − OpX<br/>+ ITDA + Owner's Comp<br/>+ Add-Backs = SDE</div>
         </div>
       ):(
         <>
-          <div className="mb-3">
+          <div className="mb-4">
             <span className="lbl">SDE Basis</span>
-            <div className="flex rounded overflow-hidden border border-gray-700 text-xs">
+            <div className="flex rounded overflow-hidden border border-gray-700 text-sm">
               {['weighted','recent'].map(b=>(
                 <button key={b} onClick={()=>set({...state,sdeBasis:b})}
-                  className={`flex-1 py-1.5 transition-colors ${sdeBasis===b?'bg-blue-700 text-white':'bg-gray-900 text-gray-400 hover:bg-gray-800'}`}>
+                  className={`flex-1 py-2 transition-colors ${sdeBasis===b?'bg-blue-700 text-white':'bg-gray-900 text-gray-400 hover:bg-gray-800'}`}>
                   {b==='weighted'?'Weighted Avg':'Most Recent'}
                 </button>
               ))}
             </div>
           </div>
-          <div className="bg-gray-900 rounded p-3 mb-3">
+          <div className="bg-gray-900 rounded p-4 mb-4">
             <span className="lbl">Selected SDE</span>
-            <div className="text-xl font-bold text-green-400 mono">{fmtD(base)}</div>
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="text-2xl font-bold text-green-400 mono">{fmtD(base)}</div>
+            <div className="text-sm text-gray-500 mt-1">
               {sdeBasis==='weighted'?`Wtd Avg (3×/2×/1×) ÷ 6`:`Most Recent Year`}
             </div>
           </div>
-          <div className="mb-3">
+          <div className="mb-4">
             <span className="lbl text-blue-400 mb-2 block">Fair Market Value Range</span>
             {mults.map(m=>(
-              <div key={m} className="flex justify-between items-center bg-gray-900 rounded px-3 py-1.5 mb-1">
-                <span className="text-xs text-gray-400">{m.toFixed(1)}× SDE</span>
-                <span className="mono text-sm font-semibold text-blue-300">{fmtD(base*m)}</span>
+              <div key={m} className="flex justify-between items-center bg-gray-900 rounded px-3 py-2 mb-1.5">
+                <span className="text-sm text-gray-400">{m.toFixed(1)}× SDE</span>
+                <span className="mono text-base font-semibold text-blue-300">{fmtD(base*m)}</span>
               </div>
             ))}
-            <button className="text-xs text-blue-400 hover:text-blue-300 mt-1"
+            <button className="text-sm text-blue-400 hover:text-blue-300 mt-2"
               onClick={()=>{const m=prompt('Enter custom multiplier (e.g. 4.0):');if(m&&!isNaN(parseFloat(m)))set({...state,customMults:[...(customMults||[]),m]});}}>
               + Add Custom Multiplier
             </button>
           </div>
-          <div className="border-t border-gray-700 pt-3">
+          <div className="border-t border-gray-700 pt-4">
             <span className="lbl text-green-400 mb-2 block">SBA Loan Analysis</span>
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              <div><span className="lbl">Rate (%)</span><NI value={loanRate} onChange={v=>set({...state,loanRate:v})}/>{primeRate&&<div className="text-xs text-gray-600 mt-0.5">Prime {primeRate}% + 2.75%</div>}</div>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div><span className="lbl">Rate (%)</span><NI value={loanRate} onChange={v=>set({...state,loanRate:v})}/>{primeRate&&<div className="text-xs text-gray-600 mt-1">Prime {primeRate}% + 2.75%</div>}</div>
               <div><span className="lbl">Amort (yrs)</span><NI value={loanAmort} onChange={v=>set({...state,loanAmort:v})}/></div>
             </div>
             {mults.map(m=>{
               const price=base*m, loan=price*dpFrac;
               const mo=pmt(loan), ann=mo*12;
               return (
-                <div key={m} className="bg-gray-900 rounded p-2 mb-1.5 text-xs">
-                  <div className="text-gray-400 font-semibold mb-1">{m.toFixed(1)}× — {fmtD(price)}</div>
-                  <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
+                <div key={m} className="bg-gray-900 rounded p-3 mb-2 text-sm">
+                  <div className="text-gray-300 font-semibold mb-2">{m.toFixed(1)}× — {fmtD(price)}</div>
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-1">
                     <span className="text-gray-500">Loan ({100-(dpPct||10)}% LTV):</span><span className="mono text-gray-300">{fmtD(loan)}</span>
                     <span className="text-gray-500">Monthly Pmt:</span><span className="mono text-yellow-400">{fmtD(mo)}</span>
                     <span className="text-gray-500">Annual DS:</span><span className="mono text-red-400">{fmtD(ann)}</span>
@@ -436,8 +436,8 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
     set({...state,years});
   };
   return (
-    <div style={{display:'flex',gap:16,minHeight:0}}>
-      <div style={{flex:'0 0 66.666%',overflowY:'auto',paddingRight:4,minWidth:0}}>
+    <div style={{display:'flex',gap:24,minHeight:0}}>
+      <div style={{flex:'0 0 64%',overflowY:'auto',paddingRight:8,minWidth:0}}>
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-bold text-white">Data Input &amp; Setup</h2>
@@ -448,13 +448,13 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
         {state.years.map((yd,i)=><YearSec key={yd.year} yd={yd} onChange={yd=>upY(i,yd)} onImport={()=>importTaxReturn(i)}/>)}
         {state.ytdEnabled&&<YearSec yd={state.ytdData} onChange={yd=>set({...state,ytdData:yd})} onImport={null}/>}
         {/* Advisor Notes */}
-        <div style={{marginTop:16,padding:12,background:'#0f172a',borderRadius:8,border:'1px solid #1e293b'}}>
-          <div style={{fontSize:11,color:'#64748b',marginBottom:6,fontWeight:600,letterSpacing:1}}>ADVISOR NOTES</div>
+        <div style={{marginTop:20,padding:16,background:'#0f172a',borderRadius:8,border:'1px solid #1e293b'}}>
+          <div style={{fontSize:12,color:'#64748b',marginBottom:8,fontWeight:700,letterSpacing:1,textTransform:'uppercase'}}>Advisor Notes</div>
           <textarea
             value={state.notes||''}
             onChange={e=>set({...state,notes:e.target.value})}
             placeholder="Deal context, conditions, assumptions, red flags, RE details..."
-            style={{width:'100%',minHeight:90,background:'#1e293b',color:'#e2e8f0',border:'1px solid #334155',borderRadius:6,padding:'8px 10px',fontSize:12,fontFamily:'inherit',resize:'vertical',boxSizing:'border-box'}}
+            style={{width:'100%',minHeight:100,background:'#1e293b',color:'#e2e8f0',border:'1px solid #334155',borderRadius:6,padding:'10px 12px',fontSize:14,fontFamily:'inherit',resize:'vertical',boxSizing:'border-box'}}
           />
         </div>
       </div>
@@ -3038,22 +3038,22 @@ function App() {
       {/* Sidebar */}
       <div className="no-print" style={{width:220,flexShrink:0,display:'flex',flexDirection:'column',background:'#0d1117',borderRight:'1px solid #1e293b',overflowY:'auto'}}>
         <div style={{padding:'16px 16px 12px',borderBottom:'1px solid #1e293b'}}>
-          <div style={{fontSize:12,fontWeight:700,color:'#2eb860',letterSpacing:'.03em'}}>QSI™ Market Price Analyzer</div>
-          <div style={{fontSize:10,color:'#475569'}}>SBA Acquisition Tool</div>
+          <div style={{fontSize:13,fontWeight:700,color:'#2eb860',letterSpacing:'.03em'}}>QSI™ Market Price Analyzer</div>
+          <div style={{fontSize:11,color:'#475569'}}>SBA Acquisition Tool</div>
         </div>
         <div style={{padding:'12px',borderBottom:'1px solid #1e293b'}}>
           <div className="mb-2">
             <span className="lbl">Deal Name</span>
-            <input className="input-field" style={{fontSize:12,padding:'5px 8px'}} value={state.dealName} onChange={e=>setState({...state,dealName:e.target.value})} placeholder="Enter deal name..."/>
+            <input className="input-field" value={state.dealName} onChange={e=>setState({...state,dealName:e.target.value})} placeholder="Enter deal name..."/>
           </div>
           <div>
             <span className="lbl">Advisor</span>
-            <input className="input-field" style={{fontSize:12,padding:'5px 8px'}} value={state.advisorName} onChange={e=>setState({...state,advisorName:e.target.value})} placeholder="Advisor name..."/>
+            <input className="input-field" value={state.advisorName} onChange={e=>setState({...state,advisorName:e.target.value})} placeholder="Advisor name..."/>
           </div>
         </div>
         <div style={{padding:'8px 12px',borderBottom:'1px solid #1e293b'}}>
           {[['+ New Deal',newDeal,'#1e293b','#94a3b8'],['Save Deal',save,'#1a5e35','#6de09a'],['Load Deal',()=>setShowLoad(true),'#1e293b','#94a3b8']].map(([l,fn,bg,c])=>(
-            <button key={l} onClick={fn} style={{display:'block',width:'100%',marginBottom:4,fontSize:11,background:bg,color:c,border:'none',borderRadius:5,padding:'6px 8px',cursor:'pointer',textAlign:'center'}}
+            <button key={l} onClick={fn} style={{display:'block',width:'100%',marginBottom:4,fontSize:12,background:bg,color:c,border:'none',borderRadius:5,padding:'7px 8px',cursor:'pointer',textAlign:'center'}}
               onMouseEnter={e=>{e.target.style.filter='brightness(1.2)';}} onMouseLeave={e=>{e.target.style.filter='';}}>{l}</button>
           ))}
           {saveStatus!=='idle'&&(
@@ -3065,7 +3065,7 @@ function App() {
           )}
           <div style={{borderTop:'1px solid #1e293b',marginTop:4,paddingTop:6}}>
             {[['↓ Export Deal',exportDeal,'#14281a','#6ee7b7'],['↑ Import Deal',importDeal,'#14281a','#6ee7b7']].map(([l,fn,bg,c])=>(
-              <button key={l} onClick={fn} style={{display:'block',width:'100%',marginBottom:4,fontSize:11,background:bg,color:c,border:'1px solid #166534',borderRadius:5,padding:'6px 8px',cursor:'pointer',textAlign:'center'}}
+              <button key={l} onClick={fn} style={{display:'block',width:'100%',marginBottom:4,fontSize:12,background:bg,color:c,border:'1px solid #166534',borderRadius:5,padding:'7px 8px',cursor:'pointer',textAlign:'center'}}
                 onMouseEnter={e=>{e.target.style.filter='brightness(1.2)';}} onMouseLeave={e=>{e.target.style.filter='';}}>{l}</button>
             ))}
           </div>
@@ -3074,7 +3074,7 @@ function App() {
           {TABS.map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)}
               className={`sidebar-btn w-full text-left`}
-              style={{display:'flex',alignItems:'center',gap:8,padding:'9px 14px',fontSize:11,background:tab===t.id?'#0a2416':'transparent',borderLeft:tab===t.id?'3px solid #2eb860':'3px solid transparent',color:tab===t.id?'#6de09a':'#94a3b8',cursor:'pointer',border:'none',outline:'none',width:'100%',borderRadius:0}}>
+              style={{display:'flex',alignItems:'center',gap:8,padding:'10px 14px',fontSize:13,background:tab===t.id?'#0a2416':'transparent',borderLeft:tab===t.id?'3px solid #2eb860':'3px solid transparent',color:tab===t.id?'#6de09a':'#94a3b8',cursor:'pointer',border:'none',outline:'none',width:'100%',borderRadius:0}}>
               <span>{t.icon}</span><span>{t.label}</span>
             </button>
           ))}
@@ -3090,7 +3090,7 @@ function App() {
       </div>
       {/* Content */}
       <div className="az-main" style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
-      <div className="az-scroll" style={{flex:1,overflowY:'auto',padding:24}}>
+      <div className="az-scroll" style={{flex:1,overflowY:'auto',padding:28}}>
         {tab==='input'&&<T1 state={state} set={setState} primeRate={primeRate} importTaxReturn={importTaxReturn}/>}
         {tab==='dashboard'&&<T2 state={state}/>}
         {tab==='sde'&&<T3 state={state}/>}

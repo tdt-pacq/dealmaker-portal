@@ -8,10 +8,10 @@
   .sidebar-btn:hover{background:#1a2232;}
   .sidebar-btn.active{background:#0a2416;border-left-color:#2eb860;color:#2eb860;}
   .card{background:#161b27;border:1px solid #1e2d45;border-radius:8px;}
-  .input-field{background:#0d1117;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;padding:6px 10px;width:100%;font-size:13px;}
+  .input-field{background:#0d1117;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;padding:8px 12px;width:100%;font-size:14px;}
   .input-field:focus{outline:none;border-color:#2eb860;box-shadow:0 0 0 2px rgba(46,184,96,0.18);}
   .input-field:disabled{opacity:0.35;cursor:not-allowed;}
-  .calc-field{background:#061a0d;border:1px solid #1a5e35;border-radius:6px;color:#2eb860;padding:6px 10px;font-size:13px;font-family:monospace;width:100%;}
+  .calc-field{background:#061a0d;border:1px solid #1a5e35;border-radius:6px;color:#2eb860;padding:8px 12px;font-size:14px;font-family:monospace;width:100%;}
   /* Green emphasis for positive numbers */
   .text-green-400{color:#2eb860!important;}
   .text-green-300{color:#5cd686!important;}
@@ -26,7 +26,7 @@
   .hover\:text-blue-300:hover{color:#6de09a!important;}
   .border-blue-900{border-color:#0c2a18!important;}
   .accent-blue-500{accent-color:#2eb860!important;}
-  .lbl{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;display:block;}
+  .lbl{font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:block;}
   .mono{font-family:'Courier New',monospace;}
   ::-webkit-scrollbar{width:5px;height:5px;}
   ::-webkit-scrollbar-track{background:#0d1117;}
