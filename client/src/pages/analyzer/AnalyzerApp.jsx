@@ -2925,16 +2925,16 @@ function App() {
     };
     input.click();
   };
-  const extractFromPDF=async(b64,prompt)=>{
-    // Route through Express server — uses ANTHROPIC_API_KEY env var, no key in client
+  const extractFromPDF=async(file,prompt)=>{
+    // Send file as multipart — server extracts text with pdf-parse, sends text to Claude
+    // Avoids base64 encoding which bloats token count past Claude's 200K context limit
     const auth=sessionStorage.getItem('pacq_auth');
-    const headers={'Content-Type':'application/json'};
+    const form=new FormData();
+    form.append('file',file);
+    form.append('prompt',prompt);
+    const headers={};
     if(auth) headers['Authorization']=`Basic ${auth}`;
-    const resp=await fetch('/api/extract/pdf',{
-      method:'POST',
-      headers,
-      body:JSON.stringify({pdfBase64:b64,prompt}),
-    });
+    const resp=await fetch('/api/extract/pdf',{method:'POST',headers,body:form});
     if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error||`Server error ${resp.status}`);}
     const json=await resp.json();
     return JSON.parse(json.result);
@@ -2945,7 +2945,7 @@ function App() {
     input.onchange=async e=>{
       const file=e.target.files[0];if(!file)return;
       setExtracting(true);
-      try{const b64=await fileToBase64(file);const data=await extractFromPDF(b64,COMBINED_PROMPT);setReviewData({type:'combined',yearIndex:yi,income:data.income,balance:data.balance});}
+      try{const data=await extractFromPDF(file,COMBINED_PROMPT);setReviewData({type:'combined',yearIndex:yi,income:data.income,balance:data.balance});}
       catch(err){alert('Extraction failed: '+err.message);}
       finally{setExtracting(false);}
     };
@@ -2957,7 +2957,7 @@ function App() {
     input.onchange=async e=>{
       const file=e.target.files[0];if(!file)return;
       setExtracting(true);
-      try{const b64=await fileToBase64(file);const data=await extractFromPDF(b64,INDUSTRY_PROMPT);setReviewData({type:'industry',data});}
+      try{const data=await extractFromPDF(file,INDUSTRY_PROMPT);setReviewData({type:'industry',data});}
       catch(err){alert('Extraction failed: '+err.message);}
       finally{setExtracting(false);}
     };
@@ -2969,7 +2969,7 @@ function App() {
     input.onchange=async e=>{
       const file=e.target.files[0];if(!file)return;
       setExtracting(true);
-      try{const b64=await fileToBase64(file);const data=await extractFromPDF(b64,BS_PROMPT);setReviewData({type:'balance',yearIndex:yi,data});}
+      try{const data=await extractFromPDF(file,BS_PROMPT);setReviewData({type:'balance',yearIndex:yi,data});}
       catch(err){alert('Extraction failed: '+err.message);}
       finally{setExtracting(false);}
     };
