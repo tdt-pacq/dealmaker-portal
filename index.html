@@ -1607,6 +1607,13 @@ FINANCIAL ACCURACY:
 - The Confirmed Asking Price entered by the advisor overrides all other price figures in all outputs.
 - If a Discovery Prep Report is provided, use it to enrich the business description, highlight seller differentiators, sharpen the ideal buyer profile, and strengthen the industry narrative. Do not use it for financial figures — MPA governs those.
 
+MOST RECENT YEAR RULE (CRITICAL):
+- Scan the MPA for all calendar years present in the tax return data (e.g., 2023, 2024, 2025).
+- The MOST RECENT YEAR is always the HIGHEST calendar year number found in the MPA — never assume it.
+- Use this most recent year's actual dollar figures (revenue, SDE, EBITDA) for all price box labels, blind ad financial summaries, CIM key metrics, and single-year displays.
+- Label every single-year figure with the actual year: e.g., "2025 Sales:" not "Most Recent Sales:".
+- If the MPA shows both a Weighted Average SDE and a Most Recent Year SDE, use the Most Recent Year SDE for flyer price boxes and blind ad figures. Use both in the CIM financial summary table.
+
 OUTPUT FORMAT:
 Return all five outputs wrapped in XML tags exactly as specified in the user prompt. Do not add preamble, commentary, or explanation outside the tags.`;
 
@@ -1644,9 +1651,9 @@ HEADLINE: Keyword-rich title | X Plus Years | Key Differentiator
 Region only, State
 
 Asking Price: $${price}
-Cash Flow SDE: $[most recent SDE from MPA]
-EBITDA: $[most recent EBITDA from MPA]
-Gross Revenue: $[most recent revenue from MPA]
+Cash Flow SDE: $[Most Recent Year SDE from MPA — use the highest calendar year present]
+EBITDA: $[Most Recent Year EBITDA from MPA — same year as SDE above]
+Gross Revenue: $[Most Recent Year revenue from MPA — same year as SDE above]
 Established: [year founded from EA]
 
 Business Description:
@@ -1742,16 +1749,16 @@ ZONE: PRICE_BOX_ASKING_PRICE
 $${price}
 
 ZONE: PRICE_BOX_REVENUE_LABEL
-[Most recent year] Sales:
+[Identify the highest calendar year in the MPA tax return data and write exactly: "[YEAR] Sales:" — e.g., "2025 Sales:"]
 
 ZONE: PRICE_BOX_REVENUE_VALUE
-$[revenue from MPA]
+$[Revenue for that same most recent year from MPA]
 
 ZONE: PRICE_BOX_CASHFLOW_LABEL
-[Most recent year] Cash Flow/SDE:
+[Same highest calendar year as above, write exactly: "[YEAR] Cash Flow/SDE:"]
 
 ZONE: PRICE_BOX_CASHFLOW_VALUE
-$[SDE from MPA]
+$[SDE for that same most recent year from MPA]
 
 ZONE: PRICE_BOX_MULTIPLE_LABEL
 Valuation Multiple:
@@ -1918,7 +1925,8 @@ FIN_FFE:
 [1-2 paragraphs describing FF&E value, what is included, any specific exclusions from the sale.]
 
 FIN_CASHFLOW:
-METRIC | [Most Recent Year] | [MRY] % Rev | [Prior Year] | [PY] % Rev | [2 Years Prior] | [2YP] % Rev
+[Identify the three tax return years in the MPA — use their actual calendar year numbers as column headers, highest year first]
+METRIC | [Year 1 — highest year, e.g. 2025] | [Y1] % Rev | [Year 2 — e.g. 2024] | [Y2] % Rev | [Year 3 — e.g. 2023] | [Y3] % Rev
 Gross Revenue | $X | 100% | $X | 100% | $X | 100%
 Cost of Goods Sold | $(X) | XX% | $(X) | XX% | $(X) | XX%
 Gross Profit | $X | XX% | $X | XX% | $X | XX%
@@ -1939,10 +1947,10 @@ VAL_METRICS:
 Total Asking Price: $${price}
 Real Estate Value: $[real estate value if owned from EA, or N/A]
 Business Value (excl. RE): $[total price minus RE value, or same as asking price if N/A]
-Seller's Discretionary Earnings (SDE): $[most recent SDE from MPA]
-Business Value Multiple (excl. RE): [business value divided by SDE, 2 decimal places]X
-Total Multiple (incl. RE if applicable): [total price divided by SDE]X
-Annual Revenue: $[most recent revenue]
+Seller's Discretionary Earnings (SDE): $[Most Recent Year SDE from MPA — highest calendar year]
+Business Value Multiple (excl. RE): [business value divided by Most Recent Year SDE, 2 decimal places]X
+Total Multiple (incl. RE if applicable): [total price divided by Most Recent Year SDE]X
+Annual Revenue: $[Most Recent Year revenue from MPA — same year as SDE]
 SDE Margin: [SDE divided by revenue as percentage]%
 DSCR: [ratio from MPA]
 SBA Pre-Approved: YES
