@@ -366,9 +366,13 @@ label{display:block;font-size:13px;font-weight:500;color:#94a3b8;margin-bottom:4
 
     <!-- EDIT PANEL -->
     <div id="edit-panel" class="card hidden" style="margin-bottom:20px">
-      <div class="ch">
+      <div class="ch" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
         <span class="ct">Edit Outputs</span>
-        <span style="font-size:12px;color:#64748b">Review and adjust content before opening preview</span>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:12px;color:#64748b">Review and adjust content before opening preview</span>
+          <button class="btn-g btn-sm" onclick="if(confirm('Regenerate all outputs? Your current edits will be overwritten.')) runGeneration();"
+            style="white-space:nowrap;font-size:12px">↺ Regenerate</button>
+        </div>
       </div>
       <div class="cb" style="padding-top:0">
         <div class="tabs" id="edit-tabs" style="margin-bottom:0">
