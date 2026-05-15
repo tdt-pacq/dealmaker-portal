@@ -3074,7 +3074,6 @@ const TABS=[
   {id:'dscr',label:'DSCR Analysis',icon:'🏦'},
   {id:'seller',label:'Seller Scenario',icon:'🔍'},
   {id:'roi',label:'Buyer ROI',icon:'💹'},
-  {id:'acqcalc',label:'Acq Calculator',icon:'🧮'},
   {id:'proceeds',label:'Net Proceeds',icon:'💵'},
   {id:'nlb',label:'QSI™ NLB',icon:'⭐'},
   {id:'report',label:'Deal Report',icon:'📄'},
@@ -3361,7 +3360,6 @@ function App() {
         {tab==='dscr'&&<T5 state={state} set={setState} primeRate={primeRate}/>}
         {tab==='seller'&&<TSeller state={state} set={setState}/>}
         {tab==='roi'&&<TBuyerROI state={state} set={setState}/>}
-        {tab==='acqcalc'&&<TAcqCalc state={state}/>}
         {tab==='balance'&&<T6 state={state} set={setState} importBalanceSheet={importBalanceSheet}/>}
         {tab==='industry'&&<TIndustry state={state} set={setState} importIndustryReport={importIndustryReport}/>}
         {tab==='proceeds'&&<T7 state={state} set={setState}/>}
