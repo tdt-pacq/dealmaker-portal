@@ -26,7 +26,8 @@ const PORTAL_SECTIONS = [
     id: 'buyers',
     label: 'Buyers',
     items: [
-      { id: 'acqcalc', label: 'Acq Calculator', icon: '🧮', basePath: '/acqcalc', live: true },
+      { id: 'acqcalc',      label: 'Acq Calculator',  icon: '🧮', basePath: '/acqcalc',       live: true },
+      { id: 'buyerstrategy', label: 'Buyer Strategy',  icon: '🎯', basePath: '/buyer-strategy', live: true },
       { id: 'otp', label: 'OTP', icon: '📝', basePath: '/otp', live: false },
     ],
   },
