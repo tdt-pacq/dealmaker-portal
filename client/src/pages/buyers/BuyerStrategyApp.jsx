@@ -8,6 +8,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import './buyer-strategy.css';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -963,20 +964,25 @@ async function generatePptx(deckType, buyer) {
 
 // ─── Slide Preview Modal ───────────────────────────────────────────────────────
 
-function SlidePreviewModal({slides, title, onClose, onDownload, downloading}) {
+function SlidePreviewModal({deckType, buyer, title, onClose, onDownload, downloading}) {
+  // Build slides during render (not in event handler) so React can catch errors
+  let slides = [];
+  let buildError = null;
+  try {
+    slides = deckType === 'discover' ? buildDiscoverSlides(buyer) : buildDevelopSlides(buyer);
+  } catch(e) {
+    buildError = e.message || String(e);
+  }
+
   const [idx,setIdx]  = useState(0);
-  const [dir,setDir]  = useState('right');
   const [anim,setAnim]= useState('');
-  const prevIdx = useRef(idx);
 
   const go = (newIdx) => {
-    if (newIdx===idx) return;
+    if (newIdx===idx || !slides.length) return;
     const d = newIdx>idx?'right':'left';
-    setDir(d);
     setAnim(d==='right'?'bs-slide-anim-right':'bs-slide-anim-left');
     setIdx(newIdx);
     setTimeout(()=>setAnim(''),400);
-    prevIdx.current=newIdx;
   };
 
   useEffect(()=>{
@@ -987,9 +993,9 @@ function SlidePreviewModal({slides, title, onClose, onDownload, downloading}) {
     };
     window.addEventListener('keydown',h);
     return ()=>window.removeEventListener('keydown',h);
-  },[idx,slides.length]);
+  },[idx, slides.length, onClose]);
 
-  return (
+  const modal = (
     <div className="bs-modal-overlay">
       <div className="bs-modal-topbar">
         <span className="bs-modal-title">{title}</span>
@@ -998,18 +1004,32 @@ function SlidePreviewModal({slides, title, onClose, onDownload, downloading}) {
         </button>
         <button className="bs-modal-close" onClick={onClose}>✕</button>
       </div>
-      <div className="bs-slide-stage">
-        <SlideCanvas key={idx} animClass={anim}>
-          {slides[idx]}
-        </SlideCanvas>
-      </div>
-      <div className="bs-modal-nav">
-        <button className="bs-modal-nav-btn" onClick={()=>go(Math.max(idx-1,0))} disabled={idx===0}>←</button>
-        <span className="bs-slide-counter">{idx+1} / {slides.length}</span>
-        <button className="bs-modal-nav-btn" onClick={()=>go(Math.min(idx+1,slides.length-1))} disabled={idx===slides.length-1}>→</button>
-      </div>
+      {buildError ? (
+        <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',
+                     flexDirection:'column',gap:16,color:'#ef4444',fontFamily:'Inter,sans-serif'}}>
+          <div style={{fontSize:18,fontWeight:600}}>⚠ Slide build failed</div>
+          <div style={{fontSize:13,color:'#94a3b8',maxWidth:500,textAlign:'center'}}>{buildError}</div>
+          <button className="bs-btn bs-btn-danger" onClick={onClose}>Close</button>
+        </div>
+      ) : (
+        <>
+          <div className="bs-slide-stage">
+            <SlideCanvas key={idx} animClass={anim}>
+              {slides[idx]}
+            </SlideCanvas>
+          </div>
+          <div className="bs-modal-nav">
+            <button className="bs-modal-nav-btn" onClick={()=>go(Math.max(idx-1,0))} disabled={idx===0}>←</button>
+            <span className="bs-slide-counter">{idx+1} / {slides.length}</span>
+            <button className="bs-modal-nav-btn" onClick={()=>go(Math.min(idx+1,slides.length-1))} disabled={idx===slides.length-1}>→</button>
+          </div>
+        </>
+      )}
     </div>
   );
+
+  // Portal into document.body to escape portal-shell overflow/stacking context
+  return createPortal(modal, document.body);
 }
 
 // ─── Objection Engine ─────────────────────────────────────────────────────────
@@ -1673,8 +1693,7 @@ export default function BuyerStrategyApp() {
   const openPreview = (type) => {
     if (!buyer) return;
     loadPptx();
-    const slides = type==='discover' ? buildDiscoverSlides(buyer) : buildDevelopSlides(buyer);
-    setPreview({type, slides});
+    setPreview({type});
   };
 
   const handleDownload = async () => {
@@ -1761,10 +1780,11 @@ export default function BuyerStrategyApp() {
         </>
       )}
 
-      {/* Preview Modal */}
-      {preview && (
+      {/* Preview Modal — rendered via portal into document.body */}
+      {preview && buyer && (
         <SlidePreviewModal
-          slides={preview.slides}
+          deckType={preview.type}
+          buyer={buyer}
           title={preview.type==='discover' ? `Discover Deck — ${buyer?.intel?.name||'Client'}` : `Develop Deck — ${buyer?.intel?.name||'Client'}`}
           onClose={()=>setPreview(null)}
           onDownload={handleDownload}
