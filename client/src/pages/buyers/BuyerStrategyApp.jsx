@@ -415,7 +415,7 @@ function buildDiscoverSlides(buyer) {
         'Speed to close: 60–120 days from LOI to funded transaction.',
       ]}/>
       <div style={{fontFamily:'Inter,sans-serif',fontSize:11,color:'#888888',marginTop:'auto',paddingTop:20}}>
-        Source: {{SBA_SOURCE}} — verify current terms before presenting.
+        {'Source: {{SBA_SOURCE}} — verify current terms before presenting.'}
       </div>
       <SlideNum n={4} total={9}/>
     </div>,
