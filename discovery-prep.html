@@ -979,7 +979,11 @@ function showReport(report, bizName) {
 
   const date = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   document.getElementById('export-meta').textContent = `Business Intelligence Report — ${bizName} — ${date}`;
-  document.getElementById('print-meta').textContent  = `${bizName} | Prepared ${date}`;
+  document.getElementById('print-meta').textContent  = `Prepared ${date}`;
+  const coverBiz = document.getElementById('cover-biz-name');
+  if (coverBiz) coverBiz.textContent = bizName || 'Business';
+  const coverMeta = document.getElementById('cover-meta');
+  if (coverMeta) coverMeta.textContent = `Prepared for advisor review on ${date}`;
 }
 
 // ─── HANDLERS ─────────────────────────────────────────────────────────────────
