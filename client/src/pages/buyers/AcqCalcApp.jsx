@@ -21,9 +21,9 @@ export default function AcqCalcApp() {
     liquidity: 113000,
     sde: 0,
     dpPct: 10,
-    carryPct: 5,
-    carryRate: 6,
-    carryTerm: 2,
+    carryPct: 0,
+    carryRate: 0,
+    carryTerm: 0,
     sbaRate: 10.75,
     sbaTerm: 10,
     multiple: 3.0,
@@ -54,10 +54,10 @@ export default function AcqCalcApp() {
   let carryAnnual = 0;
   if (sellerNote > 0) {
     if (c.carryMode === 'standby') {
-      carryAnnual = sellerNote * ((c.carryRate || 6) / 100);
+      carryAnnual = sellerNote * ((c.carryRate || 0) / 100);
     } else {
-      const rc = (c.carryRate || 6) / 100 / 12;
-      const nc = (c.carryTerm || 2) * 12;
+      const rc = (c.carryRate || 0) / 100 / 12;
+      const nc = (c.carryTerm || 0) * 12;
       const cmo = rc === 0 ? sellerNote / nc : sellerNote * rc * Math.pow(1 + rc, nc) / (Math.pow(1 + rc, nc) - 1);
       carryAnnual = cmo * 12;
     }
