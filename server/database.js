@@ -33,6 +33,23 @@ function initSchema() {
       listing_platform_notes TEXT
     )
   `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS deal_finder_searches (
+      id          TEXT PRIMARY KEY,
+      buyer_name  TEXT NOT NULL,
+      buyer_email TEXT NOT NULL,
+      industry    TEXT NOT NULL,
+      location    TEXT NOT NULL,
+      price_min   INTEGER DEFAULT 0,
+      price_max   INTEGER DEFAULT 5000000,
+      revenue_min INTEGER DEFAULT 0,
+      revenue_max INTEGER DEFAULT 0,
+      active      INTEGER DEFAULT 1,
+      created_at  TEXT NOT NULL,
+      last_run_at TEXT
+    )
+  `);
 }
 
 function seedTestDeal() {

@@ -4,13 +4,15 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const cron = require('node-cron');
 const { basicAuth } = require('./auth');
-const { seedTestDeal } = require('./database');
+const { getDb, seedTestDeal } = require('./database');
 const dealsRouter = require('./routes/deals');
 const generateRouter = require('./routes/generate');
 const exportRouter = require('./routes/export');
 const extractRouter = require('./routes/extract');
 const discoveryRouter = require('./routes/discovery');
+const dealFinderRouter = require('./routes/deal-finder');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -36,6 +38,7 @@ app.use('/api/generate', generateRouter);
 app.use('/api/export', exportRouter);
 app.use('/api/extract', extractRouter);
 app.use('/api/discovery', discoveryRouter);
+app.use('/api/deal-finder', dealFinderRouter);
 
 // Serve generated output files (auth required)
 app.use('/output', basicAuth, express.static(path.join(__dirname, '..', 'output')));
@@ -68,6 +71,24 @@ if (fs.existsSync(clientBuild)) {
 if (process.env.NODE_ENV !== 'production') {
   seedTestDeal();
 }
+
+// ─── Deal Finder — Daily Cron ─────────────────────────────────────────────────
+// Runs every morning at 7:00am Mountain Time for all active search profiles
+cron.schedule('0 7 * * *', async () => {
+  console.log('[Deal Finder] Starting daily cron run…');
+  const db = getDb();
+  const profiles = db.prepare('SELECT * FROM deal_finder_searches WHERE active = 1').all();
+  console.log(`[Deal Finder] ${profiles.length} active profile(s) to process`);
+  for (const profile of profiles) {
+    try {
+      await dealFinderRouter.runSearchAndEmail(profile);
+      console.log(`[Deal Finder] Sent to ${profile.buyer_email} (${profile.industry} · ${profile.location})`);
+    } catch (e) {
+      console.error(`[Deal Finder] Failed for profile ${profile.id}:`, e.message);
+    }
+  }
+  console.log('[Deal Finder] Daily cron complete');
+}, { timezone: 'America/Denver' });
 
 app.listen(PORT, () => {
   console.log(`PACQ server running on http://localhost:${PORT}`);
