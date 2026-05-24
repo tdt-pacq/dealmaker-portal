@@ -154,22 +154,36 @@ function OffMarketCard({ prospect: p }) {
 
 // ─── Results Panel ────────────────────────────────────────────────────────────
 
-function ResultsPanel({ results, buyerEmail, onClose }) {
+function ResultsPanel({ results, buyerEmail, emailStatus, emailError, onClose }) {
   const onMarket  = results?.onMarket  || [];
   const offMarket = results?.offMarket || [];
 
   return (
     <div style={{ marginTop: 20 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <div>
           <div style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0' }}>Search Results</div>
           <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
             {onMarket.length} on-market listing{onMarket.length !== 1 ? 's' : ''} · {offMarket.length} off-market prospect{offMarket.length !== 1 ? 's' : ''}
-            {buyerEmail && <span style={{ color: '#2eb860' }}> · Email sent to {buyerEmail}</span>}
           </div>
         </div>
         <button onClick={onClose} style={{ ...S.ghostBtn, padding: '5px 12px', fontSize: 12 }}>✕ Close</button>
       </div>
+
+      {/* Email status banner */}
+      {emailStatus === 'sent' && (
+        <div style={{ background: 'rgba(46,184,96,.08)', border: '1px solid rgba(46,184,96,.25)', borderRadius: 6, padding: '9px 14px', marginBottom: 14, fontSize: 13, color: '#2eb860' }}>
+          ✓ Email delivered to <strong>{buyerEmail}</strong>
+        </div>
+      )}
+      {emailStatus === 'failed' && (
+        <div style={{ background: 'rgba(220,38,38,.08)', border: '1px solid rgba(239,68,68,.3)', borderRadius: 6, padding: '9px 14px', marginBottom: 14, fontSize: 13, color: '#f87171' }}>
+          ✗ Email not sent — {emailError || 'unknown error'}.
+          {emailError?.includes('RESEND_API_KEY') && (
+            <span style={{ color: '#94a3b8' }}> Add <code style={{ background: '#1e293b', padding: '1px 5px', borderRadius: 3 }}>RESEND_API_KEY</code> to Railway environment variables.</span>
+          )}
+        </div>
+      )}
 
       {/* On-Market */}
       <div style={{ marginBottom: 24 }}>
@@ -329,7 +343,7 @@ function ProfileCard({ profile, onDelete, onToggle, onRunResult }) {
         const pollRes = await fetch(`/api/deal-finder/jobs/${jobId}`, { headers: authHeaders() });
         const job = await pollRes.json();
         if (job.status === 'complete') {
-          onRunResult(profile.id, job.results, profile.buyer_email);
+          onRunResult(profile.id, job.results, profile.buyer_email, job.emailStatus, job.emailError);
           return;
         }
         if (job.status === 'error') throw new Error(job.error || 'Search failed');
@@ -439,7 +453,7 @@ export default function DealFinderApp() {
   const [profiles, setProfiles]   = useState([]);
   const [loading, setLoading]     = useState(true);
   const [showForm, setShowForm]   = useState(false);
-  const [activeResult, setActiveResult] = useState(null); // { profileId, results, buyerEmail }
+  const [activeResult, setActiveResult] = useState(null); // { profileId, results, buyerEmail, emailStatus, emailError }
 
   const fetchProfiles = useCallback(async () => {
     try {
@@ -467,8 +481,8 @@ export default function DealFinderApp() {
     } catch { /* ignore */ }
   };
 
-  const handleRunResult = (profileId, results, buyerEmail) => {
-    setActiveResult({ profileId, results, buyerEmail });
+  const handleRunResult = (profileId, results, buyerEmail, emailStatus, emailError) => {
+    setActiveResult({ profileId, results, buyerEmail, emailStatus, emailError });
     // Scroll to results
     setTimeout(() => document.getElementById('df-results')?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
@@ -535,6 +549,8 @@ export default function DealFinderApp() {
             <ResultsPanel
               results={activeResult.results}
               buyerEmail={activeResult.buyerEmail}
+              emailStatus={activeResult.emailStatus}
+              emailError={activeResult.emailError}
               onClose={() => setActiveResult(null)}
             />
           </div>

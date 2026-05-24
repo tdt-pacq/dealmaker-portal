@@ -259,24 +259,28 @@ function buildEmailHtml(profile, results) {
 async function sendEmail(profile, results) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    console.warn('Deal Finder: RESEND_API_KEY not set — skipping email send');
-    return;
+    throw new Error('RESEND_API_KEY is not configured. Add it to your Railway environment variables to enable email delivery.');
   }
 
   const resend = new Resend(apiKey);
-  const from   = process.env.RESEND_FROM_EMAIL || 'deals@thedealteam.co';
+  const from   = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
   const date   = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
   const ccList = [];
   if (process.env.ADVISOR_CC_EMAIL) ccList.push(process.env.ADVISOR_CC_EMAIL);
 
-  await resend.emails.send({
+  const response = await resend.emails.send({
     from,
     to:      profile.buyer_email,
     cc:      ccList.length ? ccList : undefined,
     subject: `Deal Finder: ${profile.industry} in ${profile.location} — ${date}`,
     html:    buildEmailHtml(profile, results),
   });
+
+  if (response.error) {
+    throw new Error(`Resend API error: ${response.error.message || JSON.stringify(response.error)}`);
+  }
+  return response;
 }
 
 // ─── CORE SEARCH RUNNER ───────────────────────────────────────────────────────
@@ -379,12 +383,21 @@ router.post('/:id/run', (req, res) => {
     (async () => {
       try {
         const results = await runSearch(profile);
-        // Send email in background (don't block result delivery)
-        sendEmail(profile, results).catch(e => console.error('Email send error:', e.message));
-        // Update last_run_at
         db.prepare('UPDATE deal_finder_searches SET last_run_at = ? WHERE id = ?')
           .run(new Date().toISOString(), profile.id);
-        jobs.set(jobId, { status: 'complete', results, createdAt: Date.now() });
+
+        // Attempt email — capture result without blocking job completion
+        let emailStatus = 'sent';
+        let emailError  = null;
+        try {
+          await sendEmail(profile, results);
+        } catch (e) {
+          emailStatus = 'failed';
+          emailError  = e.message;
+          console.error('Deal Finder email error:', e.message);
+        }
+
+        jobs.set(jobId, { status: 'complete', results, emailStatus, emailError, createdAt: Date.now() });
       } catch (e) {
         jobs.set(jobId, { status: 'error', error: e.message, createdAt: Date.now() });
       }
@@ -400,7 +413,7 @@ router.post('/:id/run', (req, res) => {
 router.get('/jobs/:jobId', (req, res) => {
   const job = jobs.get(req.params.jobId);
   if (!job) return res.status(404).json({ error: 'Job not found or expired' });
-  res.json({ status: job.status, results: job.results, error: job.error });
+  res.json({ status: job.status, results: job.results, error: job.error, emailStatus: job.emailStatus, emailError: job.emailError });
 });
 
 router.runSearchAndEmail = runSearchAndEmail;
