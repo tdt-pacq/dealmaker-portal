@@ -178,10 +178,7 @@ function ResultsPanel({ results, buyerEmail, emailStatus, emailError, onClose })
       )}
       {emailStatus === 'failed' && (
         <div style={{ background: 'rgba(220,38,38,.08)', border: '1px solid rgba(239,68,68,.3)', borderRadius: 6, padding: '9px 14px', marginBottom: 14, fontSize: 13, color: '#f87171' }}>
-          ✗ Email not sent — {emailError || 'unknown error'}.
-          {emailError?.includes('RESEND_API_KEY') && (
-            <span style={{ color: '#94a3b8' }}> Add <code style={{ background: '#1e293b', padding: '1px 5px', borderRadius: 3 }}>RESEND_API_KEY</code> to Railway environment variables.</span>
-          )}
+          ✗ Email not sent — {emailError || 'unknown error'}
         </div>
       )}
 
@@ -218,11 +215,18 @@ function ResultsPanel({ results, buyerEmail, emailStatus, emailError, onClose })
 
 // ─── Profile Form ─────────────────────────────────────────────────────────────
 
-function ProfileForm({ onSave, onCancel }) {
+function ProfileForm({ onSave, onCancel, profile }) {
+  const isEdit = !!profile;
   const [form, setForm] = useState({
-    buyer_name: '', buyer_email: '', industry: '', location: '',
-    price_min: 500000, price_max: 3000000,
-    revenue_min: 0, revenue_max: 0, active: true,
+    buyer_name:  profile?.buyer_name  ?? '',
+    buyer_email: profile?.buyer_email ?? '',
+    industry:    profile?.industry    ?? '',
+    location:    profile?.location    ?? '',
+    price_min:   profile?.price_min   ?? 500000,
+    price_max:   profile?.price_max   ?? 3000000,
+    revenue_min: profile?.revenue_min ?? 0,
+    revenue_max: profile?.revenue_max ?? 0,
+    active:      profile ? !!profile.active : true,
   });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
@@ -237,13 +241,16 @@ function ProfileForm({ onSave, onCancel }) {
     setSaving(true);
     setErr('');
     try {
-      const res = await fetch('/api/deal-finder', {
-        method: 'POST',
+      const url    = isEdit ? `/api/deal-finder/${profile.id}` : '/api/deal-finder';
+      const method = isEdit ? 'PATCH' : 'POST';
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify(form),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Save failed'); }
-      onSave();
+      const updated = await res.json();
+      onSave(updated);
     } catch (e) {
       setErr(e.message);
       setSaving(false);
@@ -253,7 +260,7 @@ function ProfileForm({ onSave, onCancel }) {
   return (
     <div style={{ ...S.card, marginBottom: 20 }}>
       <div style={S.cardHd}>
-        <span style={S.cardTitle}>New Search Profile</span>
+        <span style={S.cardTitle}>{isEdit ? 'Edit Search Profile' : 'New Search Profile'}</span>
       </div>
       <div style={{ padding: '20px 20px 8px' }}>
 
@@ -309,7 +316,7 @@ function ProfileForm({ onSave, onCancel }) {
 
 // ─── Profile Card ─────────────────────────────────────────────────────────────
 
-function ProfileCard({ profile, onDelete, onToggle, onRunResult }) {
+function ProfileCard({ profile, onDelete, onToggle, onRunResult, onEdit }) {
   const [running, setRunning]   = useState(false);
   const [runPhase, setRunPhase] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -408,6 +415,12 @@ function ProfileCard({ profile, onDelete, onToggle, onRunResult }) {
             {running ? <><Spinner size={12} />&nbsp;{runPhase || 'Running…'}</> : '▶ Run Now'}
           </button>
           <button
+            onClick={() => onEdit(profile)}
+            style={{ ...S.ghostBtn, padding: '5px 10px', fontSize: 11 }}
+          >
+            ✏ Edit
+          </button>
+          <button
             onClick={() => onToggle(profile.id)}
             style={{ ...S.ghostBtn, padding: '5px 10px', fontSize: 11 }}
           >
@@ -453,6 +466,7 @@ export default function DealFinderApp() {
   const [profiles, setProfiles]   = useState([]);
   const [loading, setLoading]     = useState(true);
   const [showForm, setShowForm]   = useState(false);
+  const [editingProfile, setEditingProfile] = useState(null); // profile object being edited
   const [activeResult, setActiveResult] = useState(null); // { profileId, results, buyerEmail, emailStatus, emailError }
 
   const fetchProfiles = useCallback(async () => {
@@ -466,7 +480,22 @@ export default function DealFinderApp() {
 
   useEffect(() => { fetchProfiles(); }, [fetchProfiles]);
 
-  const handleSave = () => { setShowForm(false); fetchProfiles(); };
+  const handleSave = (updated) => {
+    if (editingProfile) {
+      // Merge updated profile back into list without a full refetch
+      setProfiles(prev => prev.map(p => p.id === updated.id ? updated : p));
+      setEditingProfile(null);
+    } else {
+      setShowForm(false);
+      fetchProfiles();
+    }
+  };
+
+  const handleEdit = (profile) => {
+    setShowForm(false);
+    setEditingProfile(profile);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleDelete = (id) => {
     setProfiles(prev => prev.filter(p => p.id !== id));
@@ -510,13 +539,24 @@ export default function DealFinderApp() {
           <strong style={{ color: '#2eb860' }}>How it works:</strong> Create a search profile for each Buyer's Academy member. The system runs every morning at 7am MT, searches on-market listings (BizBuySell, BizQuest, Sunbelt, Murphy Business, etc.) and off-market prospects, then emails a formatted report to the buyer. Use <strong style={{ color: '#e2e8f0' }}>Run Now</strong> to preview results immediately.
         </div>
 
+        {/* Edit form — shown inline above the list when editing */}
+        {editingProfile && (
+          <ProfileForm
+            profile={editingProfile}
+            onSave={handleSave}
+            onCancel={() => setEditingProfile(null)}
+          />
+        )}
+
         {/* New profile button / form */}
-        {!showForm ? (
-          <button onClick={() => setShowForm(true)} style={{ ...S.primaryBtn, marginBottom: 20 }}>
-            + New Search Profile
-          </button>
-        ) : (
-          <ProfileForm onSave={handleSave} onCancel={() => setShowForm(false)} />
+        {!editingProfile && (
+          !showForm ? (
+            <button onClick={() => setShowForm(true)} style={{ ...S.primaryBtn, marginBottom: 20 }}>
+              + New Search Profile
+            </button>
+          ) : (
+            <ProfileForm onSave={handleSave} onCancel={() => setShowForm(false)} />
+          )
         )}
 
         {/* Profile list */}
@@ -539,6 +579,7 @@ export default function DealFinderApp() {
               onDelete={handleDelete}
               onToggle={handleToggle}
               onRunResult={handleRunResult}
+              onEdit={handleEdit}
             />
           ))
         )}

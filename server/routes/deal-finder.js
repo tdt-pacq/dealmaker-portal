@@ -13,7 +13,7 @@
 
 const express  = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 const { v4: uuidv4 } = require('uuid');
 const { getDb }      = require('../database');
 
@@ -45,14 +45,30 @@ function extractTextBlocks(content) {
     .join('');
 }
 
-function safeParseJson(raw) {
+function safeParseJson(raw, label) {
   // Try to extract a JSON array from the Claude response
   const text = extractTextBlocks(raw);
-  const match = text.match(/\[[\s\S]*\]/);
-  if (!match) return [];
+
+  // Log the raw text response for debugging (first 1500 chars)
+  if (label) {
+    console.log(`[Deal Finder] ${label} raw text (${text.length} chars):`, text.substring(0, 1500));
+  }
+
+  // Strip markdown code fences if present (```json ... ```)
+  const stripped = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '');
+
+  // Find the outermost JSON array
+  const match = stripped.match(/\[[\s\S]*\]/);
+  if (!match) {
+    if (label) console.log(`[Deal Finder] ${label}: no JSON array found in response`);
+    return [];
+  }
   try {
-    return JSON.parse(match[0]);
-  } catch {
+    const parsed = JSON.parse(match[0]);
+    if (label) console.log(`[Deal Finder] ${label}: parsed ${Array.isArray(parsed) ? parsed.length : 'non-array'} items`);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    if (label) console.log(`[Deal Finder] ${label}: JSON parse error —`, e.message);
     return [];
   }
 }
@@ -65,49 +81,67 @@ async function searchOnMarket(profile) {
     ? `\n  Annual Revenue range: ${fmtPrice(profile.revenue_min)} – ${fmtPrice(profile.revenue_max || 'no max')}`
     : '';
 
+  // Build explicit search queries Claude should run
+  const queries = [
+    `"${profile.industry}" for sale "${profile.location}" site:bizbuysell.com`,
+    `"${profile.industry}" business for sale "${profile.location}" site:bizquest.com`,
+    `"${profile.industry}" acquisition "${profile.location}" sunbelt OR "murphy business" OR bizbuysell`,
+    `"${profile.industry}" business for sale "${profile.location}" asking price`,
+  ];
+
+  console.log(`[Deal Finder] Starting on-market search — industry: ${profile.industry}, location: ${profile.location}`);
+
   const resp = await anthropic.messages.create({
     model: 'claude-sonnet-4-5',
-    max_tokens: 4000,
+    max_tokens: 6000,
     tools: [{ type: 'web_search_20250305', name: 'web_search' }],
     system: `You are a business listing aggregator for Peterson Acquisitions — The Deal Team, a top SBA acquisition advisory firm.
-Your job: search for CURRENT, REAL, FOR-SALE business listings that match the buyer's criteria.
-Search BizBuySell, BizQuest, Sunbelt Advisors, Murphy Business, BizMLS, BusinessBroker.net, and similar platforms.
-Only return listings you actually find via web search — do not fabricate listings.
-If fewer than 3 real listings are found, return what you find.`,
+Your job: use web_search to find REAL, CURRENT, FOR-SALE business listings that match the buyer's criteria.
+You MUST run multiple web searches and extract actual listing data from the results.
+Only include listings you actually find — do not fabricate data. If a field is not shown in the listing, use "Not Disclosed".`,
     messages: [{
       role: 'user',
-      content: `Search for currently listed for-sale businesses matching these criteria:
+      content: `I need you to find currently listed for-sale businesses matching these criteria:
 
   Industry / Type: ${profile.industry}
   Location: ${profile.location}
   Asking Price range: ${priceRange}${revenueClause}
 
-Search BizBuySell, BizQuest, Sunbelt, Murphy Business, BusinessBroker.net, and BizMLS for real active listings.
+Run these web searches one by one using the web_search tool:
+1. ${queries[0]}
+2. ${queries[1]}
+3. ${queries[2]}
+4. ${queries[3]}
 
-Return up to 10 real listings as a JSON array. Each object must have these exact keys:
-[
-  {
-    "name": "Business name or 'Confidential' if listed that way",
-    "asking_price": "formatted dollar amount or 'Not Disclosed'",
-    "gross_revenue": "formatted dollar amount or 'Not Disclosed'",
-    "cash_flow": "formatted dollar amount or 'Not Disclosed'",
-    "location": "City, State",
-    "description": "2-3 sentence description from the listing",
-    "source_platform": "BizBuySell / BizQuest / Sunbelt / etc",
-    "listing_url": "full URL to the listing page",
-    "broker_name": "broker or brokerage name if shown, otherwise 'Not Listed'"
-  }
-]
+For each search, extract any real business-for-sale listings you find. Look for listing pages on BizBuySell, BizQuest, Sunbelt Advisors, Murphy Business, BusinessBroker.net, and similar broker platforms.
 
-Return ONLY the JSON array. No preamble, no explanation, no markdown fences.`,
+After running all searches, compile the unique real listings you found into a JSON array. Include up to 10 listings total (deduplicate if the same business appears on multiple sites).
+
+Each listing object must use EXACTLY these keys:
+{
+  "name": "Business name or 'Confidential Listing' if not disclosed",
+  "asking_price": "e.g. '$1,200,000' or 'Not Disclosed'",
+  "gross_revenue": "e.g. '$2,800,000' or 'Not Disclosed'",
+  "cash_flow": "e.g. '$420,000' or 'Not Disclosed'",
+  "location": "City, State",
+  "description": "2-3 sentence description from the listing",
+  "source_platform": "BizBuySell / BizQuest / Sunbelt / etc",
+  "listing_url": "full URL to the listing page",
+  "broker_name": "Broker or brokerage name, or 'Not Listed'"
+}
+
+Return ONLY a JSON array of listing objects. No preamble, no explanation, no markdown fences.
+If you find zero listings, return an empty array: []`,
     }],
   });
 
-  return safeParseJson(resp.content);
+  return safeParseJson(resp.content, 'on-market');
 }
 
 async function searchOffMarket(profile) {
   const priceRange = `${fmtPrice(profile.price_min)} – ${fmtPrice(profile.price_max || 'no max')}`;
+
+  console.log(`[Deal Finder] Starting off-market search — industry: ${profile.industry}, location: ${profile.location}`);
 
   const resp = await anthropic.messages.create({
     model: 'claude-sonnet-4-5',
@@ -148,7 +182,7 @@ Return ONLY the JSON array. No preamble, no explanation, no markdown fences.`,
     }],
   });
 
-  return safeParseJson(resp.content);
+  return safeParseJson(resp.content, 'off-market');
 }
 
 // ─── EMAIL ────────────────────────────────────────────────────────────────────
@@ -257,30 +291,36 @@ function buildEmailHtml(profile, results) {
 }
 
 async function sendEmail(profile, results) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    throw new Error('RESEND_API_KEY is not configured. Add it to your Railway environment variables to enable email delivery.');
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+
+  if (!gmailUser || !gmailPass) {
+    throw new Error('GMAIL_USER and GMAIL_APP_PASSWORD must be set in .env to enable email delivery.');
   }
 
-  const resend = new Resend(apiKey);
-  const from   = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
-  const date   = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: { user: gmailUser, pass: gmailPass },
+  });
+
+  const fromAddress = process.env.GMAIL_FROM || gmailUser;
+  const date = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
   const ccList = [];
   if (process.env.ADVISOR_CC_EMAIL) ccList.push(process.env.ADVISOR_CC_EMAIL);
 
-  const response = await resend.emails.send({
-    from,
+  const info = await transporter.sendMail({
+    from:    `"Deal Finder | The Deal Team" <${fromAddress}>`,
     to:      profile.buyer_email,
     cc:      ccList.length ? ccList : undefined,
     subject: `Deal Finder: ${profile.industry} in ${profile.location} — ${date}`,
     html:    buildEmailHtml(profile, results),
   });
 
-  if (response.error) {
-    throw new Error(`Resend API error: ${response.error.message || JSON.stringify(response.error)}`);
-  }
-  return response;
+  console.log(`[Deal Finder] Email sent — messageId: ${info.messageId}`);
+  return info;
 }
 
 // ─── CORE SEARCH RUNNER ───────────────────────────────────────────────────────
@@ -350,6 +390,35 @@ router.delete('/:id', (req, res) => {
     const db = getDb();
     db.prepare('DELETE FROM deal_finder_searches WHERE id = ?').run(req.params.id);
     res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PATCH /api/deal-finder/:id — update profile fields
+router.patch('/:id', (req, res) => {
+  const { buyer_name, buyer_email, industry, location, price_min, price_max, revenue_min, revenue_max, active } = req.body;
+  if (!buyer_name || !buyer_email || !industry || !location) {
+    return res.status(400).json({ error: 'buyer_name, buyer_email, industry, and location are required' });
+  }
+  try {
+    const db = getDb();
+    const row = db.prepare('SELECT id FROM deal_finder_searches WHERE id = ?').get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'Not found' });
+    db.prepare(`
+      UPDATE deal_finder_searches
+      SET buyer_name=?, buyer_email=?, industry=?, location=?,
+          price_min=?, price_max=?, revenue_min=?, revenue_max=?, active=?
+      WHERE id=?
+    `).run(
+      buyer_name, buyer_email, industry, location,
+      price_min ?? 0, price_max ?? 5000000,
+      revenue_min ?? 0, revenue_max ?? 0,
+      active !== false ? 1 : 0,
+      req.params.id
+    );
+    const updated = db.prepare('SELECT * FROM deal_finder_searches WHERE id = ?').get(req.params.id);
+    res.json(updated);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
