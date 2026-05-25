@@ -12,7 +12,8 @@ const generateRouter = require('./routes/generate');
 const exportRouter = require('./routes/export');
 const extractRouter = require('./routes/extract');
 const discoveryRouter = require('./routes/discovery');
-const dealFinderRouter = require('./routes/deal-finder');
+const dealFinderRouter  = require('./routes/deal-finder');
+const buyerIntelRouter  = require('./routes/buyer-intel');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -38,7 +39,8 @@ app.use('/api/generate', generateRouter);
 app.use('/api/export', exportRouter);
 app.use('/api/extract', extractRouter);
 app.use('/api/discovery', discoveryRouter);
-app.use('/api/deal-finder', dealFinderRouter);
+app.use('/api/deal-finder',  dealFinderRouter);
+app.use('/api/buyer-intel', buyerIntelRouter);
 
 // Serve generated output files (auth required)
 app.use('/output', basicAuth, express.static(path.join(__dirname, '..', 'output')));
