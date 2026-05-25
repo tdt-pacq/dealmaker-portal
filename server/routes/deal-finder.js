@@ -81,61 +81,76 @@ async function searchOnMarket(profile) {
     ? `\n  Annual Revenue range: ${fmtPrice(profile.revenue_min)} – ${fmtPrice(profile.revenue_max || 'no max')}`
     : '';
 
-  // Build explicit search queries Claude should run
-  const queries = [
-    `"${profile.industry}" for sale "${profile.location}" site:bizbuysell.com`,
-    `"${profile.industry}" business for sale "${profile.location}" site:bizquest.com`,
-    `"${profile.industry}" acquisition "${profile.location}" sunbelt OR "murphy business" OR bizbuysell`,
-    `"${profile.industry}" business for sale "${profile.location}" asking price`,
-  ];
-
   console.log(`[Deal Finder] Starting on-market search — industry: ${profile.industry}, location: ${profile.location}`);
 
-  const resp = await anthropic.messages.create({
+  // ── Call 1: Search and gather raw listing data ────────────────────────────
+  const searchResp = await anthropic.messages.create({
     model: 'claude-sonnet-4-5',
     max_tokens: 6000,
     tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-    system: `You are a business listing aggregator for Peterson Acquisitions — The Deal Team, a top SBA acquisition advisory firm.
-Your job: use web_search to find REAL, CURRENT, FOR-SALE business listings that match the buyer's criteria.
-You MUST run multiple web searches and extract actual listing data from the results.
-Only include listings you actually find — do not fabricate data. If a field is not shown in the listing, use "Not Disclosed".`,
+    system: `You are a business listing researcher. Use web_search to find real, current, for-sale business listings on BizBuySell, BizQuest, Sunbelt, Murphy Business, and BusinessBroker.net. For each listing you find, extract: the business name, asking price, gross revenue, cash flow, city/state, a brief description, the source platform, the full listing URL, and the broker name. Report everything you find in plain text.`,
     messages: [{
       role: 'user',
-      content: `I need you to find currently listed for-sale businesses matching these criteria:
-
-  Industry / Type: ${profile.industry}
+      content: `Search for businesses currently listed for sale matching:
+  Industry: ${profile.industry}
   Location: ${profile.location}
-  Asking Price range: ${priceRange}${revenueClause}
+  Asking Price: ${priceRange}${revenueClause}
 
-Run these web searches one by one using the web_search tool:
-1. ${queries[0]}
-2. ${queries[1]}
-3. ${queries[2]}
-4. ${queries[3]}
+Run these searches:
+1. ${profile.industry} for sale ${profile.location} site:bizbuysell.com
+2. ${profile.industry} business for sale ${profile.location} site:bizquest.com
+3. ${profile.industry} for sale ${profile.location} sunbelt advisors OR murphy business OR businessbroker.net
 
-For each search, extract any real business-for-sale listings you find. Look for listing pages on BizBuySell, BizQuest, Sunbelt Advisors, Murphy Business, BusinessBroker.net, and similar broker platforms.
-
-After running all searches, compile the unique real listings you found into a JSON array. Include up to 10 listings total (deduplicate if the same business appears on multiple sites).
-
-Each listing object must use EXACTLY these keys:
-{
-  "name": "Business name or 'Confidential Listing' if not disclosed",
-  "asking_price": "e.g. '$1,200,000' or 'Not Disclosed'",
-  "gross_revenue": "e.g. '$2,800,000' or 'Not Disclosed'",
-  "cash_flow": "e.g. '$420,000' or 'Not Disclosed'",
-  "location": "City, State",
-  "description": "2-3 sentence description from the listing",
-  "source_platform": "BizBuySell / BizQuest / Sunbelt / etc",
-  "listing_url": "full URL to the listing page",
-  "broker_name": "Broker or brokerage name, or 'Not Listed'"
-}
-
-Return ONLY a JSON array of listing objects. No preamble, no explanation, no markdown fences.
-If you find zero listings, return an empty array: []`,
+For every real listing you find, write out all the details: name, asking price, revenue, cash flow, location, description, URL, and broker. Report everything you find.`,
     }],
   });
 
-  return safeParseJson(resp.content, 'on-market');
+  const rawText = extractTextBlocks(searchResp.content);
+  console.log(`[Deal Finder] on-market raw gather (${rawText.length} chars):`, rawText.substring(0, 800));
+
+  if (!rawText || rawText.length < 50) {
+    console.log('[Deal Finder] on-market: no usable data from search call');
+    return [];
+  }
+
+  // ── Call 2: Extract gathered data into clean JSON ─────────────────────────
+  const extractResp = await anthropic.messages.create({
+    model: 'claude-sonnet-4-5',
+    max_tokens: 4000,
+    system: `You are a data extraction assistant. Extract every business-for-sale listing mentioned from research notes into a JSON array. IMPORTANT: Include listings even if only partial data is available — a listing with just a name and platform is still useful. Use "Not Disclosed" for any missing financial fields. Never return an empty array if any listing was mentioned.`,
+    messages: [{
+      role: 'user',
+      content: `Extract every business-for-sale listing mentioned in the research notes below. Include ALL referenced listings even if financial details are incomplete or missing.
+
+RESEARCH NOTES:
+${rawText}
+
+Rules:
+- Include a listing if you have at least its name OR a reference to it (e.g. "premier boat dealership on BizBuySell")
+- Use "Not Disclosed" for asking price, revenue, cash flow if not found
+- Use the best available URL — even a search results page is fine if no direct listing URL
+- A partial listing is far better than returning nothing
+
+Return a JSON array where each object has EXACTLY these keys:
+[
+  {
+    "name": "Business name, 'Confidential Listing', or best description (e.g. 'Marine Business — Charleston, SC')",
+    "asking_price": "dollar amount or 'Not Disclosed'",
+    "gross_revenue": "dollar amount or 'Not Disclosed'",
+    "cash_flow": "dollar amount or 'Not Disclosed'",
+    "location": "City, State",
+    "description": "Whatever description is available, even partial",
+    "source_platform": "BizBuySell / BizQuest / Sunbelt / etc",
+    "listing_url": "best available URL or 'Not Available'",
+    "broker_name": "broker name or 'Not Listed'"
+  }
+]
+
+Return ONLY the JSON array. No explanation, no markdown fences. If truly nothing was found, return [].`,
+    }],
+  });
+
+  return safeParseJson(extractResp.content, 'on-market-extract');
 }
 
 async function searchOffMarket(profile) {

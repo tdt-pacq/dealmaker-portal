@@ -154,7 +154,7 @@ function OffMarketCard({ prospect: p }) {
 
 // ─── Results Panel ────────────────────────────────────────────────────────────
 
-function ResultsPanel({ results, buyerEmail, emailStatus, emailError, onClose }) {
+function ResultsPanel({ results, profile, buyerEmail, emailStatus, emailError, onClose }) {
   const onMarket  = results?.onMarket  || [];
   const offMarket = results?.offMarket || [];
 
@@ -192,7 +192,21 @@ function ResultsPanel({ results, buyerEmail, emailStatus, emailError, onClose })
         {onMarket.length ? (
           onMarket.map((l, i) => <OnMarketCard key={i} listing={l} />)
         ) : (
-          <div style={S.emptyNote}>No on-market listings found for these criteria. Try broadening the industry keywords or price range.</div>
+          <div style={{ padding: '16px', background: '#161b27', border: '1px solid #1e2d45', borderRadius: 8 }}>
+            <div style={S.emptyNote}>No on-market listings could be extracted for these criteria — listing sites require login for full details.</div>
+            <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {[
+                { label: 'Search BizBuySell', url: `https://www.bizbuysell.com/businesses-for-sale/?q=${encodeURIComponent(profile?.industry || '')}` },
+                { label: 'Search BizQuest', url: `https://www.bizquest.com/business-for-sale/?kw=${encodeURIComponent(profile?.industry || '')}` },
+                { label: 'Search BusinessBroker.net', url: `https://www.businessbroker.net/businesses/for-sale/?q=${encodeURIComponent(profile?.industry || '')}` },
+              ].map(({ label, url }) => (
+                <a key={label} href={url} target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: 12, color: '#2eb860', border: '1px solid rgba(46,184,96,.3)', borderRadius: 4, padding: '6px 12px', textDecoration: 'none' }}>
+                  {label} →
+                </a>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 
@@ -511,7 +525,8 @@ export default function DealFinderApp() {
   };
 
   const handleRunResult = (profileId, results, buyerEmail, emailStatus, emailError) => {
-    setActiveResult({ profileId, results, buyerEmail, emailStatus, emailError });
+    const profile = profiles.find(p => p.id === profileId);
+    setActiveResult({ profileId, results, profile, buyerEmail, emailStatus, emailError });
     // Scroll to results
     setTimeout(() => document.getElementById('df-results')?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
@@ -589,6 +604,7 @@ export default function DealFinderApp() {
           <div id="df-results">
             <ResultsPanel
               results={activeResult.results}
+              profile={activeResult.profile}
               buyerEmail={activeResult.buyerEmail}
               emailStatus={activeResult.emailStatus}
               emailError={activeResult.emailError}
