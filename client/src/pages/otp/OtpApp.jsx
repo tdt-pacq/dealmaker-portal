@@ -329,7 +329,190 @@ const DEFAULT_FORM = {
   // Release
   releaseAdvisedBy: '',
   releaseBroker: '',
+  // Addendum
+  addendumItems: [],   // [{ id, title, body }]
 };
+
+// ─── Addendum Item Editor ─────────────────────────────────────────────────────
+
+function AddendumEditor({ items, onChange }) {
+  const addItem = () => {
+    onChange([
+      ...items,
+      { id: Date.now() + Math.random(), title: '', body: '' },
+    ]);
+  };
+
+  const updateItem = (id, field, val) => {
+    onChange(items.map(it => it.id === id ? { ...it, [field]: val } : it));
+  };
+
+  const removeItem = (id) => {
+    onChange(items.filter(it => it.id !== id));
+  };
+
+  const moveItem = (idx, dir) => {
+    const next = [...items];
+    const swap = idx + dir;
+    if (swap < 0 || swap >= next.length) return;
+    [next[idx], next[swap]] = [next[swap], next[idx]];
+    onChange(next);
+  };
+
+  return (
+    <div>
+      {items.length === 0 ? (
+        <div style={{
+          background: '#0a1220',
+          border: '1px dashed #1e2d45',
+          borderRadius: 6,
+          padding: '16px',
+          textAlign: 'center',
+          color: '#475569',
+          fontSize: 12,
+          marginBottom: 12,
+        }}>
+          No addendum items yet. Click "Add Item" to include custom terms, equipment lists, or special conditions.
+        </div>
+      ) : (
+        <div>
+          {items.map((item, idx) => (
+            <div key={item.id} style={{
+              background: '#0a1220',
+              border: '1px solid #1e2d45',
+              borderRadius: 6,
+              marginBottom: 10,
+              overflow: 'hidden',
+            }}>
+              {/* Item header */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '8px 12px',
+                background: '#0d1829',
+                borderBottom: '1px solid #1e2d45',
+              }}>
+                <span style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: '#2eb860',
+                  textTransform: 'uppercase',
+                  letterSpacing: 1,
+                  minWidth: 60,
+                }}>
+                  Item {idx + 1}
+                </span>
+                <input
+                  type="text"
+                  value={item.title}
+                  onChange={e => updateItem(item.id, 'title', e.target.value)}
+                  placeholder="Title / Label (e.g. Equipment List, Special Terms)"
+                  style={{
+                    flex: 1,
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: '1px solid #1e2d45',
+                    color: '#e2e8f0',
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    padding: '2px 6px',
+                    outline: 'none',
+                    fontFamily: 'system-ui, sans-serif',
+                  }}
+                  onFocus={e => e.target.style.borderBottomColor = '#2eb860'}
+                  onBlur={e => e.target.style.borderBottomColor = '#1e2d45'}
+                />
+                {/* Move up/down */}
+                <button
+                  onClick={() => moveItem(idx, -1)}
+                  disabled={idx === 0}
+                  title="Move up"
+                  style={{
+                    background: 'transparent', border: 'none',
+                    color: idx === 0 ? '#1e2d45' : '#64748b',
+                    cursor: idx === 0 ? 'default' : 'pointer',
+                    fontSize: 13, padding: '2px 4px',
+                  }}
+                >▲</button>
+                <button
+                  onClick={() => moveItem(idx, 1)}
+                  disabled={idx === items.length - 1}
+                  title="Move down"
+                  style={{
+                    background: 'transparent', border: 'none',
+                    color: idx === items.length - 1 ? '#1e2d45' : '#64748b',
+                    cursor: idx === items.length - 1 ? 'default' : 'pointer',
+                    fontSize: 13, padding: '2px 4px',
+                  }}
+                >▼</button>
+                <button
+                  onClick={() => removeItem(item.id)}
+                  title="Remove item"
+                  style={{
+                    background: 'transparent', border: 'none',
+                    color: '#ef4444', cursor: 'pointer',
+                    fontSize: 15, padding: '2px 4px', lineHeight: 1,
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#fca5a5'}
+                  onMouseLeave={e => e.currentTarget.style.color = '#ef4444'}
+                >✕</button>
+              </div>
+
+              {/* Body textarea */}
+              <div style={{ padding: '10px 12px' }}>
+                <textarea
+                  value={item.body}
+                  onChange={e => updateItem(item.id, 'body', e.target.value)}
+                  placeholder="Enter the full text of this addendum item…"
+                  rows={4}
+                  style={{
+                    width: '100%',
+                    background: '#0f172a',
+                    border: '1px solid #1e2d45',
+                    borderRadius: 4,
+                    color: '#e2e8f0',
+                    fontSize: 12.5,
+                    padding: '8px 10px',
+                    resize: 'vertical',
+                    fontFamily: 'system-ui, sans-serif',
+                    lineHeight: 1.55,
+                    outline: 'none',
+                  }}
+                  onFocus={e => e.target.style.borderColor = '#2eb860'}
+                  onBlur={e => e.target.style.borderColor = '#1e2d45'}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <button
+        onClick={addItem}
+        style={{
+          background: 'transparent',
+          border: '1px dashed #2eb860',
+          borderRadius: 5,
+          color: '#2eb860',
+          padding: '7px 16px',
+          fontSize: 12.5,
+          fontWeight: 600,
+          cursor: 'pointer',
+          fontFamily: 'system-ui, sans-serif',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          transition: 'background 0.15s',
+        }}
+        onMouseEnter={e => e.currentTarget.style.background = 'rgba(46,184,96,0.07)'}
+        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+      >
+        + Add Addendum Item
+      </button>
+    </div>
+  );
+}
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 
@@ -731,6 +914,28 @@ export default function OtpApp() {
             <TextInput value={form.releaseBroker} onChange={v => set('releaseBroker', v)} placeholder="Acme HVAC Services, LLC" />
           </FieldGroup>
         </TwoCol>
+      </FormSection>
+
+      {/* ══════════════════════════════════════════════════════════
+          SECTION 10 — Addendum
+          ══════════════════════════════════════════════════════════ */}
+      <FormSection title="Addendum Items" icon="📎">
+        <div style={{
+          background: '#0a1220',
+          border: '1px solid #1e2d45',
+          borderRadius: 5,
+          padding: '10px 14px',
+          marginBottom: 14,
+          fontSize: 11.5,
+          color: '#64748b',
+          lineHeight: 1.6,
+        }}>
+          Add any additional terms, conditions, or disclosures that should appear as a <span style={{ color: '#94a3b8' }}>separate Addendum page</span> at the end of the OTP. Each item gets a numbered heading and its body text. Leave empty to generate a standard 4-page document.
+        </div>
+        <AddendumEditor
+          items={form.addendumItems}
+          onChange={items => set('addendumItems', items)}
+        />
       </FormSection>
 
       {/* ── Bottom Generate Button ── */}
