@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const CALC_LS_KEY = 'dealteam_acqcalc_v1';
+const CALC_LS_KEY = 'dealteam_acqcalc_v2';
 
 function loadCalcState() {
   try {
@@ -27,7 +27,7 @@ function NI({ value, onChange, style }) {
 }
 
 const DEFAULT_CALC = {
-  liquidity: 113000, sde: 0, dpPct: 10, carryPct: 0,
+  liquidity: 100000, sde: 0, dpPct: 10, carryPct: 0,
   carryRate: 0, carryTerm: 0, sbaRate: 10.75, sbaTerm: 10,
   multiple: 3.0, carryMode: 'standby', mode: 'liquidity',
 };
