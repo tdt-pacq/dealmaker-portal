@@ -16,7 +16,7 @@ const PORTAL_SECTIONS = [
     id: 'sellers',
     label: 'Sellers',
     items: [
-      { id: 'discovery',   label: 'Discovery Prep',        icon: '🔍', basePath: '/discovery',          live: true  },
+      { id: 'discovery',   label: 'Business Intel',        icon: '🔍', basePath: '/discovery',          live: true  },
       { id: 'analyzer',    label: 'Market Price Analyzer', icon: '📊', basePath: '/analyzer',    live: true  },
       { id: 'engagements', label: 'Engagements',           icon: '🤝', basePath: '/engagements', live: false },
       { id: 'marketing',   label: 'Deal Marketing',        icon: '📄', basePath: '/marketing',   live: true  },
