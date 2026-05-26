@@ -3,17 +3,16 @@
  * Buyer Strategy Tool — The Deal Team | Peterson Acquisitions
  *
  * All classes prefixed with `bs-` to prevent collision with portal styles.
- * Fonts: Inter (body) + Playfair Display (headlines) via Google Fonts CDN.
+ * Fonts: system-ui (matches portal global font).
  * Dark portal chrome with brand accent colors (gold #C9A84C, navy #1B2A4A).
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
 
 /* ── Layout ─────────────────────────────────────────────────────────────── */
 
 .bs-root {
   color: #e2e8f0;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: system-ui, sans-serif;
   max-width: 1080px;
 }
 
@@ -34,7 +33,7 @@
   padding: 8px 12px;
   border-radius: 6px;
   font-size: 14px;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   cursor: pointer;
 }
 .bs-buyer-select:focus { outline: none; border-color: #2eb860; }
@@ -62,7 +61,7 @@
   color: #2eb860;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
 }
 
 .bs-card-body { padding: 18px; }
@@ -82,7 +81,7 @@
   border: 1px solid #1e2d45;
   border-radius: 8px;
   color: #64748b;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -134,7 +133,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
 }
 
 .bs-accordion-title {
@@ -142,7 +141,7 @@
   color: #e2e8f0;
   font-size: 14px;
   font-weight: 600;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   text-align: left;
 }
 
@@ -173,7 +172,7 @@
 
 .bs-label {
   display: block;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   font-size: 11px;
   font-weight: 600;
   color: #64748b;
@@ -183,7 +182,7 @@
 }
 
 .bs-prompt {
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   font-size: 13px;
   color: #94a3b8;
   font-style: italic;
@@ -203,7 +202,7 @@
   color: #e2e8f0;
   padding: 8px 12px;
   font-size: 14px;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   transition: border-color 0.14s;
 }
 .bs-input:focus { outline: none; border-color: #2eb860; box-shadow: 0 0 0 2px rgba(46,184,96,0.15); }
@@ -217,7 +216,7 @@
   color: #e2e8f0;
   padding: 10px 12px;
   font-size: 14px;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   line-height: 1.65;
   resize: vertical;
   min-height: 100px;
@@ -235,7 +234,7 @@
   color: #e2e8f0;
   padding: 8px 12px;
   font-size: 14px;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   cursor: pointer;
 }
 .bs-select:focus { outline: none; border-color: #2eb860; }
@@ -248,7 +247,7 @@
   padding: 9px 18px;
   font-size: 13px;
   font-weight: 600;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   cursor: pointer;
   transition: all 0.14s;
   display: inline-flex;
@@ -317,7 +316,7 @@
   cursor: pointer;
 }
 .bs-check-label {
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   font-size: 13px;
   color: #e2e8f0;
   line-height: 1.4;
@@ -329,7 +328,7 @@
 .bs-slider-labels {
   display: flex;
   justify-content: space-between;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   font-size: 10px;
   color: #64748b;
   margin-top: 3px;
@@ -366,7 +365,7 @@
   border: 1px solid rgba(46,184,96,0.28);
   border-radius: 20px;
   padding: 5px 14px;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: #2eb860;
@@ -382,7 +381,7 @@
   position: relative;
 }
 .bs-gap-text {
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   font-size: 14px;
   color: #e2e8f0;
   line-height: 1.75;
@@ -396,7 +395,7 @@
   border: 1px solid rgba(245,158,11,0.28);
   border-radius: 4px;
   padding: 2px 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   font-size: 10px;
   color: #f59e0b;
   font-weight: 700;
@@ -421,12 +420,12 @@
   transition: background 0.12s;
 }
 .bs-obj-header:hover { background: #1a2232; }
-.bs-obj-tag { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 700; color: #e2e8f0; }
+.bs-obj-tag { font-family: system-ui, sans-serif; font-size: 14px; font-weight: 700; color: #e2e8f0; }
 .bs-obj-body { padding: 16px; background: #0f1117; border-top: 1px solid #1e2d45; }
 .bs-obj-block { margin-bottom: 14px; }
 .bs-obj-block:last-child { margin-bottom: 0; }
 .bs-obj-block-lbl {
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -437,7 +436,7 @@
 .bs-obj-block-lbl--reframe { color: #2eb860; }
 .bs-obj-block-lbl--redirect { color: #2eb860; }
 .bs-obj-block-text {
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   font-size: 13px;
   color: #e2e8f0;
   line-height: 1.65;
@@ -472,7 +471,7 @@
 }
 .bs-milestone-icon--done { border-color: #2eb860; background: #0a2416; color: #2eb860; }
 .bs-milestone-label {
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   font-size: 13px;
   color: #94a3b8;
 }
@@ -499,7 +498,7 @@
 }
 .bs-modal-title {
   flex: 1;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   font-size: 13px;
   color: #64748b;
 }
@@ -511,7 +510,7 @@
   padding: 7px 16px;
   font-size: 12px;
   font-weight: 700;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   cursor: pointer;
   transition: background 0.14s;
 }
@@ -526,7 +525,7 @@
   font-size: 14px;
   cursor: pointer;
   transition: all 0.14s;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
 }
 .bs-modal-close:hover { border-color: #ef4444; color: #ef4444; }
 
@@ -582,12 +581,12 @@
   font-size: 16px;
   cursor: pointer;
   transition: all 0.14s;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
 }
 .bs-modal-nav-btn:hover:not(:disabled) { background: #1e2d45; }
 .bs-modal-nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
 .bs-slide-counter {
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   font-size: 13px;
   color: #64748b;
   min-width: 56px;
@@ -601,7 +600,7 @@
   border: 1px solid rgba(245,158,11,0.25);
   border-radius: 7px;
   padding: 10px 14px;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   font-size: 12px;
   color: #f59e0b;
   margin-bottom: 14px;
@@ -611,7 +610,7 @@
   border: 1px solid rgba(239,68,68,0.22);
   border-radius: 7px;
   padding: 10px 14px;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   font-size: 12px;
   color: #ef4444;
   margin-bottom: 14px;
@@ -625,7 +624,7 @@
   border-radius: 6px;
   padding: 12px 14px;
   margin-top: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   font-size: 13px;
   color: #2eb860;
   font-style: italic;
@@ -657,7 +656,7 @@
   align-items: center;
   padding: 8px 0;
   border-bottom: 1px solid #1e2d45;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   font-size: 13px;
 }
 .bs-roi-row:last-child { border-bottom: none; }
@@ -677,7 +676,7 @@
   padding: 2px 7px;
   transition: all 0.14s;
   flex-shrink: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, sans-serif;
   white-space: nowrap;
 }
 .bs-copy-btn:hover { border-color: #2eb860; color: #2eb860; }

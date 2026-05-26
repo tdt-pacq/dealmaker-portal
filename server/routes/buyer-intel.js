@@ -69,7 +69,7 @@ Search for:
 
 Report all findings in plain text.`,
     }],
-  });
+  }, { timeout: 240_000 }); // 4-min cap on web-search call
 
   const rawResearch = extractText(researchResp.content);
   console.log(`[Buyer Intel] Research gathered (${rawResearch.length} chars)`);
@@ -184,7 +184,7 @@ Return a JSON object with EXACTLY this structure (no markdown, no preamble):
   }
 }`,
     }],
-  });
+  }, { timeout: 120_000 }); // 2-min cap on synthesis call
 
   const reportRaw = extractText(reportResp.content);
   console.log(`[Buyer Intel] Report generated (${reportRaw.length} chars)`);

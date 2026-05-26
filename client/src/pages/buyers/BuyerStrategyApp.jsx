@@ -528,16 +528,16 @@ export default function BuyerStrategyApp() {
       if (!startRes.ok) throw new Error(`Server error ${startRes.status}`);
       const { jobId } = await startRes.json();
 
-      // Poll until done (3 min timeout)
-      const maxWait  = 3 * 60 * 1000;
+      // Poll until done (6 min timeout — two sequential web-search calls can take 3-4 min)
+      const maxWait  = 6 * 60 * 1000;
       const started  = Date.now();
       let result     = null;
 
       while (Date.now() - started < maxWait) {
         await new Promise(r => setTimeout(r, 5000));
 
-        // Switch message at ~30s
-        if (Date.now() - started > 30_000) {
+        // Switch message at ~60s (web search call alone can take 60-90s)
+        if (Date.now() - started > 60_000) {
           setLoadingMsg('Generating intelligence report…');
         }
 
