@@ -1,4 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
+const CALC_LS_KEY = 'dealteam_acqcalc_v1';
+
+function loadCalcState() {
+  try {
+    const saved = localStorage.getItem(CALC_LS_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return null;
+}
 
 const fmtD = v => v == null ? '$—' : '$' + Math.round(v).toLocaleString();
 const pn   = v => parseFloat(String(v).replace(/[^0-9.\-]/g,'')) || 0;
@@ -16,20 +26,20 @@ function NI({ value, onChange, style }) {
   );
 }
 
+const DEFAULT_CALC = {
+  liquidity: 113000, sde: 0, dpPct: 10, carryPct: 0,
+  carryRate: 0, carryTerm: 0, sbaRate: 10.75, sbaTerm: 10,
+  multiple: 3.0, carryMode: 'standby', mode: 'liquidity',
+};
+
 export default function AcqCalcApp() {
-  const [c, setC] = useState({
-    liquidity: 113000,
-    sde: 0,
-    dpPct: 10,
-    carryPct: 0,
-    carryRate: 0,
-    carryTerm: 0,
-    sbaRate: 10.75,
-    sbaTerm: 10,
-    multiple: 3.0,
-    carryMode: 'standby',
-    mode: 'liquidity',
-  });
+  const [c, setC] = useState(() => ({ ...DEFAULT_CALC, ...(loadCalcState() || {}) }));
+
+  // Persist to localStorage whenever inputs change
+  useEffect(() => {
+    localStorage.setItem(CALC_LS_KEY, JSON.stringify(c));
+  }, [c]);
+
   const upd = (k, v) => setC(p => ({ ...p, [k]: v }));
 
   // Core calculations
@@ -102,11 +112,21 @@ export default function AcqCalcApp() {
   return (
     <div style={{ padding: 28, maxWidth: 1100, color: '#e2e8f0' }}>
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 22, fontWeight: 700, color: '#e2e8f0', marginBottom: 4 }}>Acquisition Calculator</div>
-        <div style={{ fontSize: 13, color: '#64748b' }}>
-          SBA 7(a) — {c.sbaTerm}yr @ {c.sbaRate}% — {c.dpPct}% buyer down / {c.carryPct}% seller carry
+      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#e2e8f0', marginBottom: 4 }}>Acquisition Calculator</div>
+          <div style={{ fontSize: 13, color: '#64748b' }}>
+            SBA 7(a) — {c.sbaTerm}yr @ {c.sbaRate}% — {c.dpPct}% buyer down / {c.carryPct}% seller carry
+          </div>
         </div>
+        <button
+          onClick={() => { if (confirm('Reset calculator to defaults?')) setC({ ...DEFAULT_CALC }); }}
+          style={{ background: 'transparent', border: '1px solid #1e2d45', borderRadius: 5, color: '#64748b', fontSize: 11, padding: '5px 11px', cursor: 'pointer', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#ef4444'; e.currentTarget.style.color = '#ef4444'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e2d45'; e.currentTarget.style.color = '#64748b'; }}
+        >
+          Reset
+        </button>
       </div>
 
       {/* Row 1 — Liquidity / SDE input + mode toggle */}

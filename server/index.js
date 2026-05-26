@@ -5,7 +5,26 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const cron = require('node-cron');
-const { basicAuth } = require('./auth');
+const { basicAuth }  = require('./auth');
+const rateLimit      = require('express-rate-limit');
+
+// General API limiter — 120 req/min per IP (protects CRUD routes)
+const apiLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests — please slow down.' },
+});
+
+// AI limiter — 10 AI research kicks per 10 min per IP (each call costs real money)
+const aiLimiter = rateLimit({
+  windowMs: 10 * 60_000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'AI request limit reached. Please wait a few minutes before trying again.' },
+});
 const { getDb, seedTestDeal } = require('./database');
 const dealsRouter = require('./routes/deals');
 const generateRouter = require('./routes/generate');
@@ -31,16 +50,21 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Auth on all API routes
-app.use('/api', basicAuth);
+// Auth + general rate limit on all API routes
+app.use('/api', basicAuth, apiLimiter);
 
-app.use('/api/deals', dealsRouter);
-app.use('/api/generate', generateRouter);
-app.use('/api/export', exportRouter);
-app.use('/api/extract', extractRouter);
-app.use('/api/discovery', discoveryRouter);
+// Tighter rate limits on expensive AI endpoints
+app.use('/api/discovery',            aiLimiter);
+app.use('/api/buyer-intel/research', aiLimiter);
+app.use('/api/deal-finder/:id/run',  aiLimiter);
+
+app.use('/api/deals',        dealsRouter);
+app.use('/api/generate',     generateRouter);
+app.use('/api/export',       exportRouter);
+app.use('/api/extract',      extractRouter);
+app.use('/api/discovery',    discoveryRouter);
 app.use('/api/deal-finder',  dealFinderRouter);
-app.use('/api/buyer-intel', buyerIntelRouter);
+app.use('/api/buyer-intel',  buyerIntelRouter);
 
 // Serve generated output files (auth required)
 app.use('/output', basicAuth, express.static(path.join(__dirname, '..', 'output')));

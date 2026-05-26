@@ -19,6 +19,24 @@ function getDb() {
 
 function initSchema() {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS discovery_reports (
+      id          TEXT PRIMARY KEY,
+      business_name TEXT,
+      website_url   TEXT,
+      seller_name   TEXT,
+      state         TEXT,
+      industry      TEXT,
+      report_text   TEXT NOT NULL,
+      created_at    TEXT NOT NULL
+    )
+  `);
+
+  // Migration: add last_results column to deal_finder_searches if it doesn't exist yet
+  try {
+    db.exec('ALTER TABLE deal_finder_searches ADD COLUMN last_results TEXT');
+  } catch (_) { /* column already exists — safe to ignore */ }
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS deals (
       id TEXT PRIMARY KEY,
       deal_name TEXT NOT NULL,

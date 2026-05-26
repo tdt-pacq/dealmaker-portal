@@ -350,24 +350,29 @@ async function runSearch(profile) {
 
 // Exported for cron use in index.js — attached to router after routes are defined below
 async function runSearchAndEmail(profile) {
-  const db = getDb();
+  const db      = getDb();
   const results = await runSearch(profile);
   await sendEmail(profile, results);
-  db.prepare('UPDATE deal_finder_searches SET last_run_at = ? WHERE id = ?')
-    .run(new Date().toISOString(), profile.id);
+  db.prepare('UPDATE deal_finder_searches SET last_run_at = ?, last_results = ? WHERE id = ?')
+    .run(new Date().toISOString(), JSON.stringify(results), profile.id);
   return results;
 }
 
 // ─── ROUTES ───────────────────────────────────────────────────────────────────
 
-// GET /api/deal-finder — list all profiles
+// GET /api/deal-finder — list all profiles (parses last_results JSON for UI)
 router.get('/', (req, res) => {
   try {
     const db = getDb();
     const profiles = db.prepare(
       'SELECT * FROM deal_finder_searches ORDER BY created_at DESC'
     ).all();
-    res.json(profiles);
+    // Parse last_results JSON string back to object for the client
+    const parsed = profiles.map(p => ({
+      ...p,
+      last_results: p.last_results ? JSON.parse(p.last_results) : null,
+    }));
+    res.json(parsed);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -480,6 +485,10 @@ router.post('/:id/run', (req, res) => {
           emailError  = e.message;
           console.error('Deal Finder email error:', e.message);
         }
+
+        // Persist results to SQLite so they survive server restarts
+        db.prepare('UPDATE deal_finder_searches SET last_run_at = ?, last_results = ? WHERE id = ?')
+          .run(new Date().toISOString(), JSON.stringify(results), profile.id);
 
         jobs.set(jobId, { status: 'complete', results, emailStatus, emailError, createdAt: Date.now() });
       } catch (e) {

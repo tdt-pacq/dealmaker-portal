@@ -664,3 +664,59 @@
 .bs-roi-label { color: #64748b; }
 .bs-roi-value { color: #e2e8f0; font-family: 'Courier New', monospace; font-weight: 600; }
 .bs-roi-value--green { color: #2eb860; }
+
+/* ── Copy button ─────────────────────────────────────────────────────────── */
+
+.bs-copy-btn {
+  background: transparent;
+  border: 1px solid #1e2d45;
+  border-radius: 4px;
+  color: #475569;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 7px;
+  transition: all 0.14s;
+  flex-shrink: 0;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+}
+.bs-copy-btn:hover { border-color: #2eb860; color: #2eb860; }
+.bs-copy-btn--copied { border-color: #2eb860 !important; color: #2eb860 !important; }
+
+/* ── Print styles ─────────────────────────────────────────────────────────── */
+
+@media print {
+  [data-portal-sidebar],
+  [data-portal-topbar],
+  .bs-btn,
+  .bs-copy-btn,
+  details summary { display: none !important; }
+
+  body, .portal-content, .bs-root {
+    background: #fff !important;
+    color: #111 !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .bs-card {
+    border: 1px solid #ddd !important;
+    background: #fff !important;
+    break-inside: avoid;
+    margin-bottom: 16px !important;
+  }
+
+  .bs-card-header { border-bottom: 1px solid #ddd !important; background: #f8f8f8 !important; }
+  .bs-card-title  { color: #7a5a1c !important; }
+  .bs-accordion   { border: 1px solid #ddd !important; break-inside: avoid; }
+  .bs-accordion-header { background: #f5f5f5 !important; }
+  .bs-accordion-body   { background: #fff !important; border-top: 1px solid #ddd !important; }
+
+  /* Force all accordion stages to show expanded in print */
+  .bs-accordion-body { display: block !important; }
+
+  p, span, div { color: #222 !important; }
+  .bs-archetype-badge { border: 1px solid #aaa !important; color: #555 !important; background: #f5f5f5 !important; }
+  .bs-prompt { background: #f9f5ec !important; border-left: 3px solid #c9a84c !important; color: #333 !important; }
+}

@@ -330,7 +330,7 @@ function ProfileForm({ onSave, onCancel, profile }) {
 
 // ─── Profile Card ─────────────────────────────────────────────────────────────
 
-function ProfileCard({ profile, onDelete, onToggle, onRunResult, onEdit }) {
+function ProfileCard({ profile, onDelete, onToggle, onRunResult, onEdit, onViewLastResults }) {
   const [running, setRunning]   = useState(false);
   const [runPhase, setRunPhase] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -416,7 +416,17 @@ function ProfileCard({ profile, onDelete, onToggle, onRunResult, onEdit }) {
             <span style={{ color: '#334155', margin: '0 6px' }}>·</span>
             {priceRange}
           </div>
-          <div style={{ fontSize: 11, color: '#334155', marginTop: 6 }}>Last run: {lastRun}</div>
+          <div style={{ fontSize: 11, color: '#334155', marginTop: 6 }}>
+            Last run: {lastRun}
+            {profile.last_results && (
+              <button
+                onClick={() => onViewLastResults(profile)}
+                style={{ marginLeft: 10, background: 'transparent', border: 'none', color: '#2eb860', fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+              >
+                View Results
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Actions */}
@@ -526,8 +536,14 @@ export default function DealFinderApp() {
 
   const handleRunResult = (profileId, results, buyerEmail, emailStatus, emailError) => {
     const profile = profiles.find(p => p.id === profileId);
+    // Also update the profile's last_results in local state
+    setProfiles(prev => prev.map(p => p.id === profileId ? { ...p, last_results: results, last_run_at: new Date().toISOString() } : p));
     setActiveResult({ profileId, results, profile, buyerEmail, emailStatus, emailError });
-    // Scroll to results
+    setTimeout(() => document.getElementById('df-results')?.scrollIntoView({ behavior: 'smooth' }), 100);
+  };
+
+  const handleViewLastResults = (profile) => {
+    setActiveResult({ profileId: profile.id, results: profile.last_results, profile, buyerEmail: profile.buyer_email, emailStatus: null, emailError: null });
     setTimeout(() => document.getElementById('df-results')?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
@@ -595,6 +611,7 @@ export default function DealFinderApp() {
               onToggle={handleToggle}
               onRunResult={handleRunResult}
               onEdit={handleEdit}
+              onViewLastResults={handleViewLastResults}
             />
           ))
         )}

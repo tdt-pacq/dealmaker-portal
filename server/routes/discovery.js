@@ -1,5 +1,10 @@
-const express = require('express');
-const router = express.Router();
+const express   = require('express');
+const Anthropic  = require('@anthropic-ai/sdk');
+const { v4: uuidv4 } = require('uuid');
+const { getDb }  = require('../database');
+
+const router    = express.Router();
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // ─── PROMPTS ──────────────────────────────────────────────────────────────────
 
@@ -343,8 +348,6 @@ function makeJobId() {
 }
 
 async function runJob(jobId, businessName, websiteUrl, sellerName, state, industryDescription) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-
   const userPrompt = USER_PROMPT_TEMPLATE
     .replace('[BUSINESS_NAME]', businessName || 'Not provided')
     .replace('[WEBSITE_URL]', websiteUrl || 'Not provided')
@@ -353,48 +356,56 @@ async function runJob(jobId, businessName, websiteUrl, sellerName, state, indust
     .replace('[INDUSTRY_DESCRIPTION]', industryDescription || 'Not provided');
 
   try {
-    const upstream = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-5',
+    const response = await anthropic.messages.create(
+      {
+        model:     'claude-opus-4-5',
         max_tokens: 16000,
-        system: SYSTEM_PROMPT,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        messages: [{ role: 'user', content: userPrompt }],
-      }),
-      signal: AbortSignal.timeout(270000),
-    });
+        system:    SYSTEM_PROMPT,
+        tools:     [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages:  [{ role: 'user', content: userPrompt }],
+      },
+      { timeout: 270_000 }
+    );
 
-    if (!upstream.ok) {
-      const err = await upstream.json().catch(() => ({}));
-      jobs.set(jobId, { status: 'error', error: err.error?.message || `Anthropic API error ${upstream.status}`, createdAt: Date.now() });
-      return;
-    }
-
-    const data = await upstream.json();
-    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    const text = (response.content || [])
+      .filter(b => b.type === 'text')
+      .map(b => b.text)
+      .join('');
 
     if (!text) {
       jobs.set(jobId, { status: 'error', error: 'No text content in API response. Please retry.', createdAt: Date.now() });
       return;
     }
 
+    // Persist to SQLite so reports survive server restarts
+    try {
+      const db = getDb();
+      db.prepare(`
+        INSERT INTO discovery_reports (id, business_name, website_url, seller_name, state, industry, report_text, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        uuidv4(),
+        businessName || null, websiteUrl || null, sellerName || null,
+        state || null, industryDescription || null,
+        text,
+        new Date().toISOString()
+      );
+    } catch (dbErr) {
+      console.warn('[Discovery] Could not save report to DB:', dbErr.message);
+    }
+
     jobs.set(jobId, { status: 'complete', text, createdAt: Date.now() });
 
   } catch (err) {
-    const msg = (err.name === 'TimeoutError' || err.name === 'AbortError')
+    const isTimeout = err.name === 'APIConnectionTimeoutError' || err.name === 'TimeoutError' || err.name === 'AbortError';
+    const msg = isTimeout
       ? 'Research timed out. Please retry.'
       : (err.message || 'Unexpected error during research.');
     jobs.set(jobId, { status: 'error', error: msg, createdAt: Date.now() });
   }
 
-  // Auto-clean after 10 minutes
-  setTimeout(() => jobs.delete(jobId), 600000);
+  // Auto-clean job from memory after 10 minutes (report is now in SQLite)
+  setTimeout(() => jobs.delete(jobId), 600_000);
 }
 
 // ─── ROUTES ───────────────────────────────────────────────────────────────────
@@ -418,6 +429,34 @@ router.post('/', (req, res) => {
   runJob(jobId, businessName, websiteUrl, sellerName, state, industryDescription);
 
   res.json({ jobId });
+});
+
+// GET /api/discovery/recent — list last 20 saved reports (newest first)
+router.get('/recent', (req, res) => {
+  try {
+    const db = getDb();
+    const rows = db.prepare(`
+      SELECT id, business_name, website_url, seller_name, state, industry, created_at
+      FROM discovery_reports
+      ORDER BY created_at DESC
+      LIMIT 20
+    `).all();
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/discovery/reports/:id — retrieve a saved report's full text
+router.get('/reports/:id', (req, res) => {
+  try {
+    const db  = getDb();
+    const row = db.prepare('SELECT * FROM discovery_reports WHERE id = ?').get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'Report not found' });
+    res.json(row);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // GET /api/discovery/:jobId — poll job status

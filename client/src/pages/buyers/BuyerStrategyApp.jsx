@@ -11,9 +11,41 @@
  * GET /api/buyer-intel/jobs/:jobId every 5s.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getAuth } from '../../api';
 import './buyer-strategy.css';
+
+// ─── Copy-to-clipboard button ─────────────────────────────────────────────────
+
+function CopyBtn({ text, title = 'Copy' }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // fallback for older browsers
+      const el = document.createElement('textarea');
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    }
+  }, [text]);
+  return (
+    <button
+      className={`bs-copy-btn${copied ? ' bs-copy-btn--copied' : ''}`}
+      onClick={handleCopy}
+      title={title}
+    >
+      {copied ? '✓ Copied' : 'Copy'}
+    </button>
+  );
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -70,6 +102,9 @@ function BsField({ label, children, span2 = false }) {
 function FrameworkStage({ stage, data, open, onToggle }) {
   if (!data) return null;
   const { label, emoji, color } = stage;
+  const allQuestions = (data.questions || []).map((q, i) => `${i + 1}. ${q}`).join('\n');
+  const allPoints    = (data.talking_points || []).map((tp, i) => `${i + 1}. ${tp}`).join('\n');
+
   return (
     <div className="bs-accordion" style={{ borderColor: open ? color : undefined, marginBottom: 8 }}>
       <button className="bs-accordion-header" onClick={onToggle}>
@@ -88,16 +123,20 @@ function FrameworkStage({ stage, data, open, onToggle }) {
           {/* Questions */}
           {data.questions?.length > 0 && (
             <div style={{ marginBottom: 18 }}>
-              <div className="bs-label" style={{ marginBottom: 10 }}>Questions to Ask</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div className="bs-label" style={{ margin: 0 }}>Questions to Ask</div>
+                <CopyBtn text={allQuestions} title="Copy all questions" />
+              </div>
               {data.questions.map((q, i) => (
-                <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
+                <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 8, alignItems: 'flex-start' }}>
                   <span style={{
-                    width: 22, height: 22, borderRadius: '50%',
+                    width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
                     background: `${color}22`, border: `1px solid ${color}55`,
-                    color, fontWeight: 700, fontSize: 11, flexShrink: 0,
+                    color, fontWeight: 700, fontSize: 11,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>{i + 1}</span>
-                  <span style={{ color: '#e2e8f0', fontSize: 14, lineHeight: 1.65, paddingTop: 2 }}>{q}</span>
+                  <span style={{ color: '#e2e8f0', fontSize: 14, lineHeight: 1.65, flex: 1, paddingTop: 2 }}>{q}</span>
+                  <CopyBtn text={q} title="Copy question" />
                 </div>
               ))}
             </div>
@@ -106,11 +145,15 @@ function FrameworkStage({ stage, data, open, onToggle }) {
           {/* Talking Points */}
           {data.talking_points?.length > 0 && (
             <div>
-              <div className="bs-label" style={{ marginBottom: 10 }}>Advisor Talking Points</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div className="bs-label" style={{ margin: 0 }}>Advisor Talking Points</div>
+                <CopyBtn text={allPoints} title="Copy all talking points" />
+              </div>
               {data.talking_points.map((tp, i) => (
-                <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
+                <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 8, alignItems: 'flex-start' }}>
                   <span style={{ color: '#C9A84C', flexShrink: 0, fontSize: 16, lineHeight: 1, marginTop: 2 }}>◆</span>
-                  <span style={{ color: '#e2e8f0', fontSize: 14, lineHeight: 1.65 }}>{tp}</span>
+                  <span style={{ color: '#e2e8f0', fontSize: 14, lineHeight: 1.65, flex: 1 }}>{tp}</span>
+                  <CopyBtn text={tp} title="Copy talking point" />
                 </div>
               ))}
             </div>
@@ -123,11 +166,59 @@ function FrameworkStage({ stage, data, open, onToggle }) {
 
 // ─── ReportView ───────────────────────────────────────────────────────────────
 
+function buildPlainTextReport(report) {
+  const lines = [];
+  lines.push(`BUYER INTELLIGENCE REPORT`);
+  lines.push(`Generated: ${new Date(report.generatedAt).toLocaleString()}`);
+  lines.push('');
+  lines.push(`BACKGROUND SUMMARY`);
+  lines.push(report.summary || '');
+  if (report.personality_type) {
+    lines.push('');
+    lines.push(`PERSONALITY TYPE: ${report.personality_type}`);
+    lines.push(report.personality_rationale || '');
+  }
+  if (report.online_presence) {
+    lines.push('');
+    lines.push(`ONLINE PRESENCE`);
+    lines.push(report.online_presence);
+  }
+  if (report.hot_points?.length) {
+    lines.push('');
+    lines.push('HOT POINTS');
+    report.hot_points.forEach((p, i) => lines.push(`${i + 1}. ${p}`));
+  }
+  if (report.things_to_avoid?.length) {
+    lines.push('');
+    lines.push('THINGS TO AVOID');
+    report.things_to_avoid.forEach((p, i) => lines.push(`${i + 1}. ${p}`));
+  }
+  FRAMEWORK_STAGES.forEach(({ key, label }) => {
+    const s = report.framework?.[key];
+    if (!s) return;
+    lines.push('');
+    lines.push(`── ${label.toUpperCase()} ──`);
+    lines.push(s.overview || '');
+    if (s.questions?.length) {
+      lines.push('');
+      lines.push('Questions:');
+      s.questions.forEach((q, i) => lines.push(`  ${i + 1}. ${q}`));
+    }
+    if (s.talking_points?.length) {
+      lines.push('');
+      lines.push('Talking Points:');
+      s.talking_points.forEach((tp, i) => lines.push(`  ${i + 1}. ${tp}`));
+    }
+  });
+  return lines.join('\n');
+}
+
 function ReportView({ report, onBack, onRerun }) {
   const [openStage, setOpenStage] = useState('desire');
   const toggle = (key) => setOpenStage(prev => prev === key ? null : key);
 
   const personalityIcon = PERSONALITY_ICONS[report.personality_type] || '🎯';
+  const plainTextReport = buildPlainTextReport(report);
 
   return (
     <div>
@@ -141,9 +232,11 @@ function ReportView({ report, onBack, onRerun }) {
             Generated {new Date(report.generatedAt).toLocaleString()}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="bs-btn bs-btn-secondary bs-btn-sm" onClick={onRerun}>🔄 Re-run Research</button>
-          <button className="bs-btn bs-btn-secondary bs-btn-sm" onClick={onBack}>← Back to List</button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <CopyBtn text={plainTextReport} title="Copy full report as plain text" />
+          <button className="bs-btn bs-btn-secondary bs-btn-sm" onClick={() => window.print()}>🖨️ Print</button>
+          <button className="bs-btn bs-btn-secondary bs-btn-sm" onClick={onRerun}>🔄 Re-run</button>
+          <button className="bs-btn bs-btn-secondary bs-btn-sm" onClick={onBack}>← Back</button>
         </div>
       </div>
 
@@ -210,7 +303,16 @@ function ReportView({ report, onBack, onRerun }) {
       <div className="bs-card" style={{ marginBottom: 14 }}>
         <div className="bs-card-header">
           <span className="bs-card-title">📋 Call Prep Framework</span>
-          <span style={{ fontSize: 12, color: '#64748b' }}>Click a stage to expand</span>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: 12, color: '#64748b' }}>Click a stage to expand</span>
+            <button
+              className="bs-btn bs-btn-secondary bs-btn-sm"
+              style={{ fontSize: 10, padding: '3px 9px' }}
+              onClick={() => setOpenStage(openStage ? null : 'desire')}
+            >
+              {openStage ? 'Collapse' : 'Expand All'}
+            </button>
+          </div>
         </div>
         <div style={{ padding: '12px 12px 4px' }}>
           {FRAMEWORK_STAGES.map(stage => (
