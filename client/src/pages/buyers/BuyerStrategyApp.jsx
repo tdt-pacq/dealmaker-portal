@@ -151,7 +151,7 @@ function FrameworkStage({ stage, data, open, onToggle }) {
               </div>
               {data.talking_points.map((tp, i) => (
                 <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 8, alignItems: 'flex-start' }}>
-                  <span style={{ color: '#C9A84C', flexShrink: 0, fontSize: 16, lineHeight: 1, marginTop: 2 }}>◆</span>
+                  <span style={{ color: '#2eb860', flexShrink: 0, fontSize: 16, lineHeight: 1, marginTop: 2 }}>◆</span>
                   <span style={{ color: '#e2e8f0', fontSize: 14, lineHeight: 1.65, flex: 1 }}>{tp}</span>
                   <CopyBtn text={tp} title="Copy talking point" />
                 </div>
@@ -225,7 +225,7 @@ function ReportView({ report, onBack, onRerun }) {
       {/* Report top bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <div>
-          <div style={{ color: '#C9A84C', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 3 }}>
+          <div style={{ color: '#2eb860', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 3 }}>
             Buyer Intelligence Report
           </div>
           <div style={{ color: '#64748b', fontSize: 12 }}>
@@ -256,7 +256,7 @@ function ReportView({ report, onBack, onRerun }) {
           </p>
           {report.personality_rationale && (
             <div className="bs-prompt" style={{ margin: 0 }}>
-              <strong style={{ color: '#C9A84C' }}>Why this archetype: </strong>
+              <strong style={{ color: '#2eb860' }}>Why this archetype: </strong>
               {report.personality_rationale}
             </div>
           )}
@@ -357,7 +357,7 @@ function LoadingScreen({ msg }) {
       <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
         {[0, 1, 2].map(i => (
           <div key={i} style={{
-            width: 10, height: 10, borderRadius: '50%', background: '#C9A84C',
+            width: 10, height: 10, borderRadius: '50%', background: '#2eb860',
             animation: `bi-pulse 1.4s ${i * 0.22}s ease-in-out infinite`,
           }} />
         ))}
@@ -572,7 +572,7 @@ export default function BuyerStrategyApp() {
           {showBack && (
             <button className="bs-btn bs-btn-secondary bs-btn-sm" onClick={onBack}>← Back</button>
           )}
-          <h2 style={{ fontFamily: 'Playfair Display, serif', color: '#C9A84C', margin: 0, fontSize: 24 }}>
+          <h2 style={{ fontFamily: 'Playfair Display, serif', color: '#2eb860', margin: 0, fontSize: 24 }}>
             Buyer Intelligence
           </h2>
         </div>
@@ -630,7 +630,7 @@ export default function BuyerStrategyApp() {
     <div className="bs-root">
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h2 style={{ fontFamily: 'Playfair Display, serif', color: '#C9A84C', margin: '0 0 4px', fontSize: 24 }}>
+          <h2 style={{ fontFamily: 'Playfair Display, serif', color: '#2eb860', margin: '0 0 4px', fontSize: 24 }}>
             Buyer Intelligence
           </h2>
           <p style={{ color: '#64748b', fontSize: 14, margin: 0 }}>
@@ -657,7 +657,7 @@ export default function BuyerStrategyApp() {
                 {/* Avatar / icon */}
                 <div style={{
                   width: 42, height: 42, borderRadius: '50%',
-                  background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.3)',
+                  background: 'rgba(46,184,96,0.12)', border: '1px solid rgba(46,184,96,0.3)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 18, flexShrink: 0,
                 }}>
