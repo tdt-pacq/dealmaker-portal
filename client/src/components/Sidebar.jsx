@@ -29,7 +29,7 @@ const PORTAL_SECTIONS = [
       { id: 'acqcalc',      label: 'Acq Calculator',  icon: '🧮', basePath: '/acqcalc',       live: true },
       { id: 'buyerstrategy', label: 'Buyer Intel',     icon: '🧠', basePath: '/buyer-strategy', live: true },
       { id: 'deal-finder',  label: 'Deal Finder',     icon: '🔍', basePath: '/deal-finder',    live: true },
-      { id: 'otp', label: 'OTP', icon: '📝', basePath: '/otp', live: false },
+      { id: 'otp', label: 'OTP', icon: '📝', basePath: '/otp', live: true },
     ],
   },
 ];
