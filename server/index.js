@@ -116,7 +116,7 @@ cron.schedule('0 7 * * *', async () => {
     }
   }
   console.log('[Deal Finder] Daily cron complete');
-}, { timezone: 'America/Denver' });
+}, { timezone: 'America/New_York' });
 
 app.listen(PORT, () => {
   console.log(`PACQ server running on http://localhost:${PORT}`);

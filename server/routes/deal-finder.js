@@ -73,6 +73,127 @@ function safeParseJson(raw, label) {
   }
 }
 
+// ─── DEDUP & SCORING ─────────────────────────────────────────────────────────
+
+const DAILY_LIMIT = 5;
+
+/** Collapse a string to lowercase alphanumeric for fuzzy matching */
+function norm(s) {
+  return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+}
+
+/**
+ * Build a stable dedup key.
+ * On-market  → canonical URL (preferred) or "name|location"
+ * Off-market → "name|address"
+ */
+function dedupKey(item, type) {
+  if (type === 'on_market') {
+    const url = String(item.listing_url || '').replace(/[?#].*$/, '').toLowerCase().trim();
+    if (url && url.startsWith('http') && !['not available','n/a',''].includes(url)) return url;
+    return `${norm(item.name)}|${norm(item.location)}`;
+  }
+  return `${norm(item.name)}|${norm(item.address)}`;
+}
+
+/**
+ * Quality score for an on-market listing.
+ * Higher = more complete & actionable → sent first.
+ */
+function scoreOnMarket(l) {
+  let s = 0;
+  const url = String(l.listing_url || '').toLowerCase();
+  if (url.startsWith('http') && !url.includes('not available') && !url.includes('n/a')) {
+    s += 40;
+    if (url.includes('bizbuysell.com'))        s += 20;
+    else if (url.includes('bizquest.com'))     s += 15;
+    else if (url.includes('sunbelt') || url.includes('murphybusiness')) s += 10;
+  }
+  const notDisclosed = v => !v || /not dis|n\/a/i.test(v);
+  if (!notDisclosed(l.asking_price))  s += 20;
+  if (!notDisclosed(l.gross_revenue)) s += 20;
+  if (!notDisclosed(l.cash_flow))     s += 20;
+  if (l.description && l.description.length > 30) s += 10;
+  if (l.broker_name && !/not listed/i.test(l.broker_name)) s += 10;
+  return s;
+}
+
+/**
+ * Quality score for an off-market prospect.
+ * Higher = more established & more contactable → sent first.
+ */
+function scoreOffMarket(p) {
+  let s = 0;
+  // Google rating  (4.7 stars → 94 pts)
+  const ratingM = String(p.google_rating || '').match(/(\d+\.?\d*)/);
+  if (ratingM) s += Math.round(parseFloat(ratingM[1]) * 20);
+  // Years in business (Est. 2004 → 21 years → 105 → capped at 50)
+  const yearM = String(p.years_in_business || '').match(/\b(19|20)\d{2}\b/);
+  if (yearM) s += Math.min((new Date().getFullYear() - parseInt(yearM[1])) * 5, 50);
+  else {
+    const numY = String(p.years_in_business || '').match(/(\d+)\s*year/i);
+    if (numY) s += Math.min(parseInt(numY[1]) * 5, 50);
+  }
+  if (p.phone   && !/not found/i.test(p.phone))       s += 15;
+  if (p.owner_name && !/not found/i.test(p.owner_name)) s += 20;
+  if (p.website && !/not found/i.test(p.website))     s += 10;
+  return s;
+}
+
+/**
+ * Filter out already-sent items, score the remainder, sort desc, cap at DAILY_LIMIT.
+ * Does NOT write to the DB — call recordSent() separately only for real sends.
+ */
+function filterAndRank(profileId, rawOn, rawOff, db) {
+  const rows = db.prepare(
+    'SELECT type, dedup_key FROM deal_finder_sent WHERE profile_id = ?'
+  ).all(profileId);
+  const sentOn  = new Set(rows.filter(r => r.type === 'on_market').map(r => r.dedup_key));
+  const sentOff = new Set(rows.filter(r => r.type === 'off_market').map(r => r.dedup_key));
+
+  const rankOn = rawOn
+    .map(l => ({ ...l, _key: dedupKey(l, 'on_market'),  _score: scoreOnMarket(l) }))
+    .filter(l => !sentOn.has(l._key))
+    .sort((a, b) => b._score - a._score)
+    .slice(0, DAILY_LIMIT);
+
+  const rankOff = rawOff
+    .map(p => ({ ...p, _key: dedupKey(p, 'off_market'), _score: scoreOffMarket(p) }))
+    .filter(p => !sentOff.has(p._key))
+    .sort((a, b) => b._score - a._score)
+    .slice(0, DAILY_LIMIT);
+
+  return {
+    onMarket:       rankOn,
+    offMarket:      rankOff,
+    onMarketFound:  rawOn.length,
+    offMarketFound: rawOff.length,
+    onMarketNew:    rankOn.length,
+    offMarketNew:   rankOff.length,
+    totalSentOn:    sentOn.size,
+    totalSentOff:   sentOff.size,
+  };
+}
+
+/**
+ * Record items as sent so they are never repeated.
+ * Call only after a real email has been dispatched (cron sends).
+ */
+function recordSent(profileId, onMarket, offMarket, db) {
+  const stmt = db.prepare(`
+    INSERT OR IGNORE INTO deal_finder_sent (id, profile_id, type, dedup_key, name, sent_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+  const now = new Date().toISOString();
+  const insertAll = db.transaction((items, type) => {
+    for (const item of items) {
+      stmt.run(uuidv4(), profileId, type, item._key, item.name || null, now);
+    }
+  });
+  insertAll(onMarket,  'on_market');
+  insertAll(offMarket, 'off_market');
+}
+
 // ─── CLAUDE SEARCH ────────────────────────────────────────────────────────────
 
 async function searchOnMarket(profile) {
@@ -178,7 +299,7 @@ Only return real businesses you find — do not fabricate entries.`,
 Search Google Maps, Yelp, LinkedIn, and public directories for real businesses in this area and industry.
 Prioritize businesses that appear owner-operated, established 5+ years, with strong reviews and local presence.
 
-Return up to 10 real off-market prospects as a JSON array. Each object must have these exact keys:
+Return up to 15 real off-market prospects as a JSON array. Each object must have these exact keys:
 [
   {
     "name": "Business name",
@@ -208,6 +329,24 @@ function buildEmailHtml(profile, results) {
 
   const onMarket  = results.onMarket  || [];
   const offMarket = results.offMarket || [];
+  const stats     = results.stats     || {};
+
+  // Exhaustion notice — when we found listings but they were all already sent
+  const onMarketExhausted  = stats.onMarketFound  > 0 && stats.onMarketNew  === 0;
+  const offMarketExhausted = stats.offMarketFound > 0 && stats.offMarketNew === 0;
+  const onMarketPartial    = stats.onMarketNew  > 0 && stats.onMarketNew  < DAILY_LIMIT;
+  const offMarketPartial   = stats.offMarketNew > 0 && stats.offMarketNew < DAILY_LIMIT;
+
+  const exhaustionNotice = (type) => `
+    <div style="color:#94a3b8;font-style:italic;padding:14px 16px;text-align:center;background:#1a2235;border-radius:6px;border:1px dashed #2d3748;">
+      All ${type} targets in your search area have already been sent in previous reports.<br>
+      <span style="font-size:12px;color:#64748b;">Your advisor can broaden the search criteria to surface new targets.</span>
+    </div>`;
+
+  const partialNotice = (found, type) => `
+    <div style="padding:10px 14px;background:rgba(46,184,96,.06);border-left:3px solid #2eb860;border-radius:0 4px 4px 0;margin-bottom:14px;font-size:12px;color:#64748b;">
+      ${found} fresh ${type} target${found !== 1 ? 's' : ''} found today (others already sent in prior reports).
+    </div>`;
 
   const listingCards = onMarket.map(l => `
     <div style="background:#1e293b;border:1px solid #2d3748;border-radius:8px;padding:20px;margin-bottom:14px;">
@@ -280,15 +419,17 @@ function buildEmailHtml(profile, results) {
     <!-- On-Market -->
     <div style="padding:24px 32px 8px;">
       <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#2eb860;margin-bottom:4px;">01 — On-Market Listings</div>
-      <div style="font-size:12px;color:#64748b;margin-bottom:16px;">Active listings sourced from BizBuySell, BizQuest, Sunbelt, Murphy Business &amp; more</div>
-      ${onMarket.length ? listingCards : noListings}
+      <div style="font-size:12px;color:#64748b;margin-bottom:16px;">Active listings sourced from BizBuySell, BizQuest, Sunbelt, Murphy Business &amp; more — sorted by listing quality</div>
+      ${onMarketPartial ? partialNotice(stats.onMarketNew, 'on-market') : ''}
+      ${onMarket.length ? listingCards : onMarketExhausted ? exhaustionNotice('on-market') : noListings}
     </div>
 
     <!-- Off-Market -->
     <div style="padding:16px 32px 24px;">
       <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#64748b;margin-bottom:4px;">02 — Off-Market Prospects</div>
-      <div style="font-size:12px;color:#64748b;margin-bottom:16px;">Established businesses not currently for sale — potential outreach candidates</div>
-      ${offMarket.length ? prospectCards : noProspects}
+      <div style="font-size:12px;color:#64748b;margin-bottom:16px;">Established businesses not currently for sale — sorted by rating &amp; years established</div>
+      ${offMarketPartial ? partialNotice(stats.offMarketNew, 'off-market') : ''}
+      ${offMarket.length ? prospectCards : offMarketExhausted ? exhaustionNotice('off-market') : noProspects}
     </div>
 
     <!-- Footer -->
@@ -348,14 +489,33 @@ async function runSearch(profile) {
   return { onMarket, offMarket };
 }
 
-// Exported for cron use in index.js — attached to router after routes are defined below
+// Exported for cron use in index.js — deduplicates, scores, caps at 5/category, records sent
 async function runSearchAndEmail(profile) {
-  const db      = getDb();
-  const results = await runSearch(profile);
-  await sendEmail(profile, results);
+  const db = getDb();
+
+  // Search for a larger pool (15 each) so dedup has room to manoeuvre
+  const raw = await runSearch(profile);
+
+  // Filter already-sent, score, sort, cap at 5 each
+  const filtered = filterAndRank(profile.id, raw.onMarket, raw.offMarket, db);
+
+  const emailResults = {
+    onMarket:  filtered.onMarket,
+    offMarket: filtered.offMarket,
+    stats:     filtered,
+  };
+
+  await sendEmail(profile, emailResults);
+
+  // Record to sent ledger ONLY after successful email dispatch
+  recordSent(profile.id, filtered.onMarket, filtered.offMarket, db);
+
+  // Persist last results (includes stats for UI display)
   db.prepare('UPDATE deal_finder_searches SET last_run_at = ?, last_results = ? WHERE id = ?')
-    .run(new Date().toISOString(), JSON.stringify(results), profile.id);
-  return results;
+    .run(new Date().toISOString(), JSON.stringify(emailResults), profile.id);
+
+  console.log(`[Deal Finder] Sent ${filtered.onMarketNew} on-market + ${filtered.offMarketNew} off-market to ${profile.buyer_email} (${filtered.onMarketFound} on / ${filtered.offMarketFound} off found; ${filtered.totalSentOn} on / ${filtered.totalSentOff} off in sent ledger)`);
+  return emailResults;
 }
 
 // ─── ROUTES ───────────────────────────────────────────────────────────────────

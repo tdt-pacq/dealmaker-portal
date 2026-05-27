@@ -68,6 +68,24 @@ function initSchema() {
       last_run_at TEXT
     )
   `);
+
+  // Deduplication ledger — tracks every listing/prospect ever sent per profile
+  // so the daily drip never repeats the same deal twice.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS deal_finder_sent (
+      id         TEXT PRIMARY KEY,
+      profile_id TEXT NOT NULL,
+      type       TEXT NOT NULL,       -- 'on_market' | 'off_market'
+      dedup_key  TEXT NOT NULL,       -- normalized URL or name|location/address
+      name       TEXT,
+      sent_at    TEXT NOT NULL,
+      UNIQUE(profile_id, type, dedup_key)
+    )
+  `);
+  // Index for fast per-profile lookups
+  try {
+    db.exec('CREATE INDEX IF NOT EXISTS idx_dfs_profile ON deal_finder_sent(profile_id, type)');
+  } catch (_) {}
 }
 
 function seedTestDeal() {
