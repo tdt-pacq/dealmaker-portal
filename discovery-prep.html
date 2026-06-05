@@ -914,22 +914,27 @@ async function callAPI(bizName, url, seller, state, industry) {
 
   const { jobId } = await startResp.json();
 
-  // Poll every 4 seconds — max 5 minutes (75 attempts)
+  // Poll every 4 seconds — max 6 minutes (90 attempts)
   const loadingMsg = document.getElementById('loading-msg');
   const start = Date.now();
-  for (let i = 0; i < 75; i++) {
+  for (let i = 0; i < 90; i++) {
     await new Promise(r => setTimeout(r, 4000));
     // Update elapsed time in the loading message
     const elapsed = Math.round((Date.now() - start) / 1000);
     if (loadingMsg) loadingMsg.textContent = `Researching — ${elapsed}s elapsed. Live web search takes 60–120 seconds…`;
     const pollResp = await fetch(`/api/discovery/${jobId}`, { headers: authHeaders });
-    if (!pollResp.ok) throw new Error(`Poll error ${pollResp.status}`);
+    // Back off if rate-limited (should not happen after server-side fix, but defensive)
+    if (pollResp.status === 429) {
+      await new Promise(r => setTimeout(r, 15000));
+      continue;
+    }
+    if (!pollResp.ok) throw new Error(`Server error ${pollResp.status} — please retry.`);
     const job = await pollResp.json();
     if (job.status === 'complete') return job.text;
     if (job.status === 'error') throw new Error(job.error || 'Processing failed. Please retry.');
   }
 
-  throw new Error('Research timed out after 5 minutes. Please retry.');
+  throw new Error('Research timed out after 6 minutes. Please retry.');
 }
 
 // ─── REPORT DISPLAY ───────────────────────────────────────────────────────────

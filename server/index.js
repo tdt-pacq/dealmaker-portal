@@ -54,8 +54,8 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Auth + general rate limit on all API routes
 app.use('/api', basicAuth, apiLimiter);
 
-// Tighter rate limits on expensive AI endpoints
-app.use('/api/discovery',            aiLimiter);
+// Tighter rate limits on expensive AI endpoints (POST-only — polls must never be rate-limited)
+app.post('/api/discovery',            aiLimiter);
 app.use('/api/buyer-intel/research', aiLimiter);
 app.use('/api/deal-finder/:id/run',  aiLimiter);
 
