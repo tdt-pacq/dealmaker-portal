@@ -214,9 +214,9 @@ export default function AcqCalcApp() {
           <div className="calc-field mono" style={{ fontSize: 24, fontWeight: 800, textAlign: 'right', marginBottom: 6 }}>{fmtD(price)}</div>
           <div style={{ fontSize: 12, color: '#64748b' }}>Based on {c.dpPct}% buyer equity injection</div>
         </div>
-        <div className="card p-5" style={{ borderColor: '#2eb860' }}>
+        <div className="card p-5" style={{ borderColor: sde >= 0 ? '#2eb860' : '#ef4444' }}>
           <div className="lbl" style={{ marginBottom: 6 }}>Annual Cash Flow (SDE)</div>
-          <div className="calc-field mono" style={{ fontSize: 24, fontWeight: 800, textAlign: 'right', marginBottom: 6, color: '#2eb860' }}>{fmtD(sde)}</div>
+          <div className="calc-field mono" style={{ fontSize: 24, fontWeight: 800, textAlign: 'right', marginBottom: 6, color: sde >= 0 ? '#2eb860' : '#ef4444' }}>{fmtD(sde)}</div>
           <div style={{ fontSize: 12, color: '#64748b' }}>Valued at {(c.multiple || 3).toFixed(1)}× cash flow</div>
         </div>
       </div>

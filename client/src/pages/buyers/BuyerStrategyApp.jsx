@@ -525,7 +525,10 @@ export default function BuyerStrategyApp() {
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify(form),
       });
-      if (!startRes.ok) throw new Error(`Server error ${startRes.status}`);
+      if (!startRes.ok) {
+        const errData = await startRes.json().catch(() => ({}));
+        throw new Error(errData.error || `Request failed (${startRes.status})`);
+      }
       const { jobId } = await startRes.json();
 
       // Poll until done (6 min timeout — two sequential web-search calls can take 3-4 min)
@@ -541,7 +544,15 @@ export default function BuyerStrategyApp() {
           setLoadingMsg('Generating intelligence report…');
         }
 
-        const pollRes  = await fetch(`/api/buyer-intel/jobs/${jobId}`, { headers: authHeaders() });
+        const pollRes = await fetch(`/api/buyer-intel/jobs/${jobId}`, { headers: authHeaders() });
+
+        // Back off if we hit the rate limiter on the poll endpoint
+        if (pollRes.status === 429) {
+          await new Promise(r => setTimeout(r, 15000));
+          continue;
+        }
+        if (!pollRes.ok) throw new Error(`Poll failed (${pollRes.status})`);
+
         const pollData = await pollRes.json();
 
         if (pollData.status === 'complete') { result = pollData.report; break; }
