@@ -12,6 +12,7 @@ const AcqCalcApp = lazy(() => import('./pages/buyers/AcqCalcApp'));
 const BuyerStrategyApp = lazy(() => import('./pages/buyers/BuyerStrategyApp'));
 const DealFinderApp = lazy(() => import('./pages/buyers/DealFinderApp'));
 const OtpApp = lazy(() => import('./pages/otp/OtpApp'));
+const RedactApp = lazy(() => import('./pages/redact/RedactApp'));
 
 
 function LoginScreen({ onLogin, error }) {
@@ -205,6 +206,7 @@ export default function App() {
                 <Route path="/buyer-strategy" element={<BuyerStrategyApp />} />
                 <Route path="/deal-finder" element={<DealFinderApp />} />
                 <Route path="/otp" element={<OtpApp />} />
+                <Route path="/redact" element={<RedactApp />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>

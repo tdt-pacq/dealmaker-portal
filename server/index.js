@@ -34,6 +34,7 @@ const discoveryRouter = require('./routes/discovery');
 const dealFinderRouter  = require('./routes/deal-finder');
 const buyerIntelRouter  = require('./routes/buyer-intel');
 const otpRouter         = require('./routes/otp');
+const redactRouter      = require('./routes/redact');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -67,6 +68,7 @@ app.use('/api/discovery',    discoveryRouter);
 app.use('/api/deal-finder',  dealFinderRouter);
 app.use('/api/buyer-intel',  buyerIntelRouter);
 app.use('/api/otp',          otpRouter);
+app.use('/api/redact',       redactRouter);
 
 // Serve generated output files (auth required)
 app.use('/output', basicAuth, express.static(path.join(__dirname, '..', 'output')));
