@@ -1,5 +1,9 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { authHeaders } from '../../api';
+
+function authHeaders() {
+  const auth = sessionStorage.getItem('pacq_auth');
+  return auth ? { Authorization: `Basic ${auth}` } : {};
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const POLL_INTERVAL_MS = 2500;
