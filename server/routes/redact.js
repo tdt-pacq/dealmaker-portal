@@ -1,44 +1,36 @@
 /**
  * redact.js
- * Tax Return Redactor — automatically black out PII (SSNs, preparer info, etc.)
- * before sharing returns with buyers in data rooms.
+ * Tax Return Redactor — pure-JavaScript PII redaction, no native dependencies.
  *
- * Pipeline per PDF:
- *   1. multer receives PDF (up to 30 MB)
- *   2. pdfjs-dist + canvas  → renders each page as PNG
- *   3. Claude Vision        → identifies PII bounding boxes on each page
- *   4. sharp                → draws black rectangles over PII regions
- *   5. pdf-lib              → assembles redacted pages into a new PDF
+ * Pipeline:
+ *   1. Claude reads the PDF as a document → returns exact PII text strings
+ *   2. pdfjs-dist (text extraction only, no canvas/rendering) finds each string's
+ *      coordinates on every page
+ *   3. pdf-lib draws opaque black rectangles over those coordinates in-place
  *
  * Routes:
- *   POST /api/redact                → start job, returns { jobId, pageCount? }
- *   GET  /api/redact/jobs/:id       → poll status / progress
- *   GET  /api/redact/download/:id   → stream completed redacted PDF
+ *   POST /api/redact              → start job, returns { jobId }
+ *   GET  /api/redact/jobs/:id     → poll { status, progress?, error? }
+ *   GET  /api/redact/download/:id → stream completed redacted PDF
  */
 
-const express  = require('express');
-const multer   = require('multer');
+const express   = require('express');
+const multer    = require('multer');
 const Anthropic = require('@anthropic-ai/sdk');
 const { v4: uuidv4 } = require('uuid');
-const pdfParse = require('pdf-parse');
-const sharp    = require('sharp');
-const { PDFDocument } = require('pdf-lib');
+const { PDFDocument, rgb } = require('pdf-lib');
 
 const router    = express.Router();
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// ─── In-Memory Job Store ──────────────────────────────────────────────────────
+// ─── Job Store ────────────────────────────────────────────────────────────────
 const jobs = new Map();
-
-// Auto-purge after 30 min
 setInterval(() => {
   const cutoff = Date.now() - 30 * 60 * 1000;
-  for (const [id, job] of jobs) {
-    if (job.createdAt < cutoff) jobs.delete(id);
-  }
+  for (const [id, job] of jobs) if (job.createdAt < cutoff) jobs.delete(id);
 }, 10 * 60 * 1000);
 
-// ─── File Upload ──────────────────────────────────────────────────────────────
+// ─── Upload ───────────────────────────────────────────────────────────────────
 const upload = multer({
   storage: multer.memoryStorage(),
   limits:  { fileSize: 30 * 1024 * 1024 },
@@ -48,177 +40,181 @@ const upload = multer({
   },
 });
 
-// ─── pdfjs-dist + canvas Setup ────────────────────────────────────────────────
+// ─── pdfjs-dist (text-only, no canvas) ───────────────────────────────────────
 let _pdfjsLib;
 function getPdfjs() {
   if (!_pdfjsLib) {
     _pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
-    // Disable the worker — we run on the main thread in Node
-    _pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+    _pdfjsLib.GlobalWorkerOptions.workerSrc = ''; // no worker in Node
   }
   return _pdfjsLib;
 }
 
-const { createCanvas } = require('canvas');
-
-// Canvas factory required by pdfjs-dist for Node.js rendering
-const nodeCanvasFactory = {
-  create(w, h) {
-    const canvas = createCanvas(w, h);
-    return { canvas, context: canvas.getContext('2d') };
-  },
-  reset(cc, w, h) { cc.canvas.width = w; cc.canvas.height = h; },
-  destroy(cc)     { cc.canvas.width = 0; cc.canvas.height = 0; },
-};
-
-/**
- * Render all pages of a PDF buffer to PNG buffers.
- * @returns {{ numPages: number, pages: Array<{buffer, width, height}> }}
- */
-async function renderPdfPages(pdfBuffer, scale = 2.0) {
-  const lib = getPdfjs();
-  const loadingTask = lib.getDocument({
-    data: new Uint8Array(pdfBuffer),
-    useSystemFonts: true,
-    disableFontFace: true,
-  });
-
-  const pdfDoc = await loadingTask.promise;
-  const numPages = pdfDoc.numPages;
-  const pages = [];
-
-  for (let i = 1; i <= numPages; i++) {
-    const page = await pdfDoc.getPage(i);
-    const viewport = page.getViewport({ scale });
-    const canvas = createCanvas(Math.round(viewport.width), Math.round(viewport.height));
-    const ctx = canvas.getContext('2d');
-
-    await page.render({
-      canvasContext:  ctx,
-      viewport,
-      canvasFactory:  nodeCanvasFactory,
-    }).promise;
-
-    pages.push({
-      buffer: canvas.toBuffer('image/png'),
-      width:  Math.round(viewport.width),
-      height: Math.round(viewport.height),
-    });
-
-    page.cleanup();
-  }
-
-  pdfDoc.destroy();
-  return { numPages, pages };
-}
-
-// ─── Claude Vision — PII Detection ───────────────────────────────────────────
-const PII_PROMPT = `This is a page from a U.S. business tax return (Form 1120-S, 1065, 1120, or Schedule C).
-Your job is to locate sensitive personal information that must be redacted before this document is shared with a business buyer.
-
-Find and return bounding boxes for ALL of the following on this page:
-1. Social Security Numbers — format XXX-XX-XXXX, partially masked (e.g., XXX-XX-1234), or 9 consecutive digits
-2. Individual Taxpayer Identification Numbers (ITINs) — same format as SSN
-3. Preparer Tax Identification Numbers (PTINs) — format P-XXXXXXXX
-4. The ENTIRE "Paid Preparer Use Only" section — including the preparer's personal name, firm name, firm address, phone number, and the PREPARER'S firm EIN (not the business's EIN)
-5. Personal home addresses of the taxpayer (relevant for Schedule C sole proprietors — the owner's personal home address, NOT the business's operating address)
-6. Spouse name and spouse SSN (if this appears to be a joint individual return)
-
-Do NOT redact:
-- Business name or trade name
-- Business EIN (format XX-XXXXXXX — this is the company's tax ID and buyers need it)
-- Business operating address
-- Any dollar amounts, line numbers, revenue, expense, or income figures
-- Tax year, fiscal year, or date information
-- Entity type, state of incorporation, or industry codes
-
-Return ONLY a JSON array — no other text, no markdown, no explanation:
-[{"label":"SSN"|"PTIN"|"preparer_block"|"personal_address"|"spouse_info","x_pct":<number>,"y_pct":<number>,"w_pct":<number>,"h_pct":<number>}]
-
-x_pct = left edge of bounding box as a percentage of total page width (0–100)
-y_pct = top edge of bounding box as a percentage of total page height (0–100)
-w_pct = width of bounding box as a percentage of total page width (0–100)
-h_pct = height of bounding box as a percentage of total page height (0–100)
-
-Add generous padding — it is better to redact a few extra pixels than to leave any part of an SSN visible.
-If nothing needs to be redacted on this page, return: []`;
-
-/**
- * Send a page PNG to Claude Vision and get back PII bounding boxes.
- * @returns {Array<{label, x_pct, y_pct, w_pct, h_pct}>}
- */
-async function detectPii(pngBuffer) {
+// ─── Step 1: Claude identifies PII text strings ───────────────────────────────
+async function identifyPiiStrings(pdfBuffer) {
   const resp = await anthropic.messages.create({
     model:      'claude-opus-4-5',
-    max_tokens: 1024,
+    max_tokens: 2048,
     messages: [{
       role: 'user',
       content: [
         {
-          type:   'image',
-          source: { type: 'base64', media_type: 'image/png', data: pngBuffer.toString('base64') },
+          type:   'document',
+          source: { type: 'base64', media_type: 'application/pdf', data: pdfBuffer.toString('base64') },
         },
-        { type: 'text', text: PII_PROMPT },
+        {
+          type: 'text',
+          text: `This is a U.S. business tax return. List every piece of sensitive personal information that must be redacted before sharing with a buyer.
+
+Return ONLY this JSON object (no other text):
+{
+  "ssns":               [],  // Social Security Numbers EXACTLY as they appear (e.g. "123-45-6789")
+  "itins":              [],  // ITINs exactly as they appear
+  "ptins":              [],  // Preparer PTINs exactly as they appear (e.g. "P-01234567")
+  "preparer_names":     [],  // Paid preparer's personal name exactly as shown
+  "preparer_firm":      [],  // Preparer's firm/company name exactly as shown
+  "preparer_address":   [],  // Each address line separately (street, city/state/zip as separate items)
+  "preparer_phone":     [],  // Preparer's phone number exactly as shown
+  "preparer_ein":       [],  // Preparer FIRM's EIN (NOT the business's EIN)
+  "personal_addresses": []   // Owner personal home addresses (Schedule C only — not the business address)
+}
+
+Rules:
+- Include the EXACT text string with its exact formatting (dashes, spaces, parentheses).
+- Do NOT include: business name, business EIN, business address, financial figures, tax year, dates.
+- If nothing exists for a category, leave it as an empty array.`,
+        },
       ],
     }],
-  }, { timeout: 60_000 });
+  }, { timeout: 90_000 });
 
-  const text = (resp.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
-
-  const match = text.match(/\[[\s\S]*\]/);
-  if (!match) return [];
+  const text = resp.content.filter(b => b.type === 'text').map(b => b.text).join('');
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) return { targets: [], hasPreparerBlock: false };
 
   try {
-    const raw = JSON.parse(match[0]);
-    return raw
-      .filter(b => b && typeof b.x_pct === 'number' && typeof b.y_pct === 'number')
-      .map(b => ({
-        label: b.label || 'redacted',
-        x_pct: Math.max(0, Math.min(99, b.x_pct)),
-        y_pct: Math.max(0, Math.min(99, b.y_pct)),
-        w_pct: Math.max(0.5, Math.min(100 - b.x_pct, b.w_pct)),
-        h_pct: Math.max(0.5, Math.min(100 - b.y_pct, b.h_pct)),
-      }));
+    const obj = JSON.parse(match[0]);
+    const targets = [
+      ...(obj.ssns               || []),
+      ...(obj.itins              || []),
+      ...(obj.ptins              || []),
+      ...(obj.preparer_names     || []),
+      ...(obj.preparer_firm      || []),
+      ...(obj.preparer_address   || []).flatMap(a => a.split(/[\n,]+/)),
+      ...(obj.preparer_phone     || []),
+      ...(obj.preparer_ein       || []),
+      ...(obj.personal_addresses || []).flatMap(a => a.split(/[\n,]+/)),
+    ].map(s => s?.trim()).filter(s => s && s.length >= 3);
+
+    const hasPreparerBlock =
+      (obj.preparer_names?.length > 0) || (obj.preparer_firm?.length > 0);
+
+    return { targets: [...new Set(targets)], hasPreparerBlock };
   } catch {
-    return [];
+    return { targets: [], hasPreparerBlock: false };
   }
 }
 
-// ─── Sharp — Draw Redaction Boxes ─────────────────────────────────────────────
-const REDACTION_PADDING = 6; // extra pixels around each box for safety
+// ─── Step 2: pdfjs finds coordinates for each target string ──────────────────
+async function findRedactionBoxes(pdfBuffer, targets, redactPreparerBlock) {
+  const lib = getPdfjs();
+  const loadingTask = lib.getDocument({
+    data: new Uint8Array(pdfBuffer),
+    useSystemFonts: true,
+  });
 
-async function applyRedactions(pngBuffer, boxes, width, height) {
-  if (!boxes.length) return pngBuffer;
+  const pdfDoc   = await loadingTask.promise;
+  const numPages = pdfDoc.numPages;
+  const pageBoxes = [];
 
-  const rects = boxes.map(b => {
-    const x = Math.max(0, Math.floor((b.x_pct / 100) * width) - REDACTION_PADDING);
-    const y = Math.max(0, Math.floor((b.y_pct / 100) * height) - REDACTION_PADDING);
-    const w = Math.min(width - x, Math.ceil((b.w_pct / 100) * width) + REDACTION_PADDING * 2);
-    const h = Math.min(height - y, Math.ceil((b.h_pct / 100) * height) + REDACTION_PADDING * 2);
-    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="black"/>`;
-  }).join('');
+  for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+    const page        = await pdfDoc.getPage(pageNum);
+    const textContent = await page.getTextContent();
+    const viewport    = page.getViewport({ scale: 1.0 });
+    const pageWidth   = viewport.width;
 
-  const svg = Buffer.from(
-    `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">${rects}</svg>`
-  );
+    // Filter to non-empty items
+    const items = textContent.items.filter(item => item.str?.trim());
 
-  return sharp(pngBuffer)
-    .composite([{ input: svg, top: 0, left: 0 }])
-    .png()
-    .toBuffer();
+    // Build a virtual concatenated string so we can search across item boundaries
+    let fullText   = '';
+    const bounds   = [];
+    for (const item of items) {
+      const start = fullText.length;
+      fullText   += item.str;
+      bounds.push({ start, end: fullText.length, item });
+      fullText   += ' '; // separator
+    }
+    const lower = fullText.toLowerCase();
+
+    const boxes = [];
+    const PAD   = 4; // extra pixels around each match
+
+    // Search for each target string
+    for (const target of targets) {
+      const targetLower = target.toLowerCase();
+      let pos = lower.indexOf(targetLower);
+      while (pos !== -1) {
+        const spanEnd  = pos + target.length;
+        const spanned  = bounds.filter(b => b.start < spanEnd && b.end > pos);
+        if (spanned.length) {
+          const xs   = spanned.map(b => b.item.transform[4]);
+          const ys   = spanned.map(b => b.item.transform[5]);
+          const x2s  = spanned.map(b => b.item.transform[4] + Math.abs(b.item.width  || 0));
+          const fontH = Math.abs(spanned[0].item.height || 12);
+          boxes.push({
+            x: Math.max(0, Math.min(...xs)  - PAD),
+            y: Math.max(0, Math.min(...ys)  - PAD),
+            w: Math.max(...x2s) - Math.min(...xs) + PAD * 2,
+            h: fontH + PAD * 2,
+          });
+        }
+        pos = lower.indexOf(targetLower, pos + 1);
+      }
+    }
+
+    // Redact the entire "Paid Preparer Use Only" block if found on this page
+    if (redactPreparerBlock) {
+      const KEYWORDS = ['paid preparer', 'preparer use only', "preparer's signature"];
+      for (const b of bounds) {
+        if (KEYWORDS.some(kw => b.item.str.toLowerCase().includes(kw))) {
+          // Black out from the bottom of the page up through (and including) this label row
+          const labelY = b.item.transform[5];
+          const fontH  = Math.abs(b.item.height || 12);
+          boxes.push({ x: 0, y: 0, w: pageWidth, h: labelY + fontH + 6 });
+          break;
+        }
+      }
+    }
+
+    pageBoxes.push({ pageIndex: pageNum - 1, boxes });
+    page.cleanup();
+  }
+
+  pdfDoc.destroy();
+  return { pageBoxes, numPages };
 }
 
-// ─── pdf-lib — Assemble Final PDF ────────────────────────────────────────────
-async function assemblePdf(pages) {
-  const pdfDoc = await PDFDocument.create();
+// ─── Step 3: pdf-lib draws opaque black rectangles ───────────────────────────
+async function applyPdfRedactions(pdfBuffer, pageBoxes) {
+  const pdfDoc = await PDFDocument.load(pdfBuffer);
+  const pages  = pdfDoc.getPages();
 
-  for (const { buffer, width, height } of pages) {
-    const pngImage = await pdfDoc.embedPng(buffer);
-    // Rendered at 2× — divide back to standard 72-DPI point dimensions
-    const ptWidth  = width  / 2;
-    const ptHeight = height / 2;
-    const page = pdfDoc.addPage([ptWidth, ptHeight]);
-    page.drawImage(pngImage, { x: 0, y: 0, width: ptWidth, height: ptHeight });
+  for (const { pageIndex, boxes } of pageBoxes) {
+    if (!boxes.length) continue;
+    const page = pages[pageIndex];
+    const { width: pw, height: ph } = page.getSize();
+
+    for (const box of boxes) {
+      page.drawRectangle({
+        x:       Math.max(0, box.x),
+        y:       Math.max(0, Math.min(box.y, ph - 1)),
+        width:   Math.min(box.w, pw),
+        height:  Math.min(box.h, ph),
+        color:   rgb(0, 0, 0),
+        opacity: 1,
+      });
+    }
   }
 
   return Buffer.from(await pdfDoc.save());
@@ -230,41 +226,27 @@ async function runRedaction(jobId, pdfBuffer) {
   if (!job) return;
 
   try {
-    // Render all pages
-    job.progress.message = 'Rendering pages…';
-    const { numPages, pages: renderedPages } = await renderPdfPages(pdfBuffer);
-    job.progress.total = numPages;
+    // Phase 1 — Claude identifies what to redact
+    job.progress.message = 'Scanning document for sensitive information…';
+    const { targets, hasPreparerBlock } = await identifyPiiStrings(pdfBuffer);
+    console.log(`[Redact] Job ${jobId}: ${targets.length} target string(s) identified`);
 
-    const redactedPages = [];
+    // Phase 2 — pdfjs locates each string
+    job.progress.message = 'Locating fields in document…';
+    const { pageBoxes, numPages } = await findRedactionBoxes(pdfBuffer, targets, hasPreparerBlock);
+    job.progress.total   = numPages;
+    job.progress.current = numPages;
 
-    for (let i = 0; i < numPages; i++) {
-      job.progress.current = i;
-      job.progress.message = `Scanning page ${i + 1} of ${numPages}…`;
+    // Phase 3 — pdf-lib applies rectangles
+    job.progress.message = 'Applying redactions…';
+    const redactedPdf = await applyPdfRedactions(pdfBuffer, pageBoxes);
 
-      const { buffer, width, height } = renderedPages[i];
-
-      // Detect PII with Claude Vision
-      const boxes = await detectPii(buffer);
-
-      // Draw black boxes
-      const redacted = await applyRedactions(buffer, boxes, width, height);
-
-      redactedPages.push({ buffer: redacted, width, height });
-
-      const found = boxes.length;
-      console.log(`[Redact] Page ${i + 1}/${numPages} — ${found} item(s) redacted`);
-    }
-
-    // Assemble final PDF
-    job.progress.message = 'Assembling redacted PDF…';
-    const pdfOut = await assemblePdf(redactedPages);
+    const totalBoxes = pageBoxes.reduce((n, p) => n + p.boxes.length, 0);
+    console.log(`[Redact] Job ${jobId} complete — ${totalBoxes} redaction(s) on ${numPages} page(s)`);
 
     job.status    = 'complete';
-    job.pdfBuffer = pdfOut;
-    job.progress.current = numPages;
+    job.pdfBuffer = redactedPdf;
     job.progress.message = 'Done';
-
-    console.log(`[Redact] Job ${jobId} complete — ${numPages} pages processed`);
 
   } catch (err) {
     job.status = 'error';
@@ -275,14 +257,10 @@ async function runRedaction(jobId, pdfBuffer) {
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
-/**
- * POST /api/redact
- * Accepts a PDF upload, starts async pipeline, returns { jobId }.
- */
 router.post('/', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No PDF file provided.' });
 
-  const jobId   = uuidv4();
+  const jobId    = uuidv4();
   const safeName = (req.file.originalname || 'return').replace(/\.pdf$/i, '');
 
   jobs.set(jobId, {
@@ -294,39 +272,23 @@ router.post('/', upload.single('file'), async (req, res) => {
     createdAt: Date.now(),
   });
 
-  // Fire and forget
   runRedaction(jobId, req.file.buffer).catch(console.error);
-
   res.json({ jobId });
 });
 
-/**
- * GET /api/redact/jobs/:id
- * Poll job status. Returns { status, progress?, filename?, error? }.
- */
 router.get('/jobs/:id', (req, res) => {
   const job = jobs.get(req.params.id);
   if (!job) return res.status(404).json({ error: 'Job not found or expired.' });
-
-  if (job.status === 'complete') {
-    return res.json({ status: 'complete', filename: job.filename });
-  }
-  if (job.status === 'error') {
-    return res.json({ status: 'error', error: job.error });
-  }
+  if (job.status === 'complete') return res.json({ status: 'complete', filename: job.filename });
+  if (job.status === 'error')   return res.json({ status: 'error',    error:    job.error });
   res.json({ status: 'processing', progress: job.progress });
 });
 
-/**
- * GET /api/redact/download/:id
- * Stream the completed redacted PDF to the client.
- */
 router.get('/download/:id', (req, res) => {
   const job = jobs.get(req.params.id);
   if (!job || job.status !== 'complete' || !job.pdfBuffer) {
     return res.status(404).json({ error: 'Redacted PDF not ready.' });
   }
-
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="${job.filename}"`);
   res.end(job.pdfBuffer);
