@@ -55,6 +55,7 @@ const initState = () => ({
   ytdData:blankYear('YTD'),
   sdeBasis:'recent', customMults:[],
   loanRate:10.75, loanAmort:10, dpPct:10, reAmort:25,
+  loanStructure:'7a', re504Rate:6.5, ppLoan:0, ppRate:7.5, ppAmort:10,
   su:{marketPrice:'',sellerFin:'',sfRate:'',sfAmort:'',reVal:'',wc:'',arVal:'',invVal:'',closing:15000},
   bs:[{cash:'',ar:'',inv:'',ca:'',ta:'',ap:'',cl:'',tl:'',nw:'',capex:''},{cash:'',ar:'',inv:'',ca:'',ta:'',ap:'',cl:'',tl:'',nw:'',capex:''},{cash:'',ar:'',inv:'',ca:'',ta:'',ap:'',cl:'',tl:'',nw:'',capex:''}],
   np:{gross:'',cash:'',ap:'',ltd:'',mortgage:'',commission:'10',legal:'',sbaFee:'',closingCosts:'',taxRate:'',customDeds:[]},
@@ -210,7 +211,7 @@ const StackedBar = ({data}) => {
 const pctRev=(v,rev)=>rev>0?`${(v/rev*100).toFixed(1)}%`:'';
 const PctBadge=({v,rev})=>{ const p=pctRev(v,rev); return p?<span style={{fontSize:9,color:'#64748b',marginLeft:4}}>({p})</span>:null; };
 
-const YearSec = ({yd,onChange,onImport}) => {
+const YearSec = ({yd,onChange,onImport,reVal=0}) => {
   const c=calcSDE(yd);
   const set=(f,v)=>onChange({...yd,[f]:v});
   const addAB=()=>{const sid=Date.now();onChange({...yd,addBacks:[...(yd.addBacks||[]),{id:sid,sharedId:sid,label:'',amount:''}]});};
@@ -287,6 +288,11 @@ const YearSec = ({yd,onChange,onImport}) => {
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Rent / Real Estate Add-Back</span>
             </div>
+            {reVal>0&&(
+              <div style={{background:'rgba(217,119,6,0.08)',border:'1px solid rgba(217,119,6,0.2)',borderRadius:4,padding:'6px 10px',fontSize:12,color:'#fbbf24',marginBottom:8}}>
+                Real estate included in deal — if the business currently leases its space, add back the rent expense below and set RE NOI to 0 (buyer will own the property; occupancy cost becomes debt service).
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <span className="lbl">Rent Expense (from return)</span>
@@ -445,8 +451,8 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
           </div>
           <Tog on={state.ytdEnabled} set={v=>set({...state,ytdEnabled:v})} label="YTD"/>
         </div>
-        {state.years.map((yd,i)=><YearSec key={yd.year} yd={yd} onChange={yd=>upY(i,yd)} onImport={()=>importTaxReturn(i)}/>)}
-        {state.ytdEnabled&&<YearSec yd={state.ytdData} onChange={yd=>set({...state,ytdData:yd})} onImport={null}/>}
+        {state.years.map((yd,i)=><YearSec key={yd.year} yd={yd} onChange={yd=>upY(i,yd)} onImport={()=>importTaxReturn(i)} reVal={pn(state.su?.reVal)}/>)}
+        {state.ytdEnabled&&<YearSec yd={state.ytdData} onChange={yd=>set({...state,ytdData:yd})} onImport={null} reVal={pn(state.su?.reVal)}/>}
         {/* Advisor Notes */}
         <div style={{marginTop:20,padding:16,background:'#0f172a',borderRadius:8,border:'1px solid #1e293b'}}>
           <div style={{fontSize:12,color:'#64748b',marginBottom:8,fontWeight:700,letterSpacing:1,textTransform:'uppercase'}}>Advisor Notes</div>
@@ -551,7 +557,7 @@ const T3 = ({state}) => {
 
 /* ── Tab 4: Sources & Uses ─────────────────────────── */
 const T4 = ({state,set}) => {
-  const {years,sdeBasis,customMults,loanRate,loanAmort,dpPct,reAmort,su}=state;
+  const {years,sdeBasis,customMults,loanRate,loanAmort,dpPct,reAmort,su,loanStructure,re504Rate,ppLoan,ppRate,ppAmort}=state;
   const base=sdeBasis==='weighted'?wtdSDE(years):recentSDE(years);
   const mults=[2.5,3.0,3.5,...(customMults||[]).map(m=>parseFloat(m)).filter(m=>m>0)];
   const setSU=(f,v)=>set({...state,su:{...su,[f]:v}});
@@ -567,16 +573,26 @@ const T4 = ({state,set}) => {
   const closingAmt=su.closing===''?0:pn(su.closing);
   const totalLoan=baseLoan+guarFee+closingAmt;
 
-  // SBA monthly payment — split business vs RE when reVal > 0
+  // SBA monthly payment
   const r=(loanRate||10.75)/100/12, n=(loanAmort||10)*12;
   const pmtFn=loan=>r===0?loan/n:loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
-  const nRE=(reAmort||25)*12;
-  const rePmtFn=loan=>r===0?loan/nRE:loan*r*Math.pow(1+r,nRE)/(Math.pow(1+r,nRE)-1);
-  const bizBaseLoan=(totalProject-reVal)*(1-dp);
-  const reBaseLoan=reVal*(1-dp);
-  const bizMonthlyAdj=reVal>0?pmtFn(bizBaseLoan+guarFee+closingAmt):pmtFn(totalLoan);
-  const reMonthly=reVal>0?rePmtFn(reBaseLoan):0;
-  const monthlyLoan=bizMonthlyAdj+reMonthly;
+  const rePct=totalProject>0?(reVal/totalProject)*100:0;
+  let bizMoPmt=0, reMoPmt=0, blendedAmort=loanAmort||10;
+  if(loanStructure==='504'&&reVal>0){
+    const r504=(re504Rate||6.5)/100/12, n504=(reAmort||25)*12;
+    const pmt504=loan=>r504===0?loan/n504:loan*r504*Math.pow(1+r504,n504)/(Math.pow(1+r504,n504)-1);
+    bizMoPmt=pmtFn((totalProject-reVal)*(1-dp)+guarFee+closingAmt);
+    reMoPmt=pmt504(reVal*(1-dp));
+  } else {
+    blendedAmort=reVal>0
+      ?Math.min(25,Math.max(10,Math.round((reVal/totalProject)*(reAmort||25)+((totalProject-reVal)/totalProject)*(loanAmort||10))))
+      :(loanAmort||10);
+    const nB=blendedAmort*12;
+    bizMoPmt=(loan=>r===0?loan/nB:loan*r*Math.pow(1+r,nB)/(Math.pow(1+r,nB)-1))(totalLoan);
+  }
+  const rPP=(ppRate||7.5)/100/12, nPP=(ppAmort||10)*12;
+  const ppMo=(ppLoan||0)>0?(rPP===0?(ppLoan||0)/nPP:(ppLoan||0)*rPP*Math.pow(1+rPP,nPP)/(Math.pow(1+rPP,nPP)-1)):0;
+  const monthlyLoan=bizMoPmt+reMoPmt+ppMo;
 
   // Seller note
   const sfAmt=pn(su.sellerFin);
@@ -621,14 +637,23 @@ const T4 = ({state,set}) => {
             <div>
               <span className="lbl">SBA Loan (auto — fee &amp; closing financed)</span>
               <CF v={totalLoan}/>
-              {totalLoan>0&&(reVal>0?(
-                <div>
-                  <div className="text-xs text-gray-500">{fmtD(bizMonthlyAdj)}/mo biz ({loanAmort}yr) + {fmtD(reMonthly)}/mo RE ({reAmort||25}yr)</div>
-                  <div className="text-xs font-bold mt-0.5" style={{color:'#2eb860'}}>= {fmtD(monthlyLoan)}/mo total</div>
-                </div>
-              ):(
-                <div className="text-xs text-gray-500 mt-0.5">{fmtD(monthlyLoan)}/mo @ {loanRate}% / {loanAmort}yr</div>
-              ))}
+              {totalLoan>0&&(
+              <div>
+                {loanStructure==='504'&&reVal>0?(
+                  <>
+                    <div className="text-xs text-gray-500 mt-0.5">{fmtD(bizMoPmt)}/mo 7(a) ({loanAmort}yr) + {fmtD(reMoPmt)}/mo 504 ({reAmort||25}yr @ {re504Rate||6.5}%)</div>
+                    <div className="text-xs font-bold mt-0.5" style={{color:'#2eb860'}}>= {fmtD(bizMoPmt+reMoPmt)}/mo SBA</div>
+                  </>
+                ):(
+                  <div className="text-xs text-gray-500 mt-0.5">
+                    {fmtD(bizMoPmt)}/mo @ {loanRate}%{reVal>0?` / ${blendedAmort}yr blended`:`/ ${loanAmort}yr`}
+                    {reVal>0&&<span className="ml-1 text-gray-600">({rePct.toFixed(0)}% RE×{reAmort||25}yr + {(100-rePct).toFixed(0)}% biz×{loanAmort}yr)</span>}
+                  </div>
+                )}
+                {ppMo>0&&<div className="text-xs text-gray-500 mt-0.5">+ {fmtD(ppMo)}/mo pari passu ({ppAmort}yr @ {ppRate}%)</div>}
+                {(ppMo>0||reMoPmt>0)&&<div className="text-xs font-bold mt-0.5" style={{color:'#2eb860'}}>= {fmtD(monthlyLoan)}/mo total</div>}
+              </div>
+            )}
             </div>
             <div>
               <span className="lbl">Buyer Down Payment (auto, {dpPct}% of total project)</span>
@@ -675,13 +700,51 @@ const T4 = ({state,set}) => {
         <span className="text-xs text-gray-400">Sources vs. Uses Variance</span>
         <span className={`mono font-bold ${Math.abs(totalSrc-totalUses)<1?'text-green-400':totalSrc>totalUses?'text-green-400':'text-red-400'}`}>{fmtD(totalSrc-totalUses)}</span>
       </div>
+
+      {/* Loan Structure & Pari Passu */}
+      <div className="card p-4 mt-3 space-y-4">
+        {reVal>0&&(
+          <div>
+            <span className="text-xs font-semibold text-gray-300 uppercase tracking-wide mb-2 block">SBA Loan Structure</span>
+            <div className="flex rounded overflow-hidden border border-gray-700 text-xs mb-2">
+              {[['7a','7(a) Blended'],['504','7(a) + SBA 504']].map(([v,l])=>(
+                <button key={v} onClick={()=>set({...state,loanStructure:v})}
+                  className={`flex-1 py-2 transition-colors ${(loanStructure||'7a')===v?'bg-blue-700 text-white':'bg-gray-900 text-gray-400 hover:bg-gray-800'}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
+            {loanStructure==='7a'&&reVal>0&&(
+              <div className="text-xs text-gray-500">Blended term: {blendedAmort}yr ({rePct.toFixed(0)}% RE × {reAmort||25}yr + {(100-rePct).toFixed(0)}% biz × {loanAmort}yr)</div>
+            )}
+            {loanStructure==='504'&&(
+              <div className="mt-2">
+                <span className="lbl">SBA 504 Debenture Rate (%)</span>
+                <NI value={re504Rate||6.5} onChange={v=>set({...state,re504Rate:v})} placeholder="6.50"/>
+                <div className="text-xs text-gray-500 mt-1">Fixed rate for the 504 CDC/SBA debenture (RE portion only)</div>
+              </div>
+            )}
+          </div>
+        )}
+        <div>
+          <span className="text-xs font-semibold text-gray-300 uppercase tracking-wide mb-2 block">
+            Pari Passu Loan <span className="text-gray-600 font-normal normal-case">(optional — conventional bank loan alongside 7(a))</span>
+          </span>
+          <div className="grid grid-cols-3 gap-3">
+            <div><span className="lbl">Loan Amount</span><NI value={ppLoan||''} onChange={v=>set({...state,ppLoan:v})} placeholder="0"/></div>
+            <div><span className="lbl">Rate (%)</span><NI value={ppRate||7.5} onChange={v=>set({...state,ppRate:v})} placeholder="7.50"/></div>
+            <div><span className="lbl">Term (yrs)</span><NI value={ppAmort||10} onChange={v=>set({...state,ppAmort:v})} placeholder="10"/></div>
+          </div>
+          {ppMo>0&&<div className="text-xs mt-1" style={{color:'#fbbf24'}}>{fmtD(ppMo)}/mo pari passu — included in all debt service calculations</div>}
+        </div>
+      </div>
     </div>
   );
 };
 
 /* ── Tab 5: DSCR ───────────────────────────────────── */
 const T5 = ({state,set,primeRate}) => {
-  const {years,ytdData,ytdEnabled,loanRate,loanAmort,dpPct,reAmort,sdeBasis,su}=state;
+  const {years,ytdData,ytdEnabled,loanRate,loanAmort,dpPct,reAmort,sdeBasis,su,loanStructure,re504Rate,ppLoan,ppRate,ppAmort}=state;
   const all=ytdEnabled?[...years,ytdData]:years;
   const r=(loanRate||10.75)/100/12, n=(loanAmort||10)*12;
   const pmt=loan=>r===0?loan/n:loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
@@ -707,19 +770,29 @@ const T5 = ({state,set,primeRate}) => {
   const sfPmt=(sfAmt>0&&sfR>0&&sfN>0)?sfAmt*sfR*Math.pow(1+sfR,sfN)/(Math.pow(1+sfR,sfN)-1):0;
   const sfAnn=sfPmt*12;
   const totalAnn=basisAnn+sfAnn;
-  // Deal DSCR — actual loan from Sources & Uses with split amortization
+  // Deal DSCR — actual loan from Sources & Uses
   const wcVal5=pn(su?.wc), arVal5=pn(su?.arVal), invVal5=pn(su?.invVal);
   const totalProject5=mp5+reVal+wcVal5+arVal5+invVal5;
   const baseLoan5=totalProject5*(1-dp);
   const guarFee5=baseLoan5*0.75*0.035;
   const closingAmt5=su?.closing===''?0:(pn(su?.closing)||15000);
-  const nRE5=(reAmort||25)*12;
-  const rePmtD=loan=>r===0?loan/nRE5:loan*r*Math.pow(1+r,nRE5)/(Math.pow(1+r,nRE5)-1);
-  const bizDealLoan=(totalProject5-reVal)*(1-dp)+guarFee5+closingAmt5;
-  const reDealLoan=reVal*(1-dp);
-  const dealBizMo=pmt(bizDealLoan);
-  const dealREMo=reVal>0?rePmtD(reDealLoan):0;
-  const dealMonthly=dealBizMo+dealREMo;
+  const totalLoan5=baseLoan5+guarFee5+closingAmt5;
+  let dealBizMo=0, dealREMo=0, blended5=loanAmort||10;
+  if(loanStructure==='504'&&reVal>0){
+    const r504=(re504Rate||6.5)/100/12, n504=(reAmort||25)*12;
+    const pmt504=loan=>r504===0?loan/n504:loan*r504*Math.pow(1+r504,n504)/(Math.pow(1+r504,n504)-1);
+    dealBizMo=pmt((totalProject5-reVal)*(1-dp)+guarFee5+closingAmt5);
+    dealREMo=pmt504(reVal*(1-dp));
+  } else {
+    blended5=reVal>0
+      ?Math.min(25,Math.max(10,Math.round((reVal/totalProject5)*(reAmort||25)+((totalProject5-reVal)/totalProject5)*(loanAmort||10))))
+      :(loanAmort||10);
+    const nB5=blended5*12;
+    dealBizMo=(loan=>r===0?loan/nB5:loan*r*Math.pow(1+r,nB5)/(Math.pow(1+r,nB5)-1))(totalLoan5);
+  }
+  const rPP5=(ppRate||7.5)/100/12, nPP5=(ppAmort||10)*12;
+  const ppMo5=(ppLoan||0)>0?(rPP5===0?(ppLoan||0)/nPP5:(ppLoan||0)*rPP5*Math.pow(1+rPP5,nPP5)/(Math.pow(1+rPP5,nPP5)-1)):0;
+  const dealMonthly=dealBizMo+dealREMo+ppMo5;
   const dealAnn=dealMonthly*12+sfAnn;
   return (
     <div>
@@ -750,14 +823,19 @@ const T5 = ({state,set,primeRate}) => {
               <NI value={reAmort||25} onChange={v=>set({...state,reAmort:Math.min(25,Math.max(1,v))})}/>
               <div className="text-xs text-gray-500 mt-1">SBA max: 25 yrs for real estate</div>
             </div>
-            <div style={{gridColumn:'span 2'}}>
+            <div>
               <span className="lbl">Real Estate % of Project</span>
-              <div style={{fontSize:18,fontWeight:700,color:rePct>=51?'#2eb860':'#94a3b8',fontFamily:'monospace'}}>{rePct.toFixed(1)}%</div>
-              <div className="text-xs text-gray-500 mt-1">
-                {rePct>=51
-                  ?'≥ 51% — RE dominates; full project eligible for 25-yr term'
-                  :'< 51% — split term: RE portion at RE amort, business at loan amort'}
-              </div>
+              <div style={{fontSize:18,fontWeight:700,color:'#94a3b8',fontFamily:'monospace'}}>{rePct.toFixed(1)}%</div>
+              <div className="text-xs text-gray-500 mt-1">{fmtD(reVal)} of {fmtD(totalProjectEst)} total</div>
+            </div>
+            <div>
+              <span className="lbl">Loan Structure</span>
+              <div style={{fontSize:14,fontWeight:700,color:'#60a5fa',fontFamily:'monospace'}}>{(loanStructure||'7a')==='504'?'7(a) + 504':'7(a) Blended'}</div>
+              {(loanStructure||'7a')==='7a'?(
+                <div className="text-xs text-gray-500 mt-1">Blended term: {blended5}yr<br/>({rePct.toFixed(0)}% RE×{reAmort||25}yr + {(100-rePct).toFixed(0)}% biz×{loanAmort}yr)</div>
+              ):(
+                <div className="text-xs text-gray-500 mt-1">7(a): {loanAmort}yr · 504: {reAmort||25}yr @ {re504Rate||6.5}%</div>
+              )}
             </div>
           </div>
         </div>
@@ -765,14 +843,20 @@ const T5 = ({state,set,primeRate}) => {
       {mp5>0&&(
         <div className="card p-3 mb-3" style={{borderColor:'#2563eb',background:'rgba(37,99,235,0.06)'}}>
           <div className="text-xs font-semibold mb-2" style={{color:'#60a5fa'}}>
-            Deal DSCR — Actual Loan @ {fmtD(mp5)}{reVal>0?` (includes ${fmtD(reVal)} RE @ ${reAmort||25}yr)`:''}
+            Deal DSCR — Actual Loan @ {fmtD(mp5)}{reVal>0?` (includes ${fmtD(reVal)} RE)`:''}
           </div>
           <div className="grid grid-cols-3 gap-3 text-xs mb-2">
             <div><span className="lbl">Total Project</span><div className="mono text-gray-300">{fmtD(totalProject5)}</div></div>
             <div><span className="lbl">Deal Monthly Payment</span><div className="mono text-yellow-400">{fmtD(dealMonthly)}</div></div>
             <div><span className="lbl">Deal Annual Debt Service</span><div className="mono text-red-400">{fmtD(dealAnn)}</div></div>
           </div>
-          {reVal>0&&<div className="text-xs text-gray-500 mb-2">{fmtD(dealBizMo)}/mo biz ({loanAmort}yr) + {fmtD(dealREMo)}/mo RE ({reAmort||25}yr){sfAnn>0?` + ${fmtD(sfPmt)}/mo seller note`:''}</div>}
+          {reVal>0&&(loanStructure||'7a')==='504'&&(
+            <div className="text-xs text-gray-500 mb-2">{fmtD(dealBizMo)}/mo 7(a) ({loanAmort}yr @ {loanRate}%) + {fmtD(dealREMo)}/mo 504 ({reAmort||25}yr @ {re504Rate||6.5}%){sfAnn>0?` + ${fmtD(sfPmt)}/mo seller note`:''}</div>
+          )}
+          {reVal>0&&(loanStructure||'7a')==='7a'&&blended5!==(loanAmort||10)&&(
+            <div className="text-xs text-gray-500 mb-2">Blended {blended5}yr term · {rePct.toFixed(0)}% RE × {reAmort||25}yr + {(100-rePct).toFixed(0)}% biz × {loanAmort}yr{sfAnn>0?` + ${fmtD(sfPmt)}/mo seller note`:''}</div>
+          )}
+          {ppMo5>0&&<div className="text-xs text-gray-500 mb-2">+ {fmtD(ppMo5)}/mo pari passu ({ppAmort}yr @ {ppRate}%) included in debt service</div>}
           <div className="grid grid-cols-3 gap-3">
             {all.map((yd,i)=>{
               const c=calcSDE(yd), sde=c.sde;
@@ -1395,7 +1479,7 @@ const TBuyerROI = ({state,set}) => {
 
 /* ── Tab: Seller Reality Check ─────────────────────── */
 const TSeller = ({state, set}) => {
-  const {years, sdeBasis, loanRate, loanAmort, dpPct, reAmort, su} = state;
+  const {years, sdeBasis, loanRate, loanAmort, dpPct, reAmort, su, loanStructure, re504Rate, ppLoan, ppRate, ppAmort} = state;
   const seller = state.seller || {askingPrice:'', buyerSalary:'', contingencyPct:'10'};
   const setSeller = (f, v) => set({...state, seller:{...seller, [f]:v}});
 
@@ -1403,10 +1487,30 @@ const TSeller = ({state, set}) => {
   const basisLabel = sdeBasis==='weighted' ? 'Weighted Avg' : 'Most Recent';
   const dp = (dpPct||10)/100;
   const r = (loanRate||10.75)/100/12, n = (loanAmort||10)*12;
-  const nRE = (reAmort||25)*12;
   const pmtFn = loan => r===0 ? loan/n : loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
-  const rePmtFn = loan => r===0 ? loan/nRE : loan*r*Math.pow(1+r,nRE)/(Math.pow(1+r,nRE)-1);
   const reVal = pn(su?.reVal);
+
+  // Blended amort based on actual S&U totalProject
+  const mp5S=pn(su?.marketPrice);
+  const totalProjectS=mp5S+reVal+pn(su?.wc)+pn(su?.arVal)+pn(su?.invVal);
+  const blendedAmortS=totalProjectS>0&&reVal>0
+    ?Math.min(25,Math.max(10,Math.round((reVal/totalProjectS)*(reAmort||25)+((totalProjectS-reVal)/totalProjectS)*(loanAmort||10))))
+    :(loanAmort||10);
+  const nBlendS=blendedAmortS*12;
+  const blendedPmtS=loan=>r===0?loan/nBlendS:loan*r*Math.pow(1+r,nBlendS)/(Math.pow(1+r,nBlendS)-1);
+  const r504S=(re504Rate||6.5)/100/12, n504S=(reAmort||25)*12;
+  const pmt504S=loan=>r504S===0?loan/n504S:loan*r504S*Math.pow(1+r504S,n504S)/(Math.pow(1+r504S,n504S)-1);
+  const rPPS=(ppRate||7.5)/100/12, nPPS=(ppAmort||10)*12;
+  const ppMoS=(ppLoan||0)>0?(rPPS===0?(ppLoan||0)/nPPS:(ppLoan||0)*rPPS*Math.pow(1+rPPS,nPPS)/(Math.pow(1+rPPS,nPPS)-1)):0;
+
+  const monthlyAtPrice = price => {
+    if(!price||price<=0) return ppMoS;
+    if((loanStructure||'7a')==='504'&&reVal>0){
+      const reComp=Math.min(reVal,price), bizComp=price-reComp;
+      return pmtFn(bizComp*(1-dp))+pmt504S(reComp*(1-dp))+ppMoS;
+    }
+    return blendedPmtS(price*(1-dp))+ppMoS;
+  };
 
   const askingPrice = pn(seller.askingPrice);
   const advisorPrice = pn(su?.marketPrice);
@@ -1416,36 +1520,23 @@ const TSeller = ({state, set}) => {
   const maxSupportable = (dscrTarget, salary) => {
     const adjSDE = sde - salary;
     if(adjSDE <= 0) return 0;
-    const annualDS = adjSDE / dscrTarget;
-    if(!reVal||reVal<=0){
-      const monthlyDS = annualDS / 12;
-      const loan = r===0 ? monthlyDS*n : monthlyDS*(Math.pow(1+r,n)-1)/(r*Math.pow(1+r,n));
-      return loan / (1-dp);
-    }
-    // With RE: binary search for price where split payment matches target
     let lo=0,hi=20000000,iters=0;
-    while(hi-lo>100&&iters++<50){
+    while(hi-lo>100&&iters++<60){
       const mid=(lo+hi)/2;
-      const m=dscrMetrics(mid);
-      if(!m)break;
-      if(m.annualDS<annualDS) lo=mid; else hi=mid;
+      if(monthlyAtPrice(mid)*12<adjSDE/dscrTarget) lo=mid; else hi=mid;
     }
     return (lo+hi)/2;
   };
 
   const dscrMetrics = price => {
     if(!price||price<=0) return null;
-    const reComp = Math.min(reVal, price);
-    const bizComp = price - reComp;
-    const reLoan = reComp*(1-dp);
-    const bizLoan = bizComp*(1-dp);
-    const monthlyPmt = pmtFn(bizLoan) + rePmtFn(reLoan);
+    const monthlyPmt = monthlyAtPrice(price);
     const annualDS = monthlyPmt*12;
     const rawDSCR = annualDS>0 ? sde/annualDS : 0;
     const adjDSCR = annualDS>0 ? (sde-buyerSalary)/annualDS : 0;
     const contingencyAmt = sde*(contingencyPct/100);
     const cashLeft = sde - buyerSalary - annualDS - contingencyAmt;
-    return {loan:reLoan+bizLoan, monthlyPmt, annualDS, rawDSCR, adjDSCR, contingencyAmt, cashLeft};
+    return {loan:price*(1-dp), monthlyPmt, annualDS, rawDSCR, adjDSCR, contingencyAmt, cashLeft};
   };
 
   const max125 = maxSupportable(1.25, buyerSalary);
@@ -1511,7 +1602,7 @@ const TSeller = ({state, set}) => {
       <div style={{fontSize:11,color:'#64748b',marginBottom:16}}>
         SDE Basis: <span style={{color:'#60a5fa'}}>{basisLabel} — {fmtD(sde)}</span>
         {advisorPrice>0&&<span> · Advisor Price: <span style={{color:'#60a5fa'}}>{fmtD(advisorPrice)}</span></span>}
-        &nbsp;·&nbsp;Loan: {loanRate||10.75}% / {loanAmort||10}yr / {dpPct||10}% down
+        &nbsp;·&nbsp;Loan: {loanRate||10.75}% / {(loanStructure||'7a')==='504'?`7(a)+504`:`${blendedAmortS}yr blended`} / {dpPct||10}% down{ppMoS>0?` · PP: ${fmtD(ppMoS)}/mo`:''}
       </div>
 
       {/* Section 1 — Inputs */}
@@ -1941,9 +2032,9 @@ const REPORT_SECTIONS=[
   {id:'nlb',     label:'QSI™ NLB',                seller:true},
 ];
 const T9 = ({state}) => {
-  const {years,ytdEnabled,ytdData,sdeBasis,customMults,loanRate,loanAmort,dpPct,su}=state;
+  const {years,ytdEnabled,ytdData,sdeBasis,customMults,loanRate,loanAmort,dpPct,su,loanStructure,re504Rate,ppLoan,ppRate,ppAmort}=state;
   const sellerData=state.seller||{askingPrice:'',buyerSalary:'',contingencyPct:'10'};
-  const reAmortR=state.reAmort||25;
+  const reAmort=state.reAmort||25;
   const [vis,setVis]=useState(()=>Object.fromEntries(REPORT_SECTIONS.map(s=>[s.id,true])));
   const toggle=id=>setVis(v=>({...v,[id]:!v[id]}));
   const setBuyer=()=>setVis(v=>Object.fromEntries(REPORT_SECTIONS.map(s=>[s.id,!s.seller])));
@@ -1955,8 +2046,6 @@ const T9 = ({state}) => {
   const mults=[2.5,3.0,3.5,...(customMults||[]).map(m=>parseFloat(m)).filter(m=>m>0)];
   const dp=(dpPct||10)/100, r=(loanRate||10.75)/100/12, n=(loanAmort||10)*12;
   const pmtFn=loan=>r===0?loan/n:loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
-  const nRE=reAmortR*12;
-  const rePmtFnR=loan=>r===0?loan/nRE:loan*r*Math.pow(1+r,nRE)/(Math.pow(1+r,nRE)-1);
 
   // Sources & Uses amounts
   const mp=pn(su?.marketPrice);
@@ -1976,19 +2065,34 @@ const T9 = ({state}) => {
   const sellerAskP=pn(sellerData.askingPrice);
   const sellerSal=pn(sellerData.buyerSalary);
   const sellerContP=pn(sellerData.contingencyPct)||10;
+  // Blended amort for report (uses totalProject from S&U)
+  const blendedAmortR9=totalProject>0&&reVal>0
+    ?Math.min(25,Math.max(10,Math.round((reVal/totalProject)*(reAmort||25)+((totalProject-reVal)/totalProject)*(loanAmort||10))))
+    :(loanAmort||10);
+  const nBlendR9=blendedAmortR9*12;
+  const blendedPmtR9=loan=>r===0?loan/nBlendR9:loan*r*Math.pow(1+r,nBlendR9)/(Math.pow(1+r,nBlendR9)-1);
+  const r504R9=(re504Rate||6.5)/100/12, n504R9=(reAmort||25)*12;
+  const pmt504R9=loan=>r504R9===0?loan/n504R9:loan*r504R9*Math.pow(1+r504R9,n504R9)/(Math.pow(1+r504R9,n504R9)-1);
+  const rPPR9=(ppRate||7.5)/100/12, nPPR9=(ppAmort||10)*12;
+  const ppMoR9=(ppLoan||0)>0?(rPPR9===0?(ppLoan||0)/nPPR9:(ppLoan||0)*rPPR9*Math.pow(1+rPPR9,nPPR9)/(Math.pow(1+rPPR9,nPPR9)-1)):0;
+  const monthlyAtPriceR9=price=>{
+    if(!price||price<=0)return ppMoR9;
+    if((loanStructure||'7a')==='504'&&reVal>0){
+      const reComp=Math.min(reVal,price),bizComp=price-reComp;
+      return pmtFn(bizComp*(1-dp))+pmt504R9(reComp*(1-dp))+ppMoR9;
+    }
+    return blendedPmtR9(price*(1-dp))+ppMoR9;
+  };
   const sDscrM=price=>{
     if(!price||price<=0)return null;
-    const reComp=Math.min(reVal,price);
-    const bizComp=price-reComp;
-    const mo=pmtFn(bizComp*(1-dp))+rePmtFnR(reComp*(1-dp));
+    const mo=monthlyAtPriceR9(price);
     const ann=mo*12;
-    return{loan:(reComp+bizComp)*(1-dp),mo,ann,rawD:ann>0?base/ann:0,adjD:ann>0?(base-sellerSal)/ann:0,cont:base*(sellerContP/100),cash:base-sellerSal-ann-base*(sellerContP/100)};
+    return{loan:price*(1-dp),mo,ann,rawD:ann>0?base/ann:0,adjD:ann>0?(base-sellerSal)/ann:0,cont:base*(sellerContP/100),cash:base-sellerSal-ann-base*(sellerContP/100)};
   };
   const sMax125=(()=>{
     const a=base-sellerSal;if(a<=0)return 0;
-    if(!reVal||reVal<=0){const mo=a/1.25/12;const loan=r===0?mo*n:mo*(Math.pow(1+r,n)-1)/(r*Math.pow(1+r,n));return loan/(1-dp);}
     let lo=0,hi=20000000,iters=0;
-    while(hi-lo>100&&iters++<50){const mid=(lo+hi)/2;const m=sDscrM(mid);if(!m)break;if(m.ann<a/1.25)lo=mid;else hi=mid;}
+    while(hi-lo>100&&iters++<60){const mid=(lo+hi)/2;if(monthlyAtPriceR9(mid)*12<a/1.25)lo=mid;else hi=mid;}
     return(lo+hi)/2;
   })();
   const sAskM=sDscrM(sellerAskP),sAdvM=sDscrM(mp),sMaxM=sDscrM(sMax125);
@@ -2268,7 +2372,7 @@ const T9 = ({state}) => {
             A DSCR of <strong style={{color:'#e2e8f0'}}>1.00</strong> means the business exactly covers its debt — nothing left over.
             <strong style={{color:'#e2e8f0'}}> 1.25</strong> is the typical SBA minimum — 25 cents of cushion for every dollar of payment.
             <strong style={{color:'#2eb860'}}> 2.00 or above</strong> is considered strong and signals that the buyer will have healthy cash flow after servicing the debt.
-            The loan modeled here assumes a <strong style={{color:'#e2e8f0'}}>3× SDE price at {loanRate}% over {loanAmort} years with {dpPct}% down</strong>.
+            The loan modeled here assumes a <strong style={{color:'#e2e8f0'}}>3× SDE price at {loanRate}% over {loanAmort} years with {dpPct}% down</strong>{reVal>0?<span> (real estate included — actual deal uses <strong style={{color:'#e2e8f0'}}>{(loanStructure||'7a')==='504'?`7(a)+504 structure`:`${blendedAmortR9}yr blended term`}</strong>)</span>:''}.
           </p>
           <table style={{width:'100%',fontSize:11,borderCollapse:'collapse'}}>
             <thead>
