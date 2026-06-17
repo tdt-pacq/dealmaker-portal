@@ -840,16 +840,9 @@ const T5 = ({state,set,primeRate}) => {
           </div>
         </div>
       )}
-      {mp5>0&&(
-        <div className="card p-3 mb-3" style={{borderColor:'#2563eb',background:'rgba(37,99,235,0.06)'}}>
-          <div className="text-xs font-semibold mb-2" style={{color:'#60a5fa'}}>
-            Deal DSCR — Actual Loan @ {fmtD(mp5)}{reVal>0?` (includes ${fmtD(reVal)} RE)`:''}
-          </div>
-          <div className="grid grid-cols-3 gap-3 text-xs mb-2">
-            <div><span className="lbl">Total Project</span><div className="mono text-gray-300">{fmtD(totalProject5)}</div></div>
-            <div><span className="lbl">Deal Monthly Payment</span><div className="mono text-yellow-400">{fmtD(dealMonthly)}</div></div>
-            <div><span className="lbl">Deal Annual Debt Service</span><div className="mono text-red-400">{fmtD(dealAnn)}</div></div>
-          </div>
+      {mp5>0?(
+        <div className="mb-4">
+          <div className="text-xs font-semibold mb-1" style={{color:'#60a5fa'}}>Deal DSCR — Actual Loan @ {fmtD(mp5)}{reVal>0?` (includes ${fmtD(reVal)} RE)`:''}</div>
           {reVal>0&&(loanStructure||'7a')==='504'&&(
             <div className="text-xs text-gray-500 mb-2">{fmtD(dealBizMo)}/mo 7(a) ({loanAmort}yr @ {loanRate}%) + {fmtD(dealREMo)}/mo 504 ({reAmort||25}yr @ {re504Rate||6.5}%){sfAnn>0?` + ${fmtD(sfPmt)}/mo seller note`:''}</div>
           )}
@@ -861,67 +854,84 @@ const T5 = ({state,set,primeRate}) => {
             {all.map((yd,i)=>{
               const c=calcSDE(yd), sde=c.sde;
               const dscr=dealAnn>0?sde/dealAnn:0;
+              const mp=maxAt2x(sde);
               const dc=dcFor(dscr,i), dbg=dbgFor(dscr,i), lbl=labelFor(dscr,i);
+              const t=thresholds[i]||thresholds[2];
               return (
-                <div key={yd.year} className={`rounded p-3 ${dbg}`} style={{border:'1px solid #1e3a5f'}}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-bold text-white text-sm">{yd.year}</span>
-                    <span className={`mono text-xs ${sde>=0?'text-green-400':'text-red-400'}`}>{fmtD(sde)}</span>
+                <div key={yd.year} className={`card p-4 ${dbg}`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-bold text-white text-base">{yd.year}</span>
+                    <div className="text-right"><div className="text-xs text-gray-400">{yd.year} SDE</div><div className={`mono font-bold ${sde>=0?'text-green-400':'text-red-400'}`}>{fmtD(sde)}</div></div>
                   </div>
-                  <div className="text-xs text-gray-500 mb-1">SDE ÷ Deal DS</div>
-                  <div className={`mono font-bold text-xl ${dc}`}>{dscr>0?dscr.toFixed(2):'—'}</div>
+                  <div className="space-y-2 text-xs">
+                    <div><span className="lbl">Deal Monthly Payment</span><div className="mono text-yellow-400">{fmtD(dealMonthly)}</div></div>
+                    <div><span className="lbl">Deal Annual Debt Service</span><div className="mono text-red-400">{fmtD(dealAnn)}</div></div>
+                    {sfAnn>0&&<div><span className="lbl">Incl. Seller Note Annual Service</span><div className="mono text-red-400">{fmtD(sfAnn)}</div></div>}
+                    <div className="border-t border-gray-700 pt-2">
+                      <span className="lbl">DSCR ({yd.year} SDE ÷ Deal DS)</span>
+                      <div className={`mono font-bold text-xl ${dc}`}>{dscr>0?dscr.toFixed(2):'—'}</div>
+                      <div className={`text-xs ${dc}`}>{lbl}</div>
+                      <div className="text-gray-600 mt-1">≥{t.green} green · ≥{t.yellow} yellow · below red</div>
+                    </div>
+                    <div><span className="lbl">Max Price @ 2.0× DSCR</span><div className="mono text-blue-400">{sde>0?fmtD(mp):'—'}</div></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ):(
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          {all.map((yd,i)=>{
+            const c=calcSDE(yd), sde=c.sde;
+            const dscr=totalAnn>0?sde/totalAnn:0;
+            const mp=maxAt2x(sde);
+            const dc=dcFor(dscr,i), dbg=dbgFor(dscr,i), lbl=labelFor(dscr,i);
+            const t=thresholds[i]||thresholds[2];
+            return (
+              <div key={yd.year} className={`card p-4 ${dbg}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="font-bold text-white text-base">{yd.year}</span>
+                  <div className="text-right"><div className="text-xs text-gray-400">{yd.year} SDE</div><div className={`mono font-bold ${sde>=0?'text-green-400':'text-red-400'}`}>{fmtD(sde)}</div></div>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <div><span className="lbl">SBA Annual Debt Service</span><div className="mono text-red-400">{fmtD(basisAnn)}</div></div>
+                  {sfAnn>0&&<div><span className="lbl">Seller Note Annual Service</span><div className="mono text-red-400">{fmtD(sfAnn)}</div></div>}
+                  {sfAnn>0&&<div><span className="lbl">Total Annual Debt Service</span><div className="mono font-bold text-red-400">{fmtD(totalAnn)}</div></div>}
+                  <div className="border-t border-gray-700 pt-2">
+                    <span className="lbl">DSCR ({yd.year} SDE ÷ {sfAnn>0?'Total':'SBA'} Debt Svc)</span>
+                    <div className={`mono font-bold text-xl ${dc}`}>{dscr>0?dscr.toFixed(2):'—'}</div>
+                    <div className={`text-xs ${dc}`}>{lbl}</div>
+                    <div className="text-gray-600 mt-1">≥{t.green} green · ≥{t.yellow} yellow · below red</div>
+                  </div>
+                  <div><span className="lbl">Max Price @ 2.0× DSCR</span><div className="mono text-blue-400">{sde>0?fmtD(mp):'—'}</div></div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <div className="card p-3 mb-4" style={{borderColor:'#1a5e35'}}>
+        <div className="flex items-start justify-between flex-wrap gap-3">
+          <div>
+            <div className="text-xs font-semibold" style={{color:'#2eb860'}}>SDE × 3 Lender Sizing Reference — {sdeBasis==='weighted'?'Weighted Avg':'Most Recent'} SDE: {fmtD(basisSDE)}</div>
+            <div className="text-xs text-gray-500 mt-0.5">Loan: {fmtD(basisLoan)} · {fmtD(basisMo)}/mo · {fmtD(basisAnn)}/yr{sfAnn>0?` + ${fmtD(sfAnn)}/yr seller note = ${fmtD(totalAnn)}/yr total`:''}</div>
+          </div>
+          <div className="flex gap-5">
+            {all.map((yd,i)=>{
+              const c=calcSDE(yd), sde=c.sde;
+              const dscr=totalAnn>0?sde/totalAnn:0;
+              const dc=dcFor(dscr,i), lbl=labelFor(dscr,i);
+              return (
+                <div key={yd.year} className="text-center" style={{minWidth:56}}>
+                  <div className="text-xs text-gray-500">{yd.year}</div>
+                  <div className={`mono font-bold text-base ${dc}`}>{dscr>0?dscr.toFixed(2):'—'}</div>
                   <div className={`text-xs ${dc}`}>{lbl}</div>
                 </div>
               );
             })}
           </div>
         </div>
-      )}
-      <div className="card p-3 mb-3" style={{borderColor:'#1a5e35'}}>
-        <div className="text-xs font-semibold mb-2" style={{color:'#2eb860'}}>Reference: SDE × 3 Sizing Estimate — {sdeBasis==='weighted'?'Weighted Avg':'Most Recent'} SDE: {fmtD(basisSDE)}</div>
-        <div className="grid grid-cols-3 gap-3 text-xs">
-          <div><span className="lbl">SBA Loan (3× basis, {100-dpPct}% LTV)</span><div className="mono text-gray-300">{fmtD(basisLoan)}</div></div>
-          <div><span className="lbl">SBA Monthly Payment</span><div className="mono text-yellow-400">{fmtD(basisMo)}</div></div>
-          <div><span className="lbl">SBA Annual Debt Service</span><div className="mono text-red-400">{fmtD(basisAnn)}</div></div>
-        </div>
-        {sfAnn>0&&<div className="grid grid-cols-3 gap-3 text-xs mt-2 pt-2 border-t border-gray-700">
-          <div><span className="lbl">Seller Note ({su?.sfRate}% / {su?.sfAmort}yr)</span><div className="mono text-gray-300">{fmtD(sfAmt)}</div></div>
-          <div><span className="lbl">Note Monthly Payment</span><div className="mono text-yellow-400">{fmtD(sfPmt)}</div></div>
-          <div><span className="lbl">Note Annual Debt Service</span><div className="mono text-red-400">{fmtD(sfAnn)}</div></div>
-        </div>}
-        {sfAnn>0&&<div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-700 text-xs">
-          <span className="text-gray-400 font-semibold">Total Annual Debt Service (SBA + Seller Note)</span>
-          <span className="mono font-bold text-red-400">{fmtD(totalAnn)}</span>
-        </div>}
-      </div>
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        {all.map((yd,i)=>{
-          const c=calcSDE(yd), sde=c.sde;
-          const dscr=totalAnn>0?sde/totalAnn:0;
-          const mp=maxAt2x(sde);
-          const dc=dcFor(dscr,i), dbg=dbgFor(dscr,i), lbl=labelFor(dscr,i);
-          const t=thresholds[i]||thresholds[2];
-          return (
-            <div key={yd.year} className={`card p-4 ${dbg}`}>
-              <div className="flex items-center justify-between mb-3">
-                <span className="font-bold text-white text-base">{yd.year}</span>
-                <div className="text-right"><div className="text-xs text-gray-400">{yd.year} SDE</div><div className={`mono font-bold ${sde>=0?'text-green-400':'text-red-400'}`}>{fmtD(sde)}</div></div>
-              </div>
-              <div className="space-y-2 text-xs">
-                <div><span className="lbl">SBA Annual Debt Service</span><div className="mono text-red-400">{fmtD(basisAnn)}</div></div>
-                {sfAnn>0&&<div><span className="lbl">Seller Note Annual Service</span><div className="mono text-red-400">{fmtD(sfAnn)}</div></div>}
-                {sfAnn>0&&<div><span className="lbl">Total Annual Debt Service</span><div className="mono font-bold text-red-400">{fmtD(totalAnn)}</div></div>}
-                <div className="border-t border-gray-700 pt-2">
-                  <span className="lbl">DSCR ({yd.year} SDE ÷ {sfAnn>0?'Total':'SBA'} Debt Svc)</span>
-                  <div className={`mono font-bold text-xl ${dc}`}>{dscr>0?dscr.toFixed(2):'—'}</div>
-                  <div className={`text-xs ${dc}`}>{lbl}</div>
-                  <div className="text-gray-600 mt-1">≥{t.green} green · ≥{t.yellow} yellow · below red</div>
-                </div>
-                <div><span className="lbl">Max Price @ 2.0× DSCR</span><div className="mono text-blue-400">{sde>0?fmtD(mp):'—'}</div></div>
-              </div>
-            </div>
-          );
-        })}
       </div>
       {years.some(y=>calcSDE(y).sde>0)&&(
         <div className="card p-4 mt-2">
@@ -2756,7 +2766,7 @@ const INCOME_PROMPT=`Extract income statement data from this business tax return
 {"entityType":"1120-S or 1065 or 1120 or Schedule C","year":number,"revenue":number or null,"cogs":number or null,"otherIncome":number or null,"opx":number or null,"interest":number or null,"depreciation":number or null,"amortization":number or null,"ownerComp":number or null,"taxes":number or null,"rent":number or null}
 IMPORTANT: Only populate the "taxes" field if this is a 1120 C-Corp return. For 1120-S, 1065, or Schedule C returns, always set "taxes" to null regardless of any tax amounts shown.
 IMPORTANT: For "revenue", use ONLY the gross receipts/net sales line — AFTER subtracting returns and allowances but BEFORE subtracting cost of goods sold. Exact lines: 1120-S Line 1c (Balance column) · 1065 Line 1c · 1120 Line 1c · Schedule C Line 1 net of Line 2 returns. Do NOT use "Total income", "Gross income", or any line that already nets out COGS or adds in other income items.
-IMPORTANT: For "otherIncome", capture any "Other income" items shown between Gross profit and Total income on the return. Exact lines: 1120-S Lines 4–5 (net gain from Form 4797, other income) · 1065 Lines 4–7 · 1120 Lines 8–10 · Schedule C Line 6. Sum all such other income items into a single number. Use null if none present. Do NOT include the ordinary business income/loss line.
+IMPORTANT: For "otherIncome", capture ONLY the "Other income (loss)" line — NOT net gain/loss from Form 4797. Exact lines: 1120-S Line 5 only (do NOT use Line 4 net gain/loss from Form 4797) · 1065 Lines 5–7 · 1120 Lines 9–10 · Schedule C Line 6. Sum all qualifying other income items into a single number. Use null if none present. Do NOT include the ordinary business income/loss line and do NOT include Form 4797 gains/losses.
 IMPORTANT: For "depreciation", only extract the depreciation amount from the front page of the return (e.g. 1120-S Line 14, 1065 Line 16c, 1120 Line 20, Schedule C Line 13 minus any Section 179). Do NOT include Section 179 depreciation — set it to null if only Section 179 is shown and no regular depreciation is present.
 IMPORTANT: For "opx" (operating expenses), use the TOTAL DEDUCTIONS line from the front page of the return only — the single line that sums ALL ordinary business expense lines together. Use these exact lines: 1120-S Line 21 (Total deductions) · 1065 Line 22 (Total deductions) · 1120 Line 27 (Total deductions) · Schedule C Line 28 (Total expenses). This total INCLUDES officer compensation, salaries, interest, depreciation, amortization, and all other expense lines — do NOT subtract any of them. Do NOT use net income, ordinary income, or any profit/loss line. Report the raw total deductions figure even though interest, depreciation, and owner compensation are also extracted in separate fields.
 IMPORTANT: For "rent" (rent expense paid by the business for its operating space), look for a "Rent" or "Rent expense" line in the deductions/expenses section or an attached Other Deductions schedule. Common locations: Schedule C Line 20a ("Rent or lease of other business property"), 1120-S/1065/1120 attached Other Deductions schedule showing "Rent". Use null if not clearly identified as rent expense for the business premises.
