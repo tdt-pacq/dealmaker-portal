@@ -130,6 +130,118 @@ export default function CommissionCalcApp() {
 
   const effectivePct   = salePrice > 0 ? (advisorNet / salePrice) * 100 : 0;
 
+  // ── PDF Export ────────────────────────────────────────────────────────────
+  const exportPDF = () => {
+    const date = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const f = n => n === 0 ? '—' : '$' + Math.abs(Math.round(n)).toLocaleString();
+    const fp = n => n.toFixed(1) + '%';
+
+    const waterfallRows = [];
+    waterfallRows.push(`<tr class="gci"><td>Gross Commission (GCI)</td><td class="sub">${fp(commRate)} × ${f(salePrice)}${minComm > 0 && rawGCI < minComm ? ' (floor)' : ''}</td><td class="amt green">${f(grossGCI)}</td></tr>`);
+    if (totalExpenses > 0) {
+      s.expenses.filter(e => pn(e.amount) > 0).forEach(e => {
+        waterfallRows.push(`<tr class="indent"><td colspan="2">${e.label || 'Expense'}</td><td class="amt red">(${f(pn(e.amount))})</td></tr>`);
+      });
+      waterfallRows.push(`<tr class="subtotal"><td colspan="2">Net GCI After Expenses</td><td class="amt">${f(netAfterExp)}</td></tr>`);
+    }
+    if (totalReferrals > 0) {
+      s.referrals.forEach((r, i) => {
+        const amt = referralAmounts[i];
+        if (!amt) return;
+        const sub = r.type === 'pct' ? ` (${pn(r.value)}% of GCI)` : ' (flat)';
+        waterfallRows.push(`<tr class="indent"><td colspan="2">${r.label || 'Referral'}${sub}</td><td class="amt red">(${f(amt)})</td></tr>`);
+      });
+      waterfallRows.push(`<tr class="subtotal"><td colspan="2">Net GCI After Referrals</td><td class="amt">${f(netAfterRef)}</td></tr>`);
+    }
+    if (pn(s.advisorPct) < 100) {
+      waterfallRows.push(`<tr class="indent"><td colspan="2">Brokerage Retention (${fp(100 - pn(s.advisorPct))})</td><td class="amt red">(${f(brokerRetain)})</td></tr>`);
+      waterfallRows.push(`<tr class="subtotal"><td colspan="2">Advisor Share (${fp(pn(s.advisorPct))})</td><td class="amt">${f(advisorShare)}</td></tr>`);
+    }
+    if (totalTeam > 0) {
+      s.teamSplits.forEach((t, i) => {
+        const amt = teamAmounts[i];
+        if (!amt) return;
+        waterfallRows.push(`<tr class="indent"><td colspan="2">${t.label || 'Team Member'} (${pn(t.pct)}%)</td><td class="amt red">(${f(amt)})</td></tr>`);
+      });
+    }
+    waterfallRows.push(`<tr class="final"><td colspan="2">Advisor Net Commission</td><td class="amt green">${f(advisorNet)}</td></tr>`);
+
+    const sensitivityRows = [-20, -10, 0, 10, 20].map(d => {
+      const p = salePrice * (1 + d / 100);
+      const g = minComm > 0 ? Math.max(p * (commRate / 100), minComm) : p * (commRate / 100);
+      const netE = g - totalExpenses;
+      const refs = s.referrals.reduce((sum, r) => sum + (r.type === 'pct' ? g * (pn(r.value) / 100) : pn(r.value)), 0);
+      const netR = netE - refs;
+      const advS = netR * (pn(s.advisorPct) / 100);
+      const net  = advS - s.teamSplits.reduce((sum, t) => sum + advS * (pn(t.pct) / 100), 0);
+      const cls  = d === 0 ? ' class="base"' : '';
+      return `<tr${cls}><td>${f(p)}${d !== 0 ? ` <span class="delta">(${d > 0 ? '+' : ''}${d}%)</span>` : ''}</td><td>${f(g)}</td><td class="${net >= 0 ? 'green' : 'red'}">${f(net)}</td></tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Commission Summary${s.dealName ? ' — ' + s.dealName : ''}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;color:#1e293b;background:#fff;padding:48px;max-width:680px;margin:0 auto}
+h1{font-size:22px;font-weight:700;letter-spacing:0.3px;margin-bottom:2px}
+.subtitle{font-size:12px;color:#64748b;margin-bottom:28px}
+.hero{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:18px 22px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center}
+.hero-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin-bottom:4px}
+.hero-amount{font-size:30px;font-weight:700;color:#16a34a;font-family:monospace}
+.hero-meta{text-align:right;font-size:12px;color:#64748b}
+.section{margin-bottom:22px}
+.section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#94a3b8;border-bottom:1px solid #e2e8f0;padding-bottom:6px;margin-bottom:10px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td,th{padding:5px 0;vertical-align:baseline}
+th{color:#64748b;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;padding-bottom:7px;border-bottom:1px solid #e2e8f0}
+td:last-child,th:last-child{text-align:right;font-family:monospace}
+td:nth-child(2){color:#64748b;font-size:11px;padding:0 12px}
+tr.gci td{font-weight:600;font-size:14px;padding-top:0}
+tr.gci td:last-child{color:#16a34a}
+tr.indent td{padding-left:14px;color:#64748b}
+tr.subtotal td{font-weight:600;border-top:1px solid #e2e8f0;padding-top:7px;padding-bottom:7px}
+tr.final td{font-weight:700;font-size:15px;border-top:2px solid #16a34a;padding-top:10px;color:#1e293b}
+tr.final td:last-child{color:#16a34a}
+.amt{font-family:monospace}
+.green{color:#16a34a}
+.red{color:#dc2626}
+tr.base td{background:#f0fdf4;font-weight:700}
+.delta{font-size:10px;color:#94a3b8;font-family:system-ui,sans-serif}
+.footer{margin-top:32px;font-size:10px;color:#94a3b8;text-align:center;border-top:1px solid #f1f5f9;padding-top:14px}
+@media print{body{padding:24px}@page{margin:0.5in;size:letter portrait}}
+</style></head><body>
+<h1>Commission Summary${s.dealName ? ' — ' + s.dealName : ''}</h1>
+<p class="subtitle">Generated ${date} · Peterson Acquisitions / The Deal Team</p>
+<div class="hero">
+  <div>
+    <div class="hero-label">Advisor Net Commission</div>
+    <div class="hero-amount">${f(advisorNet)}</div>
+  </div>
+  <div class="hero-meta">
+    <div>${f(salePrice)} sale price</div>
+    <div>${fp(commRate)} commission rate</div>
+    ${salePrice > 0 ? `<div>${fp(effectivePct)} effective rate</div>` : ''}
+  </div>
+</div>
+<div class="section">
+  <div class="section-title">Commission Waterfall</div>
+  <table><tbody>${waterfallRows.join('')}</tbody></table>
+</div>
+${salePrice > 0 ? `<div class="section">
+  <div class="section-title">Price Sensitivity</div>
+  <table><thead><tr><th>Sale Price</th><th>GCI</th><th>Advisor Net</th></tr></thead>
+  <tbody>${sensitivityRows}</tbody></table>
+</div>` : ''}
+<div class="footer">QSI™ Commission Calculator · The Deal Team · Peterson Acquisitions</div>
+<script>window.onload=()=>{window.print();}</script>
+</body></html>`;
+
+    const win = window.open('', '_blank', 'width=820,height=1000');
+    if (!win) { alert('Allow pop-ups for this site to export PDF.'); return; }
+    win.document.write(html);
+    win.document.close();
+  };
+
   const btnAdd = { background: 'transparent', border: '1px dashed #1e2d3d', borderRadius: 5,
     color: '#475569', fontSize: 12, padding: '6px 12px', cursor: 'pointer',
     fontFamily: 'system-ui, sans-serif', width: '100%', textAlign: 'left' };
@@ -142,13 +254,28 @@ export default function CommissionCalcApp() {
     <div style={{ maxWidth: 840, margin: '0 auto', padding: '28px 24px', fontFamily: 'system-ui, sans-serif' }}>
 
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontWeight: 700, fontSize: 20, color: '#e2e8f0', margin: 0, letterSpacing: 0.2 }}>
-          💰 Commission Calculator
-        </h2>
-        <p style={{ color: '#64748b', fontSize: 13, marginTop: 5, marginBottom: 0 }}>
-          Calculate advisor net from GCI after expenses, referrals, and brokerage splits.
-        </p>
+      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h2 style={{ fontWeight: 700, fontSize: 20, color: '#e2e8f0', margin: 0, letterSpacing: 0.2 }}>
+            💰 Commission Calculator
+          </h2>
+          <p style={{ color: '#64748b', fontSize: 13, marginTop: 5, marginBottom: 0 }}>
+            Calculate advisor net from GCI after expenses, referrals, and brokerage splits.
+          </p>
+        </div>
+        <button
+          onClick={exportPDF}
+          disabled={grossGCI === 0}
+          style={{
+            background: grossGCI > 0 ? '#1e3a5f' : 'transparent',
+            border: `1px solid ${grossGCI > 0 ? '#2563eb' : '#1a2235'}`,
+            borderRadius: 6, color: grossGCI > 0 ? '#60a5fa' : '#334155',
+            fontSize: 13, fontWeight: 600, padding: '8px 16px', cursor: grossGCI > 0 ? 'pointer' : 'default',
+            fontFamily: 'system-ui, sans-serif', flexShrink: 0, marginTop: 2,
+          }}
+        >
+          ⬇ Export PDF
+        </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'start' }}>
