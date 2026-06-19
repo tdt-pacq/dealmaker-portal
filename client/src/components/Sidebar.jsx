@@ -7,6 +7,7 @@ const PORTAL_SECTIONS = [
     id: 'advisors',
     label: 'Advisors',
     items: [
+      { id: 'commission',   label: 'Commission Calc',      icon: '💰', basePath: '/commission',    live: true  },
       { id: 'success-plan', label: 'Success Plan',         icon: '🎯', basePath: '/success-plan', live: false },
       { id: 'sops',         label: "SOP's",                icon: '📋', basePath: '/sops',         live: false },
       { id: 'training',     label: 'Training',             icon: '🎓', basePath: '/training',     live: false },
