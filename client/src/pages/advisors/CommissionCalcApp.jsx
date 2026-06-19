@@ -30,7 +30,7 @@ const inp = {
   color: '#e2e8f0', padding: '7px 10px', fontSize: 13, width: '100%',
   fontFamily: 'system-ui, sans-serif', outline: 'none', boxSizing: 'border-box',
 };
-const lbl = { display: 'block', fontSize: 11, color: '#64748b', marginBottom: 4,
+const lbl = { display: 'block', fontSize: 11, color: '#94a3b8', marginBottom: 4,
   textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'system-ui, sans-serif' };
 const card = { background: '#0d1117', border: '1px solid #1a2235', borderRadius: 8,
   padding: '18px 20px', marginBottom: 16 };
@@ -243,11 +243,11 @@ ${salePrice > 0 ? `<div class="section">
   };
 
   const btnAdd = { background: 'transparent', border: '1px dashed #1e2d3d', borderRadius: 5,
-    color: '#475569', fontSize: 12, padding: '6px 12px', cursor: 'pointer',
+    color: '#94a3b8', fontSize: 12, padding: '6px 12px', cursor: 'pointer',
     fontFamily: 'system-ui, sans-serif', width: '100%', textAlign: 'left' };
-  const btnDel = { background: 'transparent', border: 'none', color: '#475569',
+  const btnDel = { background: 'transparent', border: 'none', color: '#64748b',
     fontSize: 16, cursor: 'pointer', lineHeight: 1, padding: '2px 4px', flexShrink: 0 };
-  const hdr = { fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase',
+  const hdr = { fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase',
     letterSpacing: '0.08em', marginBottom: 14, fontFamily: 'system-ui, sans-serif' };
 
   return (
@@ -259,7 +259,7 @@ ${salePrice > 0 ? `<div class="section">
           <h2 style={{ fontWeight: 700, fontSize: 20, color: '#e2e8f0', margin: 0, letterSpacing: 0.2 }}>
             💰 Commission Calculator
           </h2>
-          <p style={{ color: '#64748b', fontSize: 13, marginTop: 5, marginBottom: 0 }}>
+          <p style={{ color: '#94a3b8', fontSize: 13, marginTop: 5, marginBottom: 0 }}>
             Calculate advisor net from GCI after expenses, referrals, and brokerage splits.
           </p>
         </div>
@@ -316,7 +316,7 @@ ${salePrice > 0 ? `<div class="section">
           <div style={card}>
             <div style={hdr}>Deal Expenses</div>
             {s.expenses.length === 0 && (
-              <div style={{ fontSize: 12, color: '#334155', marginBottom: 10 }}>
+              <div style={{ fontSize: 12, color: '#64748b', marginBottom: 10 }}>
                 Marketing, travel, legal, due diligence, etc.
               </div>
             )}
@@ -336,7 +336,7 @@ ${salePrice > 0 ? `<div class="section">
           {/* Referral / Co-Broker Splits */}
           <div style={card}>
             <div style={hdr}>Referral & Co-Broker Fees</div>
-            <div style={{ fontSize: 11, color: '#475569', marginBottom: 10 }}>
+            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 10 }}>
               % of GCI or flat amount paid to referrers, buyer's agents, or support brokers.
             </div>
             {s.referrals.map((r, i) => (
@@ -364,7 +364,7 @@ ${salePrice > 0 ? `<div class="section">
               <NI value={s.advisorPct} onChange={v => set({ advisorPct: Math.min(100, Math.max(0, pn(v))) })}
                 placeholder="100" prefix="%" />
               {pn(s.advisorPct) < 100 && (
-                <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>
+                <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
                   Brokerage retains {(100 - pn(s.advisorPct)).toFixed(1)}% — {fmtD(brokerRetain)}
                 </div>
               )}
@@ -373,9 +373,9 @@ ${salePrice > 0 ? `<div class="section">
 
           {/* Team Splits */}
           <div style={card}>
-            <div style={hdr}>Team Splits <span style={{ fontWeight: 400, color: '#334155', textTransform: 'none', letterSpacing: 0 }}>(% of advisor's net)</span></div>
+            <div style={hdr}>Team Splits <span style={{ fontWeight: 400, color: '#64748b', textTransform: 'none', letterSpacing: 0 }}>(% of advisor's net)</span></div>
             {s.teamSplits.length === 0 && (
-              <div style={{ fontSize: 12, color: '#334155', marginBottom: 10 }}>
+              <div style={{ fontSize: 12, color: '#64748b', marginBottom: 10 }}>
                 Split advisor's share with team members or partners.
               </div>
             )}
@@ -402,14 +402,14 @@ ${salePrice > 0 ? `<div class="section">
           {grossGCI > 0 && (
             <div style={{ background: 'rgba(46,184,96,0.07)', border: '1px solid rgba(46,184,96,0.2)',
               borderRadius: 8, padding: '16px 20px', marginBottom: 16, textAlign: 'center' }}>
-              <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+              <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
                 Advisor Net Commission
               </div>
               <div style={{ ...mono, fontSize: 32, color: advisorNet > 0 ? '#2eb860' : '#ef4444' }}>
                 {fmtD(advisorNet)}
               </div>
               {salePrice > 0 && (
-                <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
+                <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
                   {fmtPct(effectivePct)} of {fmtD(salePrice)} sale price
                 </div>
               )}
@@ -421,7 +421,7 @@ ${salePrice > 0 ? `<div class="section">
             <div style={hdr}>Commission Waterfall</div>
 
             {grossGCI === 0 ? (
-              <div style={{ fontSize: 13, color: '#334155', textAlign: 'center', padding: '20px 0' }}>
+              <div style={{ fontSize: 13, color: '#64748b', textAlign: 'center', padding: '20px 0' }}>
                 Enter a sale price to see the breakdown.
               </div>
             ) : (
