@@ -2463,7 +2463,7 @@ body{font-family:'Inter',Arial,sans-serif;background:#ccc}
   </div>
 
 </div>
-<script>
+<${'script'}>
 function saveEditsToParent() {
   const zones = {};
   document.querySelectorAll('[data-zone]').forEach(function(el) {
@@ -2482,7 +2482,7 @@ function saveEditsToParent() {
     setTimeout(function() { btn.textContent = orig; btn.style.background = '#16a34a'; }, 2500);
   }
 }
-</script>
+</${'script'}>
 </body></html>`;
 
   const win = window.open('', '_blank');
