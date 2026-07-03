@@ -2378,8 +2378,11 @@ body{font-family:'Inter',Arial,sans-serif;background:#ccc}
 }
 </style></head><body>
 <div class="print-bar">
-  <span style="font-size:12px;color:#666;margin-right:auto">✏ Click any text to edit directly before printing</span>
-  <button onclick="window.print()" style="background:${p};color:#fff;border:none;padding:8px 20px;border-radius:4px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer">🖨 Print / Save as PDF</button>
+  <div style="display:flex;flex-direction:column;gap:4px;margin-right:auto">
+    <span style="font-size:12px;color:#444">✏ Click any text to edit directly before printing</span>
+    <span style="font-size:11px;color:#b45309;background:#fef3c7;border:1px solid #fcd34d;border-radius:3px;padding:2px 8px;display:inline-block">⚠ In the print dialog, check <strong>Background graphics</strong> under Options — otherwise colors and backgrounds won't appear in the PDF.</span>
+  </div>
+  <button onclick="window.print()" style="background:${p};color:#fff;border:none;padding:8px 20px;border-radius:4px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">🖨 Print / Save as PDF</button>
 </div>
 <div class="flyer">
 
@@ -2969,8 +2972,11 @@ body{background:#bbb;font-family:'Inter',Arial,sans-serif}
 }
 </style></head><body>
 <div class="print-bar">
-  <span style="font-size:12px;color:#666;margin-right:auto">✏ Click any text to edit directly before printing</span>
-  <button onclick="window.print()" style="background:${p};color:#fff;border:none;padding:8px 20px;border-radius:4px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer">🖨 Print / Save as PDF (${pages.length} pages)</button>
+  <div style="display:flex;flex-direction:column;gap:4px;margin-right:auto">
+    <span style="font-size:12px;color:#444">✏ Click any text to edit directly before printing</span>
+    <span style="font-size:11px;color:#b45309;background:#fef3c7;border:1px solid #fcd34d;border-radius:3px;padding:2px 8px;display:inline-block">⚠ In the print dialog, check <strong>Background graphics</strong> under Options — otherwise colors and backgrounds won't appear in the PDF.</span>
+  </div>
+  <button onclick="window.print()" style="background:${p};color:#fff;border:none;padding:8px 20px;border-radius:4px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">🖨 Print / Save as PDF (${pages.length} pages)</button>
 </div>
 ${pages.join('\n')}
 </body></html>`;
