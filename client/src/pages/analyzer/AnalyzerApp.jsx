@@ -47,6 +47,56 @@ const sortedByYear = yrs => [...yrs].sort((a,b)=>String(b.year).localeCompare(St
 const wtdSDE = yrs => { const s=sortedByYear(yrs).map(y=>calcSDE(y).sde); return (s[0]*3+s[1]*2+s[2]*1)/6; };
 const recentSDE = yrs => { for(const y of sortedByYear(yrs)){ const s=calcSDE(y).sde; if(pn(y.revenue)||s) return s; } return 0; };
 
+/* ── Financial Performance Spread (shared: Income Statement + Deal Report) ── */
+const SPREAD_ROWS = [
+  ['Revenue',               y=>calcSDE(y).rev,   false],
+  ['COGS / Cost of Sales',  y=>calcSDE(y).cogs,  false],
+  ['Gross Profit',          y=>calcSDE(y).gp,    true],
+  ['Operating Expenses',    y=>calcSDE(y).opx,   false],
+  ['Net Operating Income',  y=>calcSDE(y).noi,   true],
+  ['+ Interest',            y=>calcSDE(y).int,   false],
+  ['+ Taxes',               y=>calcSDE(y).taxes, false],
+  ['+ Depreciation',        y=>calcSDE(y).dep,   false],
+  ['+ Amortization',        y=>calcSDE(y).amor,  false],
+  ['EBITDA',                y=>calcSDE(y).ebitda,true],
+  ["Owner's Compensation",  y=>calcSDE(y).oc,    false],
+  ['Adjusted EBITDA',       y=>calcSDE(y).adjE,  true],
+  ['Add-Backs',             y=>calcSDE(y).ab,    false],
+  ["Seller's Discretionary Earnings",y=>calcSDE(y).sde,true],
+];
+
+const FinancialSpreadTable = ({years}) => (
+  <table style={{width:'100%',fontSize:11,borderCollapse:'collapse'}}>
+    <thead>
+      <tr style={{borderBottom:'2px solid #1e2d45'}}>
+        <th style={{textAlign:'left',padding:'5px 0',color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,width:'40%'}}>Metric</th>
+        {years.map(y=>[
+          <th key={y.year} style={{textAlign:'right',padding:'5px 8px',color:'#475569',fontSize:10,textTransform:'uppercase',fontWeight:600}}>{y.year}</th>,
+          <th key={y.year+'p'} style={{textAlign:'right',padding:'5px 12px 5px 0',color:'#334155',fontSize:9,fontWeight:400}}>% Rev</th>
+        ])}
+      </tr>
+    </thead>
+    <tbody>
+      {SPREAD_ROWS.map(([lbl,fn,bold])=>{
+        const isSDE=lbl.startsWith("Seller");
+        return (
+          <tr key={lbl} style={{borderBottom:`1px solid ${bold?'#1e2d45':'#0d1117'}`,background:isSDE?'#061208':bold?'#0a1205':'transparent'}}>
+            <td style={{padding:'5px 0',color:isSDE?'#2eb860':bold?'#cbd5e1':'#64748b',fontWeight:bold?600:400,fontSize:11}}>{lbl}</td>
+            {years.map(y=>{
+              const v=fn(y), rev=calcSDE(y).rev;
+              const p=lbl==='Revenue'?'100%':(rev>0?`${(v/rev*100).toFixed(1)}%`:'—');
+              return [
+                <td key={y.year} className={isSDE?'rpt-green':bold?'':'rpt-muted'} style={{textAlign:'right',padding:'5px 8px',fontFamily:'monospace',color:isSDE?'#2eb860':bold?'#e2e8f0':'#94a3b8',fontWeight:bold?600:400}}>{fmtD(v)}</td>,
+                <td key={y.year+'p'} className="rpt-muted" style={{textAlign:'right',padding:'5px 12px 5px 0',fontFamily:'monospace',color:'#334155',fontSize:10}}>{p}</td>
+              ];
+            })}
+          </tr>
+        );
+      })}
+    </tbody>
+  </table>
+);
+
 /* ── Default state ─────────────────────────────────── */
 const blankYear = yr => ({year:yr,entityType:'1120-S',revenue:'',cogs:'',opx:'',otherIncome:'',interest:'',taxes:'',depreciation:'',amortization:'',ownerComp:'',addBacks:[],rent:'',rentAdj:'',expanded:false});
 const initState = () => ({
@@ -453,6 +503,11 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
         </div>
         {state.years.map((yd,i)=><YearSec key={yd.year} yd={yd} onChange={yd=>upY(i,yd)} onImport={()=>importTaxReturn(i)} reVal={pn(state.su?.reVal)}/>)}
         {state.ytdEnabled&&<YearSec yd={state.ytdData} onChange={yd=>set({...state,ytdData:yd})} onImport={null} reVal={pn(state.su?.reVal)}/>}
+        {/* Financial Performance Spread */}
+        <div className="card p-5" style={{marginBottom:20}}>
+          <div style={{fontSize:14,fontWeight:800,color:'#f1f5f9',marginBottom:14}}>Financial Performance &amp; Seller's Discretionary Earnings</div>
+          <FinancialSpreadTable years={state.ytdEnabled?[...state.years,state.ytdData]:state.years}/>
+        </div>
         {/* Advisor Notes */}
         <div style={{marginTop:20,padding:16,background:'#0f172a',borderRadius:8,border:'1px solid #1e293b'}}>
           <div style={{fontSize:12,color:'#64748b',marginBottom:8,fontWeight:700,letterSpacing:1,textTransform:'uppercase'}}>Advisor Notes</div>
@@ -2123,18 +2178,6 @@ const T9 = ({state}) => {
   const nextSDE=pn(nlb.nextSDE)||(nlbTarget/3), curSDE=recentSDE(years);
 
   const allYears=ytdEnabled?[...years,ytdData]:years;
-  const rows=[
-    ['Revenue',           y=>calcSDE(y).rev,  false],
-    ['COGS / Cost of Sales',y=>calcSDE(y).cogs,false],
-    ['Gross Profit',      y=>calcSDE(y).gp,   true],
-    ['Operating Expenses',y=>calcSDE(y).opx,  false],
-    ['Net Operating Income',y=>calcSDE(y).noi,true],
-    ['EBITDA',            y=>calcSDE(y).ebitda,true],
-    ["Owner's Compensation",y=>calcSDE(y).oc, false],
-    ['Adjusted EBITDA',   y=>calcSDE(y).adjE, true],
-    ['Add-Backs',         y=>calcSDE(y).ab,   false],
-    ["Seller's Discretionary Earnings",y=>calcSDE(y).sde,true],
-  ];
 
   const SH=({n,title,color='#059669'})=>(
     <div style={{borderLeft:`4px solid ${color}`,paddingLeft:12,marginBottom:14}}>
@@ -2218,35 +2261,7 @@ const T9 = ({state}) => {
             SDE is the foundation for every valuation and debt-coverage calculation in this report.
             A consistent or growing SDE trend signals a healthy, transferable business; a declining trend warrants further investigation.
           </p>
-          <table style={{width:'100%',fontSize:11,borderCollapse:'collapse'}}>
-            <thead>
-              <tr style={{borderBottom:'2px solid #1e2d45'}}>
-                <th style={{textAlign:'left',padding:'5px 0',color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,width:'40%'}}>Metric</th>
-                {allYears.map(y=>[
-                  <th key={y.year} style={{textAlign:'right',padding:'5px 8px',color:'#475569',fontSize:10,textTransform:'uppercase',fontWeight:600}}>{y.year}</th>,
-                  <th key={y.year+'p'} style={{textAlign:'right',padding:'5px 12px 5px 0',color:'#334155',fontSize:9,fontWeight:400}}>% Rev</th>
-                ])}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(([lbl,fn,bold])=>{
-                const isSDE=lbl.startsWith("Seller");
-                return (
-                  <tr key={lbl} style={{borderBottom:`1px solid ${bold?'#1e2d45':'#0d1117'}`,background:isSDE?'#061208':bold?'#0a1205':'transparent'}}>
-                    <td style={{padding:'5px 0',color:isSDE?'#2eb860':bold?'#cbd5e1':'#64748b',fontWeight:bold?600:400,fontSize:11}}>{lbl}</td>
-                    {allYears.map(y=>{
-                      const v=fn(y), rev=calcSDE(y).rev;
-                      const p=lbl==='Revenue'?'100%':(rev>0?`${(v/rev*100).toFixed(1)}%`:'—');
-                      return [
-                        <td key={y.year} className={isSDE?'rpt-green':bold?'':'rpt-muted'} style={{textAlign:'right',padding:'5px 8px',fontFamily:'monospace',color:isSDE?'#2eb860':bold?'#e2e8f0':'#94a3b8',fontWeight:bold?600:400}}>{fmtD(v)}</td>,
-                        <td key={y.year+'p'} className="rpt-muted" style={{textAlign:'right',padding:'5px 12px 5px 0',fontFamily:'monospace',color:'#334155',fontSize:10}}>{p}</td>
-                      ];
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <FinancialSpreadTable years={allYears}/>
           <div style={{marginTop:14,paddingTop:10,borderTop:'1px solid #1e2d45',display:'flex',gap:28,fontSize:11,flexWrap:'wrap'}}>
             <div><span style={{color:'#64748b'}}>Weighted Avg SDE: </span><span style={{fontFamily:'monospace',color:'#2eb860',fontWeight:700}}>{fmtD(wt)}</span></div>
             <div><span style={{color:'#64748b'}}>Most Recent SDE: </span><span style={{fontFamily:'monospace',color:'#2eb860',fontWeight:700}}>{fmtD(rec)}</span></div>

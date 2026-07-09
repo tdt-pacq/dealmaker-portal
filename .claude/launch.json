@@ -4,7 +4,7 @@
     {
       "name": "dealmaker-portal",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:client"],
+      "runtimeArgs": ["run", "dev"],
       "port": 3000
     }
   ]
