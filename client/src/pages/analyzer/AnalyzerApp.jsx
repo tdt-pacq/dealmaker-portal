@@ -471,17 +471,20 @@ const Analysis = ({state,set,primeRate}) => {
 
 /* ── Tab 1: Data Input ─────────────────────────────── */
 const T1 = ({state,set,primeRate,importTaxReturn}) => {
-  const upY=(yearIdx, newYd)=>{
-    const oldYd=state.years[yearIdx];
-    let years=[...state.years];
-    years[yearIdx]=newYd;
+  // Sync add-backs (add/remove/relabel) across all sections — the 3 tax-return
+  // years plus YTD when enabled — so a change to any one carries over to the rest.
+  const syncSection=(idx, newYd)=>{
+    const sections=state.ytdEnabled?[...state.years,state.ytdData]:[...state.years];
+    const oldYd=sections[idx];
+    sections[idx]=newYd;
     const oldABs=oldYd.addBacks||[], newABs=newYd.addBacks||[];
     const added=newABs.filter(na=>na.sharedId&&!oldABs.find(oa=>oa.sharedId===na.sharedId));
     const removed=oldABs.filter(oa=>oa.sharedId&&!newABs.find(na=>na.sharedId===oa.sharedId)).map(a=>a.sharedId);
     const relabeled=newABs.filter(na=>{ const o=oldABs.find(oa=>oa.sharedId===na.sharedId); return o&&o.label!==na.label; });
+    let next=sections;
     if(added.length||removed.length||relabeled.length){
-      years=years.map((y,i)=>{
-        if(i===yearIdx) return y;
+      next=sections.map((y,i)=>{
+        if(i===idx) return y;
         let abs=[...(y.addBacks||[])];
         added.forEach(ab=>{ if(!abs.find(a=>a.sharedId===ab.sharedId)) abs=[...abs,{id:Date.now()+i+Math.random(),sharedId:ab.sharedId,label:ab.label,amount:''}]; });
         removed.forEach(sid=>{ abs=abs.filter(a=>a.sharedId!==sid); });
@@ -489,8 +492,14 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
         return {...y,addBacks:abs};
       });
     }
-    set({...state,years});
+    if(state.ytdEnabled){
+      set({...state,years:next.slice(0,-1),ytdData:next[next.length-1]});
+    } else {
+      set({...state,years:next});
+    }
   };
+  const upY=(yearIdx, newYd)=>syncSection(yearIdx, newYd);
+  const upYTD=newYd=>syncSection(state.years.length, newYd);
   return (
     <div style={{display:'flex',gap:24,minHeight:0}}>
       <div style={{flex:'0 0 64%',overflowY:'auto',paddingRight:8,minWidth:0}}>
@@ -502,7 +511,7 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
           <Tog on={state.ytdEnabled} set={v=>set({...state,ytdEnabled:v})} label="YTD"/>
         </div>
         {state.years.map((yd,i)=><YearSec key={yd.year} yd={yd} onChange={yd=>upY(i,yd)} onImport={()=>importTaxReturn(i)} reVal={pn(state.su?.reVal)}/>)}
-        {state.ytdEnabled&&<YearSec yd={state.ytdData} onChange={yd=>set({...state,ytdData:yd})} onImport={null} reVal={pn(state.su?.reVal)}/>}
+        {state.ytdEnabled&&<YearSec yd={state.ytdData} onChange={upYTD} onImport={null} reVal={pn(state.su?.reVal)}/>}
         {/* Financial Performance Spread */}
         <div className="card p-5" style={{marginBottom:20}}>
           <div style={{fontSize:14,fontWeight:800,color:'#f1f5f9',marginBottom:14}}>Financial Performance &amp; Seller's Discretionary Earnings</div>
