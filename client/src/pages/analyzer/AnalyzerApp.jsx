@@ -2237,11 +2237,101 @@ const T8 = ({state,set}) => {
   );
 };
 
+/* ── Waterfall (Revenue → SDE Bridge) ─────────────── */
+const WaterfallChart = ({steps}) => {
+  const W=720,H=210,PAD={t:24,r:20,b:48,l:70};
+  const innerW=W-PAD.l-PAD.r, innerH=H-PAD.t-PAD.b;
+  // Compute bar extents
+  let running=0;
+  const bars=steps.map(s=>{
+    let lo,hi;
+    if(s.type==='start'){lo=0;hi=s.val;running=s.val;}
+    else if(s.type==='step'){if(s.val>=0){lo=running;hi=running+s.val;}else{hi=running;lo=running+s.val;}running+=s.val;}
+    else{lo=0;hi=running;}
+    return{...s,lo:Math.min(lo,hi),hi:Math.max(lo,hi),running};
+  });
+  const maxV=Math.max(...bars.map(b=>b.hi),1);
+  const minV=Math.min(...bars.map(b=>b.lo),0);
+  const range=maxV-minV||1;
+  const sy=v=>innerH*(1-(v-minV)/range);
+  const fk=v=>{const a=Math.abs(v);return(v<0?'−':'')+(a>=1000000?'$'+(a/1000000).toFixed(1)+'M':a>=1000?'$'+(a/1000).toFixed(0)+'k':'$'+a);};
+  const bw=Math.max(24,Math.floor(innerW/steps.length*0.55));
+  const gap=innerW/steps.length;
+  const barColor=s=>{
+    if(s.type==='total'){
+      if(s.label==='SDE') return '#2eb860';
+      if(s.label==='EBITDA') return '#a78bfa';
+      if(s.label.includes('Profit')) return '#3b82f6';
+      return '#60a5fa';
+    }
+    if(s.val<0) return '#ef4444';
+    if(s.label.includes('OC')||s.label.includes('Owner')) return '#3b82f6';
+    if(s.label.includes('Add')) return '#f59e0b';
+    return '#22d3ee';
+  };
+  const ticks=4;
+  return (
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{overflow:'visible'}}>
+      {Array.from({length:ticks+1},(_,i)=>{const v=minV+(range/ticks)*i;const y=PAD.t+sy(v);return(<g key={i}><line x1={PAD.l} x2={PAD.l+innerW} y1={y} y2={y} stroke="#1e2d45" strokeDasharray="3 3"/><text x={PAD.l-5} y={y+4} textAnchor="end" fontSize="9" fill="#64748b">{fk(v)}</text></g>);})}
+      {/* Connector dashes between bars */}
+      {bars.slice(0,-1).map((b,i)=>{
+        const x1=PAD.l+gap*i+gap/2+bw/2, x2=PAD.l+gap*(i+1)+gap/2-bw/2;
+        const cy=PAD.t+sy(b.running);
+        return <line key={i} x1={x1} x2={x2} y1={cy} y2={cy} stroke="#334155" strokeWidth="1" strokeDasharray="4 2"/>;
+      })}
+      {bars.map((b,i)=>{
+        const x=PAD.l+gap*i+gap/2-bw/2;
+        const yTop=PAD.t+sy(b.hi), yBot=PAD.t+sy(b.lo);
+        const bh=Math.max(Math.abs(yBot-yTop),2);
+        const col=barColor(b);
+        const isTotal=b.type==='start'||b.type==='total';
+        const dispVal=isTotal?b.running:b.val;
+        return (<g key={i}>
+          <rect x={x} y={yTop} width={bw} height={bh} fill={col} rx="2" opacity={isTotal?1:0.8}/>
+          <text x={x+bw/2} y={yTop-4} textAnchor="middle" fontSize="9" fill={col} fontWeight={isTotal?700:400}>{fk(dispVal)}</text>
+          <text x={x+bw/2} y={PAD.t+innerH+14} textAnchor="middle" fontSize="9" fill={isTotal?'#94a3b8':'#64748b'}>{b.label}</text>
+        </g>);
+      })}
+      <line x1={PAD.l} x2={PAD.l} y1={PAD.t} y2={PAD.t+innerH} stroke="#374151"/>
+      <line x1={PAD.l} x2={PAD.l+innerW} y1={PAD.t+sy(0)} y2={PAD.t+sy(0)} stroke="#374151"/>
+    </svg>
+  );
+};
+
 /* ── Tab: Narrative Report ─────────────────────────── */
 const TNarrative = ({state}) => {
   const [status,setStatus]=useState('idle');
   const [narrative,setNarrative]=useState('');
   const [copied,setCopied]=useState(false);
+
+  // Data prep — newest first from sortedByYear
+  const withData=[...sortedByYear(state.years)].filter(y=>pn(y.revenue)>0);
+  const hasData=withData.length>0;
+  const c0=hasData?calcSDE(withData[0]):null;   // most recent
+  const c1=withData.length>1?calcSDE(withData[1]):null; // previous
+  // Chart data: oldest→newest for left-right display
+  const chartData=[...withData].reverse().map(y=>{const c=calcSDE(y);return{year:String(y.year),revenue:c.rev,sde:c.sde,gm:c.rev>0?+(c.gp/c.rev*100).toFixed(1):0,em:c.rev>0?+(c.ebitda/c.rev*100).toFixed(1):0,sm:c.rev>0?+(c.sde/c.rev*100).toFixed(1):0};});
+  const pctFmt=v=>v.toFixed(1)+'%';
+  // YoY helper
+  const yoy=(cur,prev)=>prev&&Math.abs(prev)>0?((cur-prev)/Math.abs(prev)*100):null;
+  // Waterfall steps for most recent year
+  const wfSteps=c0?(()=>{
+    const idao=c0.int+c0.taxes+c0.dep+c0.amor;
+    const ab=c0.ab+c0.rentAB;
+    const steps=[
+      {label:'Revenue',val:c0.rev,type:'start'},
+      {label:'− COGS',val:-c0.cogs,type:'step'},
+      {label:'Gr. Profit',val:c0.gp,type:'total'},
+      {label:'− OpEx',val:-c0.opx,type:'step'},
+      {label:'NOI',val:c0.noi,type:'total'},
+    ];
+    if(idao>0) steps.push({label:'+I/T/D&A',val:idao,type:'step'});
+    steps.push({label:'EBITDA',val:c0.ebitda,type:'total'});
+    if(c0.oc>0) steps.push({label:'+OC',val:c0.oc,type:'step'});
+    if(ab>0) steps.push({label:'+Add-Backs',val:ab,type:'step'});
+    steps.push({label:'SDE',val:c0.sde,type:'total'});
+    return steps;
+  })():[];
 
   const generate=async()=>{
     setStatus('loading');
@@ -2261,56 +2351,118 @@ const TNarrative = ({state}) => {
       const data=await resp.json();
       setNarrative(data.narrative);
       setStatus('done');
-    }catch(err){
-      setStatus('error');
-    }
+    }catch(err){setStatus('error');}
   };
 
   const copy=()=>{navigator.clipboard.writeText(narrative);setCopied(true);setTimeout(()=>setCopied(false),2000);};
-
   const btnStyle=(bg,c)=>({padding:'8px 16px',background:bg,color:c,border:'none',borderRadius:6,fontSize:12,cursor:'pointer',fontWeight:600});
+  const renderNarrative=text=>text.split('\n').map((line,i)=>{
+    const bold=line.match(/^\*\*(.+?)\*\*$/);
+    if(bold) return <div key={i} style={{fontSize:13,fontWeight:800,color:'#e2e8f0',marginTop:i>0?18:0,marginBottom:6,borderBottom:'1px solid #1e2d45',paddingBottom:4}}>{bold[1]}</div>;
+    const mixed=line.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    if(!line.trim()) return <div key={i} style={{height:6}}/>;
+    return <div key={i} style={{fontSize:12,color:'#94a3b8',lineHeight:1.8}} dangerouslySetInnerHTML={{__html:mixed}}/>;
+  });
 
-  // Render narrative with bold headers
-  const renderNarrative=text=>{
-    return text.split('\n').map((line,i)=>{
-      const bold=line.match(/^\*\*(.+?)\*\*$/);
-      if(bold) return <div key={i} style={{fontSize:13,fontWeight:800,color:'#e2e8f0',marginTop:i>0?18:0,marginBottom:6,borderBottom:'1px solid #1e2d45',paddingBottom:4}}>{bold[1]}</div>;
-      const mixed=line.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
-      if(!line.trim()) return <div key={i} style={{height:6}}/>;
-      return <div key={i} style={{fontSize:12,color:'#94a3b8',lineHeight:1.8}} dangerouslySetInnerHTML={{__html:mixed}}/>;
-    });
+  // KPI card
+  const KpiCard=({label,value,pctOfRev,yoyPct,color='#e2e8f0'})=>{
+    const up=yoyPct!=null&&yoyPct>=0;
+    return (
+      <div className="card p-4" style={{flex:1}}>
+        <div style={{fontSize:10,color:'#475569',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>{label}</div>
+        <div style={{fontFamily:'monospace',fontSize:18,fontWeight:800,color,marginBottom:4}}>{value}</div>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+          {pctOfRev!=null&&<span style={{fontSize:10,color:'#64748b'}}>{pctOfRev.toFixed(1)}% of rev</span>}
+          {yoyPct!=null&&<span style={{fontSize:10,color:up?'#2eb860':'#ef4444',fontWeight:600}}>{up?'▲':'▼'}{Math.abs(yoyPct).toFixed(1)}% YoY</span>}
+        </div>
+      </div>
+    );
   };
 
   return (
     <div>
       <h2 className="text-lg font-bold text-white mb-1">Financial Narrative Report</h2>
-      <p style={{fontSize:12,color:'#475569',marginBottom:20}}>AI-generated plain-language financial analysis — suitable for inclusion in a CBR or deal package.</p>
-      {status==='idle'&&(
-        <button onClick={generate} style={{...btnStyle('#1a5e35','#6de09a'),fontSize:13,padding:'10px 24px'}}>Generate Narrative Report</button>
-      )}
-      {status==='loading'&&(
-        <div style={{padding:40,textAlign:'center'}}>
-          <div style={{color:'#2eb860',fontSize:13,marginBottom:6}}>Generating narrative…</div>
-          <div style={{color:'#475569',fontSize:11}}>Claude is analyzing the financials. This takes 15–25 seconds.</div>
-        </div>
-      )}
-      {status==='error'&&(
-        <div>
-          <div style={{color:'#ef4444',marginBottom:12,fontSize:13}}>Generation failed. Check that income statement data is entered and try again.</div>
-          <button onClick={generate} style={btnStyle('#1a5e35','#6de09a')}>Retry</button>
-        </div>
-      )}
-      {status==='done'&&(
-        <div>
-          <div style={{display:'flex',gap:8,marginBottom:16,justifyContent:'flex-end'}}>
-            <button onClick={()=>setStatus('idle')} style={btnStyle('#1e293b','#94a3b8')}>Regenerate</button>
-            <button onClick={copy} style={btnStyle(copied?'#1a5e35':'#1e3a5f',copied?'#6de09a':'#60a5fa')}>{copied?'✓ Copied':'Copy Text'}</button>
+      <p style={{fontSize:12,color:'#475569',marginBottom:16}}>Visual performance summary + AI-generated analysis — suitable for inclusion in a CBR or deal package.</p>
+
+      {/* ── Visual Dashboard (always visible when data exists) ── */}
+      {hasData&&(
+        <>
+          {/* KPI Cards */}
+          <div style={{display:'flex',gap:12,marginBottom:16}}>
+            <KpiCard label="Revenue" value={fmtD(c0.rev)} yoyPct={yoy(c0.rev,c1?.rev)} color="#e2e8f0"/>
+            <KpiCard label="Gross Profit" value={fmtD(c0.gp)} pctOfRev={c0.rev>0?c0.gp/c0.rev*100:null} yoyPct={yoy(c0.gp,c1?.gp)} color="#60a5fa"/>
+            <KpiCard label="EBITDA" value={fmtD(c0.ebitda)} pctOfRev={c0.rev>0?c0.ebitda/c0.rev*100:null} yoyPct={yoy(c0.ebitda,c1?.ebitda)} color="#a78bfa"/>
+            <KpiCard label="SDE" value={fmtD(c0.sde)} pctOfRev={c0.rev>0?c0.sde/c0.rev*100:null} yoyPct={yoy(c0.sde,c1?.sde)} color="#2eb860"/>
           </div>
-          <div className="card p-6">
-            {renderNarrative(narrative)}
+
+          {/* Trend Charts */}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:12,marginBottom:12}}>
+            <div className="card p-4">
+              <div style={{fontSize:11,color:'#94a3b8',fontWeight:600,marginBottom:8}}>Revenue Trend</div>
+              <BarChart data={chartData} dataKey="revenue" color="#60a5fa"/>
+            </div>
+            <div className="card p-4">
+              <div style={{fontSize:11,color:'#94a3b8',fontWeight:600,marginBottom:8}}>Gross Margin %</div>
+              <BarChart data={chartData} dataKey="gm" color="#3b82f6" fmtAxis={pctFmt}/>
+            </div>
+            <div className="card p-4">
+              <div style={{fontSize:11,color:'#94a3b8',fontWeight:600,marginBottom:8}}>EBITDA Margin %</div>
+              <BarChart data={chartData} dataKey="em" color="#a78bfa" fmtAxis={pctFmt}/>
+            </div>
+            <div className="card p-4">
+              <div style={{fontSize:11,color:'#94a3b8',fontWeight:600,marginBottom:8}}>SDE Trend</div>
+              <BarChart data={chartData} dataKey="sde" color="#2eb860"/>
+            </div>
           </div>
-        </div>
+
+          {/* SDE Waterfall */}
+          {wfSteps.length>0&&(
+            <div className="card p-5" style={{marginBottom:20}}>
+              <div style={{fontSize:11,color:'#94a3b8',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:12}}>
+                Revenue → SDE Bridge — {withData[0]?.year}
+              </div>
+              <WaterfallChart steps={wfSteps}/>
+              <div style={{display:'flex',gap:16,marginTop:10,flexWrap:'wrap'}}>
+                {[['#ef4444','Subtraction'],['#22d3ee','I/T/D&A Addbacks'],['#3b82f6','Owner Comp'],['#f59e0b','Other Add-Backs'],['#a78bfa','EBITDA'],['#2eb860','SDE']].map(([c,l])=>(
+                  <span key={l} style={{fontSize:10,color:'#64748b',display:'flex',alignItems:'center',gap:5}}>
+                    <span style={{width:10,height:10,borderRadius:2,background:c,display:'inline-block'}}/>
+                    {l}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
+
+      {/* ── AI Narrative ── */}
+      <div style={{borderTop:'1px solid #1e2d45',paddingTop:20,marginTop:4}}>
+        <div style={{fontSize:11,color:'#475569',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:12}}>AI Narrative Analysis</div>
+        {status==='idle'&&(
+          <button onClick={generate} style={{...btnStyle('#1a5e35','#6de09a'),fontSize:13,padding:'10px 24px'}}>{hasData?'Generate Narrative Report':'Enter income statement data first'}</button>
+        )}
+        {status==='loading'&&(
+          <div style={{padding:32,textAlign:'center'}}>
+            <div style={{color:'#2eb860',fontSize:13,marginBottom:6}}>Generating narrative…</div>
+            <div style={{color:'#475569',fontSize:11}}>Claude is analyzing the financials. This takes 15–25 seconds.</div>
+          </div>
+        )}
+        {status==='error'&&(
+          <div>
+            <div style={{color:'#ef4444',marginBottom:12,fontSize:13}}>Generation failed. Check that income statement data is entered and try again.</div>
+            <button onClick={generate} style={btnStyle('#1a5e35','#6de09a')}>Retry</button>
+          </div>
+        )}
+        {status==='done'&&(
+          <div>
+            <div style={{display:'flex',gap:8,marginBottom:14,justifyContent:'flex-end'}}>
+              <button onClick={()=>setStatus('idle')} style={btnStyle('#1e293b','#94a3b8')}>Regenerate</button>
+              <button onClick={copy} style={btnStyle(copied?'#1a5e35':'#1e3a5f',copied?'#6de09a':'#60a5fa')}>{copied?'✓ Copied':'Copy Text'}</button>
+            </div>
+            <div className="card p-6">{renderNarrative(narrative)}</div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
