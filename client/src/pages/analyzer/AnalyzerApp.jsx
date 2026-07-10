@@ -147,7 +147,7 @@ const Tog = ({on,set,label}) => (
 );
 
 /* ── SVG Bar Chart ─────────────────────────────────── */
-const BarChart = ({data,dataKey,color='#2eb860',label=''}) => {
+const BarChart = ({data,dataKey,color='#2eb860',label='',fmtAxis}) => {
   const W=340,H=160,PAD={t:10,r:10,b:30,l:60};
   const vals=data.map(d=>d[dataKey]||0);
   const maxV=Math.max(...vals,1);
@@ -158,7 +158,7 @@ const BarChart = ({data,dataKey,color='#2eb860',label=''}) => {
   const gap=innerW/data.length;
   const scaleY=v=>(innerH*(1-(v-minV)/range));
   const zeroY=scaleY(0);
-  const fmtTick=v=>{ const a=Math.abs(v); if(a>=1000000)return '$'+(v/1000000).toFixed(1)+'M'; if(a>=1000)return '$'+(v/1000).toFixed(0)+'k'; return '$'+v; };
+  const fmtTick=fmtAxis||(v=>{ const a=Math.abs(v); if(a>=1000000)return '$'+(v/1000000).toFixed(1)+'M'; if(a>=1000)return '$'+(v/1000).toFixed(0)+'k'; return '$'+v; });
   const ticks=4;
   return (
     <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{overflow:'visible'}}>
@@ -564,6 +564,11 @@ const T3 = ({state}) => {
   const wtd=wtdSDE(years), recent=recentSDE(years);
   const yearCards=data.filter(d=>d.year!=='YTD');
   const chartData=data;
+  // Margin % chart data
+  const marginData=base.map(y=>{const c=calcSDE(y);const r=c.rev;return{year:String(y.year),gm:r>0?+(c.gp/r*100).toFixed(1):0,em:r>0?+(c.ebitda/r*100).toFixed(1):0,sm:r>0?+(c.sde/r*100).toFixed(1):0,rev:c.rev};});
+  const pctFmt=v=>v.toFixed(1)+'%';
+  // YoY revenue growth
+  const sortedRevYears=[...years].sort((a,b)=>String(a.year).localeCompare(String(b.year)));
   return (
     <div>
       <h2 className="text-lg font-bold text-white mb-4">SDE Charts</h2>
@@ -602,10 +607,24 @@ const T3 = ({state}) => {
               <div className="text-sm text-gray-400 mb-1">Most Recent SDE</div>
               <div className={`mono font-bold text-xl ${recent>=0?'text-green-400':'text-red-400'}`}>{fmtD(recent)}</div>
             </div>
+            {/* Revenue growth */}
+            {sortedRevYears.length>=2&&(()=>{
+              const rows=sortedRevYears.filter(y=>calcSDE(y).rev>0);
+              return rows.length>=2?(
+                <div className="border-t border-gray-700 pt-3">
+                  <div className="text-sm text-gray-400 mb-1">Revenue Growth</div>
+                  {rows.slice(1).map((y,i)=>{
+                    const prev=calcSDE(rows[i]).rev, cur=calcSDE(y).rev;
+                    const g=prev>0?((cur-prev)/prev*100):0;
+                    return <div key={y.year} style={{fontSize:11,fontFamily:'monospace',color:g>=0?'#2eb860':'#ef4444'}}>{rows[i].year}→{y.year}: {g>=0?'+':''}{g.toFixed(1)}%</div>;
+                  })}
+                </div>
+              ):null;
+            })()}
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="card p-4">
           <h3 className="text-sm font-semibold text-gray-300 mb-3">SDE Components (Stacked)</h3>
           <StackedBar data={chartData}/>
@@ -614,6 +633,131 @@ const T3 = ({state}) => {
           <h3 className="text-sm font-semibold text-gray-300 mb-3">SDE Trend</h3>
           <LineChart data={chartData} dataKey="sde" color="#2eb860"/>
         </div>
+      </div>
+      {/* Margin % Trends */}
+      <div style={{marginBottom:4}}>
+        <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:10}}>Margin Trends</div>
+        <div className="grid grid-cols-3 gap-4">
+          {[{label:'Gross Margin %',k:'gm',color:'#60a5fa'},{label:'EBITDA Margin %',k:'em',color:'#a78bfa'},{label:'SDE Margin %',k:'sm',color:'#2eb860'}].map(ch=>(
+            <div key={ch.k} className="card p-4">
+              <h3 className="text-sm font-semibold text-gray-300 mb-3">{ch.label}</h3>
+              <BarChart data={marginData} dataKey={ch.k} color={ch.color} fmtAxis={pctFmt}/>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ── Tab: Ratio Analysis ───────────────────────────── */
+const TRatios = ({state}) => {
+  const {years,bs,ind}=state;
+  const sorted=sortedByYear(years);
+  const yearData=sorted.map(y=>{
+    const origIdx=years.findIndex(oy=>String(oy.year)===String(y.year));
+    const b=(bs&&bs[origIdx])||{};
+    const bv={cash:pn(b.cash),ar:pn(b.ar),inv:pn(b.inv),ca:pn(b.ca),ta:pn(b.ta),cl:pn(b.cl),tl:pn(b.tl),nw:pn(b.nw)};
+    return{year:y.year,c:calcSDE(y),b:bv};
+  });
+  const hasBs=d=>d.b.ta>0||d.b.ca>0||d.b.cl>0;
+  const rat=(n,d)=>d>0?n/d:null;
+  const pct=(n,d)=>d>0?n/d*100:null;
+  const days=(n,d)=>d>0?n/d*365:null;
+  // color: green/yellow/red for ascending thresholds
+  const gc=(v,g,o)=>v==null?'#475569':v>=g?'#2eb860':v>=o?'#f59e0b':'#ef4444';
+  // color: green/yellow/red for descending thresholds (lower is better)
+  const rc=(v,g,o)=>v==null?'#475569':v<=g?'#2eb860':v<=o?'#f59e0b':'#ef4444';
+  const fP=v=>v==null?'—':v.toFixed(1)+'%';
+  const fR=v=>v==null?'—':v.toFixed(2)+'x';
+  const fD=v=>v==null?'—':v.toFixed(0)+' d';
+
+  const SH=({title})=>(
+    <tr><td colSpan={yearData.length+1} style={{padding:'12px 0 4px',color:'#60a5fa',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',borderTop:'1px solid #1e2d45'}}>{title}</td></tr>
+  );
+  const Row=({label,hint,vals,cols,fmt})=>(
+    <tr style={{borderBottom:'1px solid #0a0f1a'}}>
+      <td style={{padding:'7px 0',fontSize:11,width:'42%'}}>
+        <span style={{color:'#94a3b8'}}>{label}</span>
+        {hint&&<div style={{fontSize:9,color:'#334155',marginTop:1}}>{hint}</div>}
+      </td>
+      {yearData.map((d,i)=>(
+        <td key={d.year} style={{textAlign:'right',padding:'7px 10px',fontFamily:'monospace',fontSize:12,color:cols?cols[i]:'#94a3b8',fontWeight:600}}>{fmt(vals[i])}</td>
+      ))}
+    </tr>
+  );
+
+  const indGM=pn(ind.grossMarginPct),indCOGS=pn(ind.cogsPct),indPT=pn(ind.preTaxProfitPct),indNM=pn(ind.netMarginPct);
+  const hasIndPct=indGM>0||indCOGS>0||indPT>0||indNM>0;
+
+  return (
+    <div>
+      <h2 className="text-lg font-bold text-white mb-1">Financial Ratio Analysis</h2>
+      <p style={{fontSize:12,color:'#475569',marginBottom:20}}>Ratios marked — require Balance Sheet data (populate the Balance Sheet tab to unlock them).</p>
+      <div className="card p-5">
+        <table style={{width:'100%',borderCollapse:'collapse'}}>
+          <thead>
+            <tr style={{borderBottom:'2px solid #1e2d45'}}>
+              <th style={{textAlign:'left',fontSize:10,color:'#475569',textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,paddingBottom:8,width:'42%'}}>Ratio</th>
+              {yearData.map(d=><th key={d.year} style={{textAlign:'right',padding:'0 10px 8px',fontSize:10,color:'#475569',textTransform:'uppercase',fontWeight:600}}>{d.year}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            <SH title="Profitability"/>
+            <Row label="Gross Margin %" hint="(Revenue − COGS) ÷ Revenue"
+              vals={yearData.map(d=>pct(d.c.gp,d.c.rev))}
+              cols={yearData.map(d=>gc(pct(d.c.gp,d.c.rev),40,25))} fmt={fP}/>
+            <Row label="EBITDA Margin %" hint="EBITDA ÷ Revenue · >15% strong"
+              vals={yearData.map(d=>pct(d.c.ebitda,d.c.rev))}
+              cols={yearData.map(d=>gc(pct(d.c.ebitda,d.c.rev),15,8))} fmt={fP}/>
+            <Row label="SDE Margin %" hint="SDE ÷ Revenue"
+              vals={yearData.map(d=>pct(d.c.sde,d.c.rev))}
+              cols={yearData.map(d=>gc(pct(d.c.sde,d.c.rev),20,10))} fmt={fP}/>
+            <Row label="Return on Assets" hint="NOI ÷ Total Assets · requires BS"
+              vals={yearData.map(d=>hasBs(d)&&d.b.ta>0?pct(d.c.noi,d.b.ta):null)}
+              cols={yearData.map(d=>gc(hasBs(d)&&d.b.ta>0?pct(d.c.noi,d.b.ta):null,10,5))} fmt={fP}/>
+            <Row label="Return on Equity" hint="NOI ÷ Net Worth · requires BS"
+              vals={yearData.map(d=>d.b.nw>0?pct(d.c.noi,d.b.nw):null)}
+              cols={yearData.map(d=>gc(d.b.nw>0?pct(d.c.noi,d.b.nw):null,15,10))} fmt={fP}/>
+            <SH title="Liquidity (requires Balance Sheet)"/>
+            <Row label="Current Ratio" hint="Current Assets ÷ Current Liabilities · >1.5 healthy"
+              vals={yearData.map(d=>d.b.cl>0?rat(d.b.ca,d.b.cl):null)}
+              cols={yearData.map(d=>gc(d.b.cl>0?rat(d.b.ca,d.b.cl):null,1.5,1.0))} fmt={fR}/>
+            <Row label="Quick Ratio" hint="(Cash + A/R) ÷ Current Liabilities · >1.0 healthy"
+              vals={yearData.map(d=>d.b.cl>0?rat(d.b.cash+d.b.ar,d.b.cl):null)}
+              cols={yearData.map(d=>gc(d.b.cl>0?rat(d.b.cash+d.b.ar,d.b.cl):null,1.0,0.8))} fmt={fR}/>
+            <SH title="Efficiency (requires Balance Sheet)"/>
+            <Row label="Asset Turnover" hint="Revenue ÷ Total Assets · >1.0 efficient"
+              vals={yearData.map(d=>d.b.ta>0?rat(d.c.rev,d.b.ta):null)}
+              cols={yearData.map(d=>gc(d.b.ta>0?rat(d.c.rev,d.b.ta):null,1.5,0.8))} fmt={fR}/>
+            <Row label="A/R Days" hint="A/R ÷ Revenue × 365 · <30 days efficient"
+              vals={yearData.map(d=>d.b.ar>0&&d.c.rev>0?days(d.b.ar,d.c.rev):null)}
+              cols={yearData.map(d=>rc(d.b.ar>0&&d.c.rev>0?days(d.b.ar,d.c.rev):null,30,45))} fmt={fD}/>
+            <Row label="Inventory Days" hint="Inventory ÷ COGS × 365 · lower is faster"
+              vals={yearData.map(d=>d.b.inv>0&&d.c.cogs>0?days(d.b.inv,d.c.cogs):null)}
+              cols={yearData.map(d=>rc(d.b.inv>0&&d.c.cogs>0?days(d.b.inv,d.c.cogs):null,30,60))} fmt={fD}/>
+            <SH title="Leverage & Solvency (requires Balance Sheet)"/>
+            <Row label="Debt-to-Equity" hint="Total Liabilities ÷ Net Worth · <1.0 conservative"
+              vals={yearData.map(d=>d.b.nw>0?rat(d.b.tl,d.b.nw):null)}
+              cols={yearData.map(d=>rc(d.b.nw>0?rat(d.b.tl,d.b.nw):null,1.0,2.0))} fmt={fR}/>
+            <Row label="Debt-to-Assets" hint="Total Liabilities ÷ Total Assets"
+              vals={yearData.map(d=>d.b.ta>0?pct(d.b.tl,d.b.ta):null)}
+              cols={yearData.map(d=>rc(d.b.ta>0?pct(d.b.tl,d.b.ta):null,50,70))}
+              fmt={v=>v==null?'—':v.toFixed(1)+'%'}/>
+          </tbody>
+        </table>
+        {hasIndPct&&(
+          <div style={{marginTop:16,padding:'10px 14px',background:'#0a1628',borderRadius:6,border:'1px solid #1e2d45'}}>
+            <div style={{fontSize:10,color:'#a78bfa',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Industry Avg — {ind.name||'Imported'}</div>
+            <div style={{display:'flex',gap:20,flexWrap:'wrap'}}>
+              {indGM>0&&<span style={{fontSize:11}}><span style={{color:'#64748b'}}>Gross Margin: </span><span style={{fontFamily:'monospace',color:'#e2e8f0',fontWeight:600}}>{indGM.toFixed(1)}%</span></span>}
+              {indCOGS>0&&<span style={{fontSize:11}}><span style={{color:'#64748b'}}>COGS: </span><span style={{fontFamily:'monospace',color:'#e2e8f0',fontWeight:600}}>{indCOGS.toFixed(1)}%</span></span>}
+              {indPT>0&&<span style={{fontSize:11}}><span style={{color:'#64748b'}}>Pre-Tax Profit: </span><span style={{fontFamily:'monospace',color:'#e2e8f0',fontWeight:600}}>{indPT.toFixed(1)}%</span></span>}
+              {indNM>0&&<span style={{fontSize:11}}><span style={{color:'#64748b'}}>Net Margin: </span><span style={{fontFamily:'monospace',color:'#e2e8f0',fontWeight:600}}>{indNM.toFixed(1)}%</span></span>}
+            </div>
+          </div>
+        )}
+        <div style={{marginTop:12,fontSize:10,color:'#334155'}}>🟢 On target · 🟡 Monitor · 🔴 Below target · — Balance sheet data not yet entered</div>
       </div>
     </div>
   );
@@ -2093,6 +2237,84 @@ const T8 = ({state,set}) => {
   );
 };
 
+/* ── Tab: Narrative Report ─────────────────────────── */
+const TNarrative = ({state}) => {
+  const [status,setStatus]=useState('idle');
+  const [narrative,setNarrative]=useState('');
+  const [copied,setCopied]=useState(false);
+
+  const generate=async()=>{
+    setStatus('loading');
+    const auth=sessionStorage.getItem('pacq_auth');
+    const headers={'Content-Type':'application/json'};
+    if(auth) headers['Authorization']=`Basic ${auth}`;
+    const yearSummaries=sortedByYear(state.years).map(y=>{
+      const c=calcSDE(y);
+      return{year:y.year,entityType:y.entityType,revenue:c.rev,cogs:c.cogs,grossProfit:c.gp,opx:c.opx,ebitda:c.ebitda,ownerComp:c.oc,addBacks:c.ab,sde:c.sde,
+        grossMarginPct:c.rev>0?(c.gp/c.rev*100).toFixed(1):null,
+        ebitdaMarginPct:c.rev>0?(c.ebitda/c.rev*100).toFixed(1):null,
+        sdeMarginPct:c.rev>0?(c.sde/c.rev*100).toFixed(1):null};
+    });
+    try{
+      const resp=await fetch('/api/extract/narrative',{method:'POST',headers,body:JSON.stringify({dealName:state.dealName,years:yearSummaries,bs:state.bs,ind:state.ind,notes:state.notes})});
+      if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error||`Server error ${resp.status}`);}
+      const data=await resp.json();
+      setNarrative(data.narrative);
+      setStatus('done');
+    }catch(err){
+      setStatus('error');
+    }
+  };
+
+  const copy=()=>{navigator.clipboard.writeText(narrative);setCopied(true);setTimeout(()=>setCopied(false),2000);};
+
+  const btnStyle=(bg,c)=>({padding:'8px 16px',background:bg,color:c,border:'none',borderRadius:6,fontSize:12,cursor:'pointer',fontWeight:600});
+
+  // Render narrative with bold headers
+  const renderNarrative=text=>{
+    return text.split('\n').map((line,i)=>{
+      const bold=line.match(/^\*\*(.+?)\*\*$/);
+      if(bold) return <div key={i} style={{fontSize:13,fontWeight:800,color:'#e2e8f0',marginTop:i>0?18:0,marginBottom:6,borderBottom:'1px solid #1e2d45',paddingBottom:4}}>{bold[1]}</div>;
+      const mixed=line.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+      if(!line.trim()) return <div key={i} style={{height:6}}/>;
+      return <div key={i} style={{fontSize:12,color:'#94a3b8',lineHeight:1.8}} dangerouslySetInnerHTML={{__html:mixed}}/>;
+    });
+  };
+
+  return (
+    <div>
+      <h2 className="text-lg font-bold text-white mb-1">Financial Narrative Report</h2>
+      <p style={{fontSize:12,color:'#475569',marginBottom:20}}>AI-generated plain-language financial analysis — suitable for inclusion in a CBR or deal package.</p>
+      {status==='idle'&&(
+        <button onClick={generate} style={{...btnStyle('#1a5e35','#6de09a'),fontSize:13,padding:'10px 24px'}}>Generate Narrative Report</button>
+      )}
+      {status==='loading'&&(
+        <div style={{padding:40,textAlign:'center'}}>
+          <div style={{color:'#2eb860',fontSize:13,marginBottom:6}}>Generating narrative…</div>
+          <div style={{color:'#475569',fontSize:11}}>Claude is analyzing the financials. This takes 15–25 seconds.</div>
+        </div>
+      )}
+      {status==='error'&&(
+        <div>
+          <div style={{color:'#ef4444',marginBottom:12,fontSize:13}}>Generation failed. Check that income statement data is entered and try again.</div>
+          <button onClick={generate} style={btnStyle('#1a5e35','#6de09a')}>Retry</button>
+        </div>
+      )}
+      {status==='done'&&(
+        <div>
+          <div style={{display:'flex',gap:8,marginBottom:16,justifyContent:'flex-end'}}>
+            <button onClick={()=>setStatus('idle')} style={btnStyle('#1e293b','#94a3b8')}>Regenerate</button>
+            <button onClick={copy} style={btnStyle(copied?'#1a5e35':'#1e3a5f',copied?'#6de09a':'#60a5fa')}>{copied?'✓ Copied':'Copy Text'}</button>
+          </div>
+          <div className="card p-6">
+            {renderNarrative(narrative)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 /* ── Tab 9: Deal Report ────────────────────────────── */
 const REPORT_SECTIONS=[
   {id:'spread',  label:'Financial Performance',   seller:false},
@@ -3210,6 +3432,7 @@ const TABS=[
   {id:'dashboard',label:'Dashboard',icon:'📊'},
   {id:'input',label:'Income Statement',icon:'📋'},
   {id:'balance',label:'Balance Sheet',icon:'⚖️'},
+  {id:'ratios',label:'Ratio Analysis',icon:'📐'},
   {id:'industry',label:'Industry',icon:'🏭'},
   {id:'sde',label:'SDE Charts',icon:'📈'},
   {id:'sources',label:'Sources & Uses',icon:'💰'},
@@ -3218,6 +3441,7 @@ const TABS=[
   {id:'roi',label:'Buyer ROI',icon:'💹'},
   {id:'proceeds',label:'Net Proceeds',icon:'💵'},
   {id:'nlb',label:'QSI™ NLB',icon:'⭐'},
+  {id:'narrative',label:'Narrative Report',icon:'✍️'},
   {id:'report',label:'Deal Report',icon:'📄'},
 ];
 
@@ -3498,6 +3722,7 @@ function App() {
         {tab==='input'&&<T1 state={state} set={setState} primeRate={primeRate} importTaxReturn={importTaxReturn}/>}
         {tab==='dashboard'&&<T2 state={state}/>}
         {tab==='sde'&&<T3 state={state}/>}
+        {tab==='ratios'&&<TRatios state={state}/>}
         {tab==='sources'&&<T4 state={state} set={setState}/>}
         {tab==='dscr'&&<T5 state={state} set={setState} primeRate={primeRate}/>}
         {tab==='seller'&&<TSeller state={state} set={setState}/>}
@@ -3506,6 +3731,7 @@ function App() {
         {tab==='industry'&&<TIndustry state={state} set={setState} importIndustryReport={importIndustryReport}/>}
         {tab==='proceeds'&&<T7 state={state} set={setState}/>}
         {tab==='nlb'&&<T8 state={state} set={setState}/>}
+        {tab==='narrative'&&<TNarrative state={state}/>}
         {tab==='report'&&<T9 state={state}/>}
       </div>
       </div>

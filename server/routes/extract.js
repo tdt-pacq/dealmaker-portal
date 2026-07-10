@@ -360,6 +360,94 @@ router.post('/pdf', pdfUpload.single('file'), async (req, res) => {
   }
 });
 
+// POST /api/extract/narrative — AI financial narrative from computed deal data
+router.post('/narrative', express.json(), async (req, res) => {
+  const { dealName, years, bs, ind, notes } = req.body || {};
+  if (!years || !years.length) return res.status(400).json({ error: 'years data is required.' });
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured.' });
+
+  const fmt = n => n != null ? '$' + Number(n).toLocaleString('en-US', {maximumFractionDigits:0}) : 'N/A';
+  const pct = n => n != null ? Number(n).toFixed(1) + '%' : 'N/A';
+
+  const isLines = years.map(y => [
+    `  ${y.year}: Revenue ${fmt(y.revenue)} | Gross Profit ${fmt(y.grossProfit)} (${pct(y.grossMarginPct)}) | EBITDA ${fmt(y.ebitda)} (${pct(y.ebitdaMarginPct)}) | Owner Comp ${fmt(y.ownerComp)} | Add-Backs ${fmt(y.addBacks)} | SDE ${fmt(y.sde)} (${pct(y.sdeMarginPct)})`
+  ].join('')).join('\n');
+
+  const bsLines = (bs || []).map((b, i) => {
+    const y = years[i];
+    if (!y || (!b.ta && !b.ca)) return null;
+    return `  ${y?.year}: Cash ${fmt(b.cash)} | A/R ${fmt(b.ar)} | Inventory ${fmt(b.inv)} | Current Assets ${fmt(b.ca)} | Total Assets ${fmt(b.ta)} | Current Liabilities ${fmt(b.cl)} | Total Liabilities ${fmt(b.tl)} | Net Worth ${fmt(b.nw)}`;
+  }).filter(Boolean).join('\n');
+
+  const indLines = ind && ind.name ? [
+    `Industry: ${ind.name}${ind.naics ? ' (NAICS ' + ind.naics + ')' : ''} — Source: ${ind.source || 'imported report'} ${ind.reportYear || ''}`,
+    ind.grossMarginPct ? `  Gross Margin Avg: ${pct(ind.grossMarginPct)}` : '',
+    ind.ebitdaMult ? `  EBITDA Multiple: ${Number(ind.ebitdaMult).toFixed(2)}x` : '',
+    ind.sdeMult ? `  SDE Multiple: ${Number(ind.sdeMult).toFixed(2)}x` : '',
+  ].filter(Boolean).join('\n') : '';
+
+  const prompt = `You are a senior M&A financial analyst at Peterson Acquisitions, a professional business brokerage. You have been given financial performance data for a business being prepared for sale${dealName ? ` ("${dealName}")` : ''}. Write a concise, professional Financial Analysis Summary suitable for inclusion in a Confidential Business Review (CBR) presented to prospective buyers.
+
+INCOME STATEMENT DATA (${years[0]?.entityType || 'business entity'}):
+${isLines}
+
+${bsLines ? 'BALANCE SHEET DATA:\n' + bsLines + '\n' : ''}
+${indLines ? 'INDUSTRY BENCHMARKS:\n' + indLines + '\n' : ''}
+${notes ? 'ADVISOR NOTES:\n' + notes + '\n' : ''}
+
+Write the report with these exact sections using bold headers:
+
+**Revenue & Growth**
+Describe the revenue trend across the years shown. Calculate and cite YoY growth rates. Comment on consistency and trajectory.
+
+**Gross Margin Analysis**
+Analyze gross margin percentage trend. Is it expanding or compressing? What does this indicate about pricing power and cost control?${indLines ? ' Compare to the industry benchmark where relevant.' : ''}
+
+**EBITDA & Operating Cash Flow**
+Evaluate EBITDA and EBITDA margin trend. Comment on operating efficiency and what the trend suggests about the business model.
+
+**Seller's Discretionary Earnings**
+Analyze SDE trend and margin. Comment on the quality and nature of the add-backs. Is the earnings stream growing, stable, or declining?
+
+${bsLines ? `**Balance Sheet & Financial Health**
+Comment on liquidity ratios, leverage, and working capital position based on the balance sheet data provided.
+
+` : ''}**Key Strengths**
+List 3–4 specific financial strengths with supporting data points.
+
+**Risk Factors**
+List 3–4 honest risk factors or areas of concern an acquirer should investigate.
+
+**Transferability Assessment**
+Brief paragraph: is this business financially positioned for a clean acquisition? What financial conditions should be met or negotiated in a deal structure?
+
+Use specific dollar figures and percentages from the data. Write in professional M&A language — direct, factual, no filler. Avoid generic statements not supported by the numbers.`;
+
+  try {
+    const upstream = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+      signal: AbortSignal.timeout(60000),
+    });
+    if (!upstream.ok) {
+      const err = await upstream.json().catch(() => ({}));
+      return res.status(upstream.status).json({ error: err.error?.message || `Anthropic error ${upstream.status}` });
+    }
+    const data = await upstream.json();
+    const narrative = (data.content || []).find(b => b.type === 'text')?.text?.trim() || '';
+    res.json({ narrative });
+  } catch (err) {
+    const msg = (err.name === 'TimeoutError' || err.name === 'AbortError') ? 'Request timed out.' : (err.message || 'Unexpected error.');
+    res.status(500).json({ error: msg });
+  }
+});
+
 // Multer error handler for this router
 router.use((err, _req, res, _next) => {
   if (err.code === 'LIMIT_FILE_SIZE') {
