@@ -2237,6 +2237,15 @@ const T8 = ({state,set}) => {
   );
 };
 
+/* ── Narrative text renderer (shared by TNarrative + T9) ── */
+const renderNarrative=text=>text.split('\n').map((line,i)=>{
+  const bold=line.match(/^\*\*(.+?)\*\*$/);
+  if(bold) return <div key={i} style={{fontSize:13,fontWeight:800,color:'#e2e8f0',marginTop:i>0?18:0,marginBottom:6,borderBottom:'1px solid #1e2d45',paddingBottom:4}}>{bold[1]}</div>;
+  const mixed=line.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  if(!line.trim()) return <div key={i} style={{height:6}}/>;
+  return <div key={i} style={{fontSize:12,color:'#94a3b8',lineHeight:1.8}} dangerouslySetInnerHTML={{__html:mixed}}/>;
+});
+
 /* ── Waterfall (Revenue → SDE Bridge) ─────────────── */
 const WaterfallChart = ({steps}) => {
   const W=720,H=210,PAD={t:24,r:20,b:48,l:70};
@@ -2299,9 +2308,8 @@ const WaterfallChart = ({steps}) => {
 };
 
 /* ── Tab: Narrative Report ─────────────────────────── */
-const TNarrative = ({state}) => {
-  const [status,setStatus]=useState('idle');
-  const [narrative,setNarrative]=useState('');
+const TNarrative = ({state,narrative,setNarrative,narrativeStatus,setNarrativeStatus}) => {
+  const [status,setStatus]=[narrativeStatus,setNarrativeStatus];
   const [copied,setCopied]=useState(false);
 
   // Data prep — newest first from sortedByYear
@@ -2356,13 +2364,6 @@ const TNarrative = ({state}) => {
 
   const copy=()=>{navigator.clipboard.writeText(narrative);setCopied(true);setTimeout(()=>setCopied(false),2000);};
   const btnStyle=(bg,c)=>({padding:'8px 16px',background:bg,color:c,border:'none',borderRadius:6,fontSize:12,cursor:'pointer',fontWeight:600});
-  const renderNarrative=text=>text.split('\n').map((line,i)=>{
-    const bold=line.match(/^\*\*(.+?)\*\*$/);
-    if(bold) return <div key={i} style={{fontSize:13,fontWeight:800,color:'#e2e8f0',marginTop:i>0?18:0,marginBottom:6,borderBottom:'1px solid #1e2d45',paddingBottom:4}}>{bold[1]}</div>;
-    const mixed=line.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
-    if(!line.trim()) return <div key={i} style={{height:6}}/>;
-    return <div key={i} style={{fontSize:12,color:'#94a3b8',lineHeight:1.8}} dangerouslySetInnerHTML={{__html:mixed}}/>;
-  });
 
   // KPI card
   const KpiCard=({label,value,pctOfRev,yoyPct,color='#e2e8f0'})=>{
@@ -2469,17 +2470,18 @@ const TNarrative = ({state}) => {
 
 /* ── Tab 9: Deal Report ────────────────────────────── */
 const REPORT_SECTIONS=[
-  {id:'spread',  label:'Financial Performance',   seller:false},
-  {id:'fmv',     label:'Fair Market Value Range',  seller:false},
-  {id:'industry',label:'Industry Comparison',      seller:false},
-  {id:'dscr',    label:'DSCR Summary',             seller:false},
-  {id:'seller',  label:'Seller Reality Check',     seller:false},
-  {id:'roi',     label:'Buyer ROI Summary',        seller:false},
-  {id:'sources', label:'Sources & Uses',           seller:false},
-  {id:'proceeds',label:'Net Proceeds to Seller',   seller:true},
-  {id:'nlb',     label:'QSI™ NLB',                seller:true},
+  {id:'spread',    label:'Financial Performance',   seller:false},
+  {id:'fmv',       label:'Fair Market Value Range',  seller:false},
+  {id:'industry',  label:'Industry Comparison',      seller:false},
+  {id:'dscr',      label:'DSCR Summary',             seller:false},
+  {id:'seller',    label:'Seller Reality Check',     seller:false},
+  {id:'roi',       label:'Buyer ROI Summary',        seller:false},
+  {id:'sources',   label:'Sources & Uses',           seller:false},
+  {id:'proceeds',  label:'Net Proceeds to Seller',   seller:true},
+  {id:'nlb',       label:'QSI™ NLB',                seller:true},
+  {id:'narrative', label:'Narrative Analysis',       seller:false},
 ];
-const T9 = ({state}) => {
+const T9 = ({state,narrative,narrativeStatus}) => {
   const {years,ytdEnabled,ytdData,sdeBasis,customMults,loanRate,loanAmort,dpPct,su,loanStructure,re504Rate,ppLoan,ppRate,ppAmort}=state;
   const sellerData=state.seller||{askingPrice:'',buyerSalary:'',contingencyPct:'10'};
   const reAmort=state.reAmort||25;
@@ -3065,6 +3067,53 @@ const T9 = ({state}) => {
           </div>
         </div>}
 
+        {/* Section: Narrative Analysis */}
+        {vis.narrative&&(()=>{
+          const withData=[...sortedByYear(years)].filter(y=>pn(y.revenue)>0);
+          const c0=withData.length>0?calcSDE(withData[0]):null;
+          const c1=withData.length>1?calcSDE(withData[1]):null;
+          const yoy=(cur,prev)=>prev&&Math.abs(prev)>0?((cur-prev)/Math.abs(prev)*100):null;
+          const chartData=[...withData].reverse().map(y=>{const c=calcSDE(y);return{year:String(y.year),revenue:c.rev,sde:c.sde,gm:c.rev>0?+(c.gp/c.rev*100).toFixed(1):0,em:c.rev>0?+(c.ebitda/c.rev*100).toFixed(1):0,sm:c.rev>0?+(c.sde/c.rev*100).toFixed(1):0};});
+          const pctFmt=v=>v.toFixed(1)+'%';
+          const wfSteps=c0?(()=>{const idao=c0.int+c0.taxes+c0.dep+c0.amor,ab=c0.ab+c0.rentAB,s=[{label:'Revenue',val:c0.rev,type:'start'},{label:'− COGS',val:-c0.cogs,type:'step'},{label:'Gr. Profit',val:c0.gp,type:'total'},{label:'− OpEx',val:-c0.opx,type:'step'},{label:'NOI',val:c0.noi,type:'total'}];if(idao>0)s.push({label:'+I/T/D&A',val:idao,type:'step'});s.push({label:'EBITDA',val:c0.ebitda,type:'total'});if(c0.oc>0)s.push({label:'+OC',val:c0.oc,type:'step'});if(ab>0)s.push({label:'+Add-Backs',val:ab,type:'step'});s.push({label:'SDE',val:c0.sde,type:'total'});return s;})():[];
+          const KpiCard=({label,value,pctOfRev,yoyPct,color='#e2e8f0'})=>{const up=yoyPct!=null&&yoyPct>=0;return(<div className="card p-4" style={{flex:1}}><div style={{fontSize:10,color:'#475569',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>{label}</div><div style={{fontFamily:'monospace',fontSize:16,fontWeight:800,color,marginBottom:4}}>{value}</div><div style={{display:'flex',gap:8,flexWrap:'wrap'}}>{pctOfRev!=null&&<span style={{fontSize:10,color:'#64748b'}}>{pctOfRev.toFixed(1)}% of rev</span>}{yoyPct!=null&&<span style={{fontSize:10,color:up?'#2eb860':'#ef4444',fontWeight:600}}>{up?'▲':'▼'}{Math.abs(yoyPct).toFixed(1)}% YoY</span>}</div></div>);};
+          return (
+            <div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
+              <SH n={10} title="Financial Narrative Analysis"/>
+              {c0&&(<>
+                {/* KPI cards */}
+                <div style={{display:'flex',gap:10,marginBottom:14}}>
+                  <KpiCard label="Revenue" value={fmtD(c0.rev)} yoyPct={yoy(c0.rev,c1?.rev)} color="#e2e8f0"/>
+                  <KpiCard label="Gross Profit" value={fmtD(c0.gp)} pctOfRev={c0.rev>0?c0.gp/c0.rev*100:null} yoyPct={yoy(c0.gp,c1?.gp)} color="#60a5fa"/>
+                  <KpiCard label="EBITDA" value={fmtD(c0.ebitda)} pctOfRev={c0.rev>0?c0.ebitda/c0.rev*100:null} yoyPct={yoy(c0.ebitda,c1?.ebitda)} color="#a78bfa"/>
+                  <KpiCard label="SDE" value={fmtD(c0.sde)} pctOfRev={c0.rev>0?c0.sde/c0.rev*100:null} yoyPct={yoy(c0.sde,c1?.sde)} color="#2eb860"/>
+                </div>
+                {/* Trend charts */}
+                <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:14}}>
+                  {[{l:'Revenue Trend',k:'revenue',c:'#60a5fa',f:undefined},{l:'Gross Margin %',k:'gm',c:'#3b82f6',f:pctFmt},{l:'EBITDA Margin %',k:'em',c:'#a78bfa',f:pctFmt},{l:'SDE Trend',k:'sde',c:'#2eb860',f:undefined}].map(ch=>(
+                    <div key={ch.k} className="card p-3">
+                      <div style={{fontSize:10,color:'#64748b',fontWeight:600,marginBottom:6}}>{ch.l}</div>
+                      <BarChart data={chartData} dataKey={ch.k} color={ch.c} fmtAxis={ch.f}/>
+                    </div>
+                  ))}
+                </div>
+                {/* Waterfall */}
+                {wfSteps.length>0&&<div style={{marginBottom:14}}>
+                  <div style={{fontSize:10,color:'#475569',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>Revenue → SDE Bridge — {withData[0]?.year}</div>
+                  <WaterfallChart steps={wfSteps}/>
+                </div>}
+              </>)}
+              {/* Narrative text */}
+              {narrativeStatus==='done'
+                ? <div style={{borderTop:'1px solid #1e2d45',paddingTop:14,marginTop:4}}>{renderNarrative(narrative)}</div>
+                : <p className="no-print" style={{color:'#475569',fontSize:12,fontStyle:'italic',marginTop:8}}>
+                    Narrative text not yet generated — go to the <strong style={{color:'#94a3b8'}}>Narrative Report</strong> tab and click Generate to populate this section.
+                  </p>
+              }
+            </div>
+          );
+        })()}
+
         {/* Footer */}
         <div style={{marginTop:20,paddingTop:12,borderTop:'1px solid #1e2d45',display:'flex',justifyContent:'space-between',fontSize:10,color:'#334155'}}>
           <span>QSI™ Market Price Analyzer &nbsp;·&nbsp; Confidential &nbsp;·&nbsp; For Discussion Purposes Only</span>
@@ -3609,6 +3658,8 @@ function App() {
   const [authDenied,setAuthDenied]=useState(false);
   const [extracting,setExtracting]=useState(false);
   const [reviewData,setReviewData]=useState(null);
+  const [narrative,setNarrative]=useState('');
+  const [narrativeStatus,setNarrativeStatus]=useState('idle');
   useEffect(()=>{
     return firebase.auth().onAuthStateChanged(u=>{
       if(u&&isAllowed(u.email)){
@@ -3883,8 +3934,8 @@ function App() {
         {tab==='industry'&&<TIndustry state={state} set={setState} importIndustryReport={importIndustryReport}/>}
         {tab==='proceeds'&&<T7 state={state} set={setState}/>}
         {tab==='nlb'&&<T8 state={state} set={setState}/>}
-        {tab==='narrative'&&<TNarrative state={state}/>}
-        {tab==='report'&&<T9 state={state}/>}
+        {tab==='narrative'&&<TNarrative state={state} narrative={narrative} setNarrative={setNarrative} narrativeStatus={narrativeStatus} setNarrativeStatus={setNarrativeStatus}/>}
+        {tab==='report'&&<T9 state={state} narrative={narrative} narrativeStatus={narrativeStatus}/>}
       </div>
       </div>
       {showLoad&&<LoadModal onClose={()=>setShowLoad(false)} onLoad={load} user={user}/>}
