@@ -47,6 +47,45 @@ const sortedByYear = yrs => [...yrs].sort((a,b)=>String(b.year).localeCompare(St
 const wtdSDE = yrs => { const s=sortedByYear(yrs).map(y=>calcSDE(y).sde); return (s[0]*3+s[1]*2+s[2]*1)/6; };
 const recentSDE = yrs => { for(const y of sortedByYear(yrs)){ const s=calcSDE(y).sde; if(pn(y.revenue)||s) return s; } return 0; };
 
+/* ── YTD annualization helpers ─────────────────────────────────────────────── */
+// Returns months elapsed from a "YYYY-MM" string (1–11; 12 = full year, treated as-is)
+const ytdMonthsFromStr = through => {
+  if (!through) return 0;
+  const m = Number(through.split('-')[1]);
+  return (m >= 1 && m <= 11) ? m : 0;
+};
+// Scale all numeric fields of a year-data object by (12 / months)
+const annualizeYTD = (yd, months) => {
+  if (!months) return yd;
+  const f = 12 / months;
+  const sc = v => String(Math.round(pn(v) * f));
+  return {
+    ...yd,
+    revenue: sc(yd.revenue), cogs: sc(yd.cogs), opx: sc(yd.opx),
+    otherIncome: sc(yd.otherIncome||0), interest: sc(yd.interest),
+    taxes: sc(yd.taxes), depreciation: sc(yd.depreciation),
+    amortization: sc(yd.amortization), ownerComp: sc(yd.ownerComp),
+    addBacks: (yd.addBacks||[]).map(ab=>({...ab, amount: sc(ab.amount)})),
+    rent: sc(yd.rent||0), rentAdj: sc(yd.rentAdj||0),
+  };
+};
+// Returns annualized SDE from ytdData + through string, or 0 if not computable
+const annYTDSDE = (ytdData, ytdThrough) => {
+  const m = ytdMonthsFromStr(ytdThrough);
+  return m > 0 ? calcSDE(annualizeYTD(ytdData, m)).sde : 0;
+};
+// Central SDE resolver — used by all tabs
+const resolveSDE = (state) => {
+  const wt  = wtdSDE(state.years);
+  const rec = recentSDE(state.years);
+  const ann = (state.ytdEnabled && state.ytdThrough) ? annYTDSDE(state.ytdData, state.ytdThrough) : 0;
+  const basis = state.sdeBasis === 'weighted' ? wt
+              : state.sdeBasis === 'ytd'      ? ann
+              :                                 rec;
+  return { wt, rec, ann, basis };
+};
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
 /* ── Financial Performance Spread (shared: Income Statement + Deal Report) ── */
 const SPREAD_ROWS = [
   ['Revenue',               y=>calcSDE(y).rev,   false],
@@ -65,15 +104,26 @@ const SPREAD_ROWS = [
   ["Seller's Discretionary Earnings",y=>calcSDE(y).sde,true],
 ];
 
-const FinancialSpreadTable = ({years}) => (
+const FinancialSpreadTable = ({years, ytdThrough=''}) => {
+  const months = ytdMonthsFromStr(ytdThrough);
+  return (
   <table style={{width:'100%',fontSize:11,borderCollapse:'collapse'}}>
     <thead>
       <tr style={{borderBottom:'2px solid #1e2d45'}}>
-        <th style={{textAlign:'left',padding:'5px 0',color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,width:'40%'}}>Metric</th>
-        {years.map(y=>[
-          <th key={y.year} style={{textAlign:'right',padding:'5px 8px',color:'#475569',fontSize:10,textTransform:'uppercase',fontWeight:600}}>{y.year}</th>,
-          <th key={y.year+'p'} style={{textAlign:'right',padding:'5px 12px 5px 0',color:'#334155',fontSize:9,fontWeight:400}}>% Rev</th>
-        ])}
+        <th style={{textAlign:'left',padding:'5px 0',color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,width:'36%'}}>Metric</th>
+        {years.map(y=>{
+          const isYTD = String(y.year)==='YTD';
+          const hasAnn = isYTD && months > 0;
+          return [
+            <th key={y.year} style={{textAlign:'right',padding:'5px 8px',color:'#475569',fontSize:10,textTransform:'uppercase',fontWeight:600}}>
+              {isYTD && months > 0 ? `YTD (${months}mo)` : y.year}
+            </th>,
+            hasAnn
+              ? <th key={y.year+'ann'} style={{textAlign:'right',padding:'5px 8px',color:'#a78bfa',fontSize:9,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.04em'}}>Ann.</th>
+              : null,
+            <th key={y.year+'p'} style={{textAlign:'right',padding:'5px 12px 5px 0',color:'#334155',fontSize:9,fontWeight:400}}>% Rev</th>
+          ];
+        })}
       </tr>
     </thead>
     <tbody>
@@ -83,11 +133,20 @@ const FinancialSpreadTable = ({years}) => (
           <tr key={lbl} style={{borderBottom:`1px solid ${bold?'#1e2d45':'#0d1117'}`,background:isSDE?'#061208':bold?'#0a1205':'transparent'}}>
             <td style={{padding:'5px 0',color:isSDE?'#2eb860':bold?'#cbd5e1':'#64748b',fontWeight:bold?600:400,fontSize:11}}>{lbl}</td>
             {years.map(y=>{
+              const isYTD = String(y.year)==='YTD';
+              const hasAnn = isYTD && months > 0;
+              const annYd = hasAnn ? annualizeYTD(y, months) : null;
               const v=fn(y), rev=calcSDE(y).rev;
+              const va = hasAnn ? fn(annYd) : null;
+              const annRev = hasAnn ? calcSDE(annYd).rev : 0;
               const p=lbl==='Revenue'?'100%':(rev>0?`${(v/rev*100).toFixed(1)}%`:'—');
+              const pa=hasAnn?(lbl==='Revenue'?'100%':(annRev>0?`${(va/annRev*100).toFixed(1)}%`:'—')):null;
               return [
                 <td key={y.year} className={isSDE?'rpt-green':bold?'':'rpt-muted'} style={{textAlign:'right',padding:'5px 8px',fontFamily:'monospace',color:isSDE?'#2eb860':bold?'#e2e8f0':'#94a3b8',fontWeight:bold?600:400}}>{fmtD(v)}</td>,
-                <td key={y.year+'p'} className="rpt-muted" style={{textAlign:'right',padding:'5px 12px 5px 0',fontFamily:'monospace',color:'#334155',fontSize:10}}>{p}</td>
+                hasAnn
+                  ? <td key={y.year+'ann'} style={{textAlign:'right',padding:'5px 8px',fontFamily:'monospace',color:isSDE?'#a78bfa':bold?'#c4b5fd':'#7c6fcd',fontWeight:bold?600:400,fontSize:10,fontStyle:'italic'}}>{fmtD(va)}</td>
+                  : null,
+                <td key={y.year+'p'} className="rpt-muted" style={{textAlign:'right',padding:'5px 12px 5px 0',fontFamily:'monospace',color:'#334155',fontSize:10}}>{hasAnn ? pa : p}</td>
               ];
             })}
           </tr>
@@ -95,12 +154,13 @@ const FinancialSpreadTable = ({years}) => (
       })}
     </tbody>
   </table>
-);
+  );
+};
 
 /* ── Default state ─────────────────────────────────── */
 const blankYear = yr => ({year:yr,entityType:'1120-S',revenue:'',cogs:'',opx:'',otherIncome:'',interest:'',taxes:'',depreciation:'',amortization:'',ownerComp:'',addBacks:[],rent:'',rentAdj:'',expanded:false});
 const initState = () => ({
-  dealName:'', advisorName:'', ytdEnabled:false,
+  dealName:'', advisorName:'', ytdEnabled:false, ytdThrough:'',
   years:[blankYear(curYear-3),blankYear(curYear-2),blankYear(curYear-1)],
   ytdData:blankYear('YTD'),
   sdeBasis:'recent', customMults:[],
@@ -393,10 +453,11 @@ const YearSec = ({yd,onChange,onImport,reVal=0}) => {
 
 /* ── Analysis Panel ────────────────────────────────── */
 const Analysis = ({state,set,primeRate}) => {
-  const {years,sdeBasis,customMults,loanRate,loanAmort,dpPct}=state;
+  const {years,sdeBasis,customMults,loanRate,loanAmort,dpPct,ytdEnabled,ytdThrough,ytdData}=state;
   const hasData=years.some(y=>pn(y.revenue)||calcSDE(y).sde);
-  const wt=wtdSDE(years), rec=recentSDE(years);
-  const base=sdeBasis==='weighted'?wt:rec;
+  const {wt,rec,ann}=resolveSDE(state);
+  const base=sdeBasis==='weighted'?wt:sdeBasis==='ytd'?ann:rec;
+  const showYTD=ytdEnabled&&ytdMonthsFromStr(ytdThrough)>0;
   const mults=[2.5,3.0,3.5,...(customMults||[]).map(m=>parseFloat(m)).filter(m=>m>0)];
   const r=(loanRate||10.75)/100/12, n=(loanAmort||10)*12;
   const pmt=loan=>r===0?loan/n:loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
@@ -414,10 +475,10 @@ const Analysis = ({state,set,primeRate}) => {
           <div className="mb-4">
             <span className="lbl">SDE Basis</span>
             <div className="flex rounded overflow-hidden border border-gray-700 text-sm">
-              {['weighted','recent'].map(b=>(
+              {['weighted','recent',...(showYTD?['ytd']:[])].map(b=>(
                 <button key={b} onClick={()=>set({...state,sdeBasis:b})}
                   className={`flex-1 py-2 transition-colors ${sdeBasis===b?'bg-blue-700 text-white':'bg-gray-900 text-gray-400 hover:bg-gray-800'}`}>
-                  {b==='weighted'?'Weighted Avg':'Most Recent'}
+                  {b==='weighted'?'Weighted Avg':b==='ytd'?'Ann. YTD':'Most Recent'}
                 </button>
               ))}
             </div>
@@ -426,7 +487,7 @@ const Analysis = ({state,set,primeRate}) => {
             <span className="lbl">Selected SDE</span>
             <div className="text-2xl font-bold text-green-400 mono">{fmtD(base)}</div>
             <div className="text-sm text-gray-500 mt-1">
-              {sdeBasis==='weighted'?`Wtd Avg (3×/2×/1×) ÷ 6`:`Most Recent Year`}
+              {sdeBasis==='weighted'?`Wtd Avg (3×/2×/1×) ÷ 6`:sdeBasis==='ytd'?`Annualized YTD (${ytdMonthsFromStr(ytdThrough)}mo × ${(12/ytdMonthsFromStr(ytdThrough)).toFixed(2)})`:`Most Recent Year`}
             </div>
           </div>
           <div className="mb-4">
@@ -508,14 +569,42 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
             <h2 className="text-lg font-bold text-white">Data Input &amp; Setup</h2>
             <p className="text-xs text-gray-500">SDE + DSCR Analysis — 3-Year Tax Return Spread</p>
           </div>
-          <Tog on={state.ytdEnabled} set={v=>set({...state,ytdEnabled:v})} label="YTD"/>
+          <Tog on={state.ytdEnabled} set={v=>set({...state,ytdEnabled:v,ytdThrough:v?state.ytdThrough:''})} label="YTD"/>
         </div>
         {state.years.map((yd,i)=><YearSec key={yd.year} yd={yd} onChange={yd=>upY(i,yd)} onImport={()=>importTaxReturn(i)} reVal={pn(state.su?.reVal)}/>)}
-        {state.ytdEnabled&&<YearSec yd={state.ytdData} onChange={upYTD} onImport={null} reVal={pn(state.su?.reVal)}/>}
+        {state.ytdEnabled&&(()=>{
+          const months=ytdMonthsFromStr(state.ytdThrough);
+          const annSDE=months>0?annYTDSDE(state.ytdData,state.ytdThrough):0;
+          const [ytdY,ytdM]=state.ytdThrough?state.ytdThrough.split('-').map(Number):[null,null];
+          return (
+            <div>
+              {/* YTD through-date row */}
+              <div style={{display:'flex',alignItems:'center',gap:12,padding:'10px 16px',background:'#0f172a',borderRadius:'8px 8px 0 0',border:'1px solid #1e293b',borderBottom:'none',marginTop:8}}>
+                <span style={{fontSize:11,color:'#64748b',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.06em'}}>YTD Through</span>
+                <input type="month" value={state.ytdThrough||''}
+                  onChange={e=>set({...state,ytdThrough:e.target.value})}
+                  style={{background:'#1e293b',color:'#e2e8f0',border:'1px solid #334155',borderRadius:4,padding:'3px 8px',fontSize:12,outline:'none'}}/>
+                {months>0&&<span style={{fontSize:11,color:'#94a3b8'}}>{months} month{months!==1?'s':''} of data</span>}
+                {annSDE>0&&(
+                  <span style={{marginLeft:'auto',fontSize:12,color:'#a78bfa',fontWeight:700}}>
+                    ✦ Annualized SDE: <span style={{fontFamily:'monospace'}}>{fmtD(annSDE)}</span>
+                    <span style={{fontSize:10,color:'#7c6fcd',fontWeight:400,marginLeft:6}}>
+                      ({fmtD(calcSDE(state.ytdData).sde)} × {(12/months).toFixed(2)})
+                    </span>
+                  </span>
+                )}
+                {state.ytdThrough&&months===0&&<span style={{marginLeft:'auto',fontSize:11,color:'#f87171'}}>Full-year — no annualization applied</span>}
+              </div>
+              <div style={{borderRadius:'0 0 8px 8px',overflow:'hidden'}}>
+                <YearSec yd={state.ytdData} onChange={upYTD} onImport={null} reVal={pn(state.su?.reVal)}/>
+              </div>
+            </div>
+          );
+        })()}
         {/* Financial Performance Spread */}
         <div className="card p-5" style={{marginBottom:20}}>
           <div style={{fontSize:14,fontWeight:800,color:'#f1f5f9',marginBottom:14}}>Financial Performance &amp; Seller's Discretionary Earnings</div>
-          <FinancialSpreadTable years={state.ytdEnabled?[...state.years,state.ytdData]:state.years}/>
+          <FinancialSpreadTable years={state.ytdEnabled?[...state.years,state.ytdData]:state.years} ytdThrough={state.ytdEnabled?state.ytdThrough:''}/>
         </div>
         {/* Advisor Notes */}
         <div style={{marginTop:20,padding:16,background:'#0f172a',borderRadius:8,border:'1px solid #1e293b'}}>
@@ -766,7 +855,7 @@ const TRatios = ({state}) => {
 /* ── Tab 4: Sources & Uses ─────────────────────────── */
 const T4 = ({state,set}) => {
   const {years,sdeBasis,customMults,loanRate,loanAmort,dpPct,reAmort,su,loanStructure,re504Rate,ppLoan,ppRate,ppAmort}=state;
-  const base=sdeBasis==='weighted'?wtdSDE(years):recentSDE(years);
+  const base=resolveSDE(state).basis;
   const mults=[2.5,3.0,3.5,...(customMults||[]).map(m=>parseFloat(m)).filter(m=>m>0)];
   const setSU=(f,v)=>set({...state,su:{...su,[f]:v}});
   useEffect(()=>{ if(base>0&&!pn(su.marketPrice)) set(prev=>({...prev,su:{...prev.su,marketPrice:base*3}})); },[base]);
@@ -818,10 +907,10 @@ const T4 = ({state,set}) => {
       <div className="flex items-center gap-3 mb-4">
         <span className="text-xs text-gray-400">SDE Basis:</span>
         <div className="flex rounded overflow-hidden border border-gray-700 text-xs">
-          {['weighted','recent'].map(b=>(
+          {['weighted','recent',...(state.ytdEnabled&&ytdMonthsFromStr(state.ytdThrough)>0?['ytd']:[])].map(b=>(
             <button key={b} onClick={()=>set({...state,sdeBasis:b})}
               className={`py-1 px-3 transition-colors ${sdeBasis===b?'bg-blue-700 text-white':'bg-gray-900 text-gray-400 hover:bg-gray-800'}`}>
-              {b==='weighted'?'Weighted Avg':'Most Recent'}
+              {b==='weighted'?'Weighted Avg':b==='ytd'?'Ann. YTD':'Most Recent'}
             </button>
           ))}
         </div>
@@ -957,7 +1046,7 @@ const T5 = ({state,set,primeRate}) => {
   const r=(loanRate||10.75)/100/12, n=(loanAmort||10)*12;
   const pmt=loan=>r===0?loan/n:loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
   const dp=(dpPct||10)/100;
-  const basisSDE=sdeBasis==='weighted'?wtdSDE(years):recentSDE(years);
+  const basisSDE=resolveSDE(state).basis;
   const maxAt2x=sde=>{ if(!r)return(sde/2)/(12/n)/(1-dp); const pf=r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1); return((sde/2)/(pf*12))/(1-dp); };
   // Per-year thresholds: index 0=oldest(2023), 1=middle(2024), 2=most recent(2025)
   const thresholds=[
@@ -1002,16 +1091,17 @@ const T5 = ({state,set,primeRate}) => {
   const ppMo5=(ppLoan||0)>0?(rPP5===0?(ppLoan||0)/nPP5:(ppLoan||0)*rPP5*Math.pow(1+rPP5,nPP5)/(Math.pow(1+rPP5,nPP5)-1)):0;
   const dealMonthly=dealBizMo+dealREMo+ppMo5;
   const dealAnn=dealMonthly*12+sfAnn;
+  const showYTD5=ytdEnabled&&ytdMonthsFromStr(state.ytdThrough)>0;
   return (
     <div>
       <h2 className="text-lg font-bold text-white mb-1">DSCR Analysis</h2>
       <div className="flex items-center gap-3 mb-3">
         <span className="text-xs text-gray-400">SDE Basis:</span>
         <div className="flex rounded overflow-hidden border border-gray-700 text-xs">
-          {['weighted','recent'].map(b=>(
+          {['weighted','recent',...(showYTD5?['ytd']:[])].map(b=>(
             <button key={b} onClick={()=>set({...state,sdeBasis:b})}
               className={`py-1 px-3 transition-colors ${sdeBasis===b?'bg-blue-700 text-white':'bg-gray-900 text-gray-400 hover:bg-gray-800'}`}>
-              {b==='weighted'?'Weighted Avg':'Most Recent'}
+              {b==='weighted'?'Weighted Avg':b==='ytd'?'Ann. YTD':'Most Recent'}
             </button>
           ))}
         </div>
@@ -1122,7 +1212,7 @@ const T5 = ({state,set,primeRate}) => {
       <div className="card p-3 mb-4" style={{borderColor:'#1a5e35'}}>
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <div className="text-xs font-semibold" style={{color:'#2eb860'}}>SDE × 3 Lender Sizing Reference — {sdeBasis==='weighted'?'Weighted Avg':'Most Recent'} SDE: {fmtD(basisSDE)}</div>
+            <div className="text-xs font-semibold" style={{color:'#2eb860'}}>SDE × 3 Lender Sizing Reference — {sdeBasis==='weighted'?'Weighted Avg':sdeBasis==='ytd'?'Ann. YTD':'Most Recent'} SDE: {fmtD(basisSDE)}</div>
             <div className="text-xs text-gray-500 mt-0.5">Loan: {fmtD(basisLoan)} · {fmtD(basisMo)}/mo · {fmtD(basisAnn)}/yr{sfAnn>0?` + ${fmtD(sfAnn)}/yr seller note = ${fmtD(totalAnn)}/yr total`:''}</div>
           </div>
           <div className="flex gap-5">
@@ -1143,7 +1233,7 @@ const T5 = ({state,set,primeRate}) => {
       </div>
       {years.some(y=>calcSDE(y).sde>0)&&(
         <div className="card p-4 mt-2">
-          <h3 className="text-sm font-bold text-gray-300 mb-3">DSCR Sensitivity — {sdeBasis==='weighted'?'Weighted Avg':'Most Recent'} SDE</h3>
+          <h3 className="text-sm font-bold text-gray-300 mb-3">DSCR Sensitivity — {sdeBasis==='weighted'?'Weighted Avg':sdeBasis==='ytd'?'Ann. YTD':'Most Recent'} SDE</h3>
           <table className="w-full text-xs">
             <thead><tr className="text-gray-500 border-b border-gray-700">
               <th className="text-left py-1 pr-3">Mult</th><th className="text-right py-1 pr-3">Price</th><th className="text-right py-1 pr-3">Loan</th><th className="text-right py-1 pr-3">Monthly</th><th className="text-right py-1 pr-3">Ann. DS</th><th className="text-right py-1">DSCR</th>
@@ -1440,8 +1530,8 @@ const TBuyerROI = ({state,set}) => {
   const leverage=totalCash>0?mp/totalCash:0;
 
   // SDE
-  const sde=sdeBasis==='weighted'?wtdSDE(years):recentSDE(years);
-  const basisLabel=sdeBasis==='weighted'?'Weighted Avg':'Most Recent';
+  const sde=resolveSDE(state).basis;
+  const basisLabel=sdeBasis==='weighted'?'Weighted Avg':sdeBasis==='ytd'?'Ann. YTD':'Most Recent';
   const netCF=sde-totalDS;
   const cashOnCash=totalCash>0?netCF/totalCash*100:0;
 
@@ -1525,7 +1615,19 @@ const TBuyerROI = ({state,set}) => {
   return (
     <div>
       <h2 className="text-lg font-bold text-white mb-1">Buyer ROI Analysis</h2>
-      <div style={{fontSize:11,color:'#64748b',marginBottom:16}}>SDE Basis: <span style={{color:'#60a5fa'}}>{basisLabel} — {fmtD(sde)}</span> · Asking Price: <span style={{color:'#60a5fa'}}>{fmtD(mp)}</span></div>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16,flexWrap:'wrap'}}>
+        <span style={{fontSize:11,color:'#64748b'}}>SDE Basis:</span>
+        <div style={{display:'flex',borderRadius:4,overflow:'hidden',border:'1px solid #334155'}}>
+          {['weighted','recent',...(state.ytdEnabled&&ytdMonthsFromStr(state.ytdThrough)>0?['ytd']:[])].map(b=>(
+            <button key={b} onClick={()=>set({...state,sdeBasis:b})}
+              style={{padding:'2px 10px',fontSize:11,cursor:'pointer',background:sdeBasis===b?'#1d4ed8':'#0f172a',color:sdeBasis===b?'#fff':'#94a3b8',border:'none'}}>
+              {b==='weighted'?'Weighted Avg':b==='ytd'?'Ann. YTD':'Most Recent'}
+            </button>
+          ))}
+        </div>
+        <span style={{fontSize:11,color:'#60a5fa',fontFamily:'monospace'}}>{fmtD(sde)}</span>
+        <span style={{fontSize:11,color:'#64748b',marginLeft:4}}>· Asking Price: <span style={{color:'#60a5fa'}}>{fmtD(mp)}</span></span>
+      </div>
 
       {/* Card 1 — Investment Summary */}
       <div className="card p-4 mb-4">
@@ -1701,8 +1803,8 @@ const TSeller = ({state, set}) => {
   const seller = state.seller || {askingPrice:'', buyerSalary:'', contingencyPct:'10'};
   const setSeller = (f, v) => set({...state, seller:{...seller, [f]:v}});
 
-  const sde = sdeBasis==='weighted' ? wtdSDE(years) : recentSDE(years);
-  const basisLabel = sdeBasis==='weighted' ? 'Weighted Avg' : 'Most Recent';
+  const sde = resolveSDE(state).basis;
+  const basisLabel = sdeBasis==='weighted' ? 'Weighted Avg' : sdeBasis==='ytd' ? 'Ann. YTD' : 'Most Recent';
   const dp = (dpPct||10)/100;
   const r = (loanRate||10.75)/100/12, n = (loanAmort||10)*12;
   const pmtFn = loan => r===0 ? loan/n : loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
@@ -1817,10 +1919,19 @@ const TSeller = ({state, set}) => {
   return (
     <div>
       <h2 className="text-lg font-bold text-white mb-1">Seller Reality Check</h2>
-      <div style={{fontSize:11,color:'#64748b',marginBottom:16}}>
-        SDE Basis: <span style={{color:'#60a5fa'}}>{basisLabel} — {fmtD(sde)}</span>
-        {advisorPrice>0&&<span> · Advisor Price: <span style={{color:'#60a5fa'}}>{fmtD(advisorPrice)}</span></span>}
-        &nbsp;·&nbsp;Loan: {loanRate||10.75}% / {(loanStructure||'7a')==='504'?`7(a)+504`:`${blendedAmortS}yr blended`} / {dpPct||10}% down{ppMoS>0?` · PP: ${fmtD(ppMoS)}/mo`:''}
+      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16,flexWrap:'wrap'}}>
+        <span style={{fontSize:11,color:'#64748b'}}>SDE Basis:</span>
+        <div style={{display:'flex',borderRadius:4,overflow:'hidden',border:'1px solid #334155'}}>
+          {['weighted','recent',...(state.ytdEnabled&&ytdMonthsFromStr(state.ytdThrough)>0?['ytd']:[])].map(b=>(
+            <button key={b} onClick={()=>set({...state,sdeBasis:b})}
+              style={{padding:'2px 10px',fontSize:11,cursor:'pointer',background:sdeBasis===b?'#1d4ed8':'#0f172a',color:sdeBasis===b?'#fff':'#94a3b8',border:'none'}}>
+              {b==='weighted'?'Weighted Avg':b==='ytd'?'Ann. YTD':'Most Recent'}
+            </button>
+          ))}
+        </div>
+        <span style={{fontSize:11,color:'#60a5fa',fontFamily:'monospace'}}>{basisLabel} — {fmtD(sde)}</span>
+        {advisorPrice>0&&<span style={{fontSize:11,color:'#64748b'}}>· Advisor: <span style={{color:'#60a5fa'}}>{fmtD(advisorPrice)}</span></span>}
+        <span style={{fontSize:11,color:'#475569'}}>· {loanRate||10.75}% / {(loanStructure||'7a')==='504'?`7(a)+504`:`${blendedAmortS}yr`} / {dpPct||10}% down</span>
       </div>
 
       {/* Section 1 — Inputs */}
@@ -1969,13 +2080,14 @@ const T7 = ({state,set}) => {
   const np=state.np||{}, setNP=(f,v)=>set({...state,np:{...np,[f]:v}});
 
   // Gross: auto from S&U market price → fallback to basis SDE × 3 → manual
-  const basisSDE=state.sdeBasis==='weighted'?wtdSDE(state.years):recentSDE(state.years);
+  const basisSDE=resolveSDE(state).basis;
   const suPrice=pn(state.su?.marketPrice);
   const autoGross=suPrice>0?suPrice:(basisSDE>0?basisSDE*3:0);
   const gross=autoGross>0?autoGross:pn(np.gross);
   const grossIsAuto=autoGross>0;
+  const basisLbl7=state.sdeBasis==='weighted'?'Weighted Avg':state.sdeBasis==='ytd'?'Ann. YTD':'Most Recent';
   const grossLabel=suPrice>0?'Auto from Sources & Uses market price'
-    :(basisSDE>0?`Auto: ${state.sdeBasis==='weighted'?'Weighted Avg':'Most Recent'} SDE × 3.0×`:'');
+    :(basisSDE>0?`Auto: ${basisLbl7} SDE × 3.0×`:'');
 
   // Auto-fill SBA fee & closing from S&U
   const dpPct=(state.dpPct||10)/100;
@@ -2490,9 +2602,9 @@ const T9 = ({state,narrative,narrativeStatus}) => {
   const setBuyer=()=>setVis(v=>Object.fromEntries(REPORT_SECTIONS.map(s=>[s.id,!s.seller])));
   const setSeller=()=>setVis(v=>Object.fromEntries(REPORT_SECTIONS.map(s=>[s.id,true])));
 
-  const wt=wtdSDE(years), rec=recentSDE(years);
-  const base=sdeBasis==='weighted'?wt:rec;
-  const basisLabel=sdeBasis==='weighted'?'Weighted Average':'Most Recent';
+  const {wt,rec,ann}=resolveSDE(state);
+  const base=sdeBasis==='weighted'?wt:sdeBasis==='ytd'?ann:rec;
+  const basisLabel=sdeBasis==='weighted'?'Weighted Average':sdeBasis==='ytd'?'Annualized YTD':'Most Recent';
   const mults=[2.5,3.0,3.5,...(customMults||[]).map(m=>parseFloat(m)).filter(m=>m>0)];
   const dp=(dpPct||10)/100, r=(loanRate||10.75)/100/12, n=(loanAmort||10)*12;
   const pmtFn=loan=>r===0?loan/n:loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
@@ -2646,10 +2758,11 @@ const T9 = ({state,narrative,narrativeStatus}) => {
             SDE is the foundation for every valuation and debt-coverage calculation in this report.
             A consistent or growing SDE trend signals a healthy, transferable business; a declining trend warrants further investigation.
           </p>
-          <FinancialSpreadTable years={allYears}/>
+          <FinancialSpreadTable years={allYears} ytdThrough={ytdEnabled?state.ytdThrough:''}/>
           <div style={{marginTop:14,paddingTop:10,borderTop:'1px solid #1e2d45',display:'flex',gap:28,fontSize:11,flexWrap:'wrap'}}>
             <div><span style={{color:'#64748b'}}>Weighted Avg SDE: </span><span style={{fontFamily:'monospace',color:'#2eb860',fontWeight:700}}>{fmtD(wt)}</span></div>
             <div><span style={{color:'#64748b'}}>Most Recent SDE: </span><span style={{fontFamily:'monospace',color:'#2eb860',fontWeight:700}}>{fmtD(rec)}</span></div>
+            {ann>0&&<div><span style={{color:'#64748b'}}>Ann. YTD SDE: </span><span style={{fontFamily:'monospace',color:'#a78bfa',fontWeight:700}}>{fmtD(ann)}</span></div>}
             <div style={{marginLeft:'auto'}}><span style={{color:'#64748b'}}>Valuation Basis: </span><span style={{fontFamily:'monospace',color:'#2eb860',fontWeight:700}}>{basisLabel} — {fmtD(base)}</span></div>
           </div>
         </div>}
@@ -2904,7 +3017,7 @@ const T9 = ({state,narrative,narrativeStatus}) => {
           const rClose=(su?.closing===''||su?.closing===undefined)?15000:pn(su?.closing);
           const rFee=rsbaLoan*0.75*0.035;
           const rTotalCash=rmp*rdp+rClose+rFee+pn(su?.wc);
-          const rsde=sdeBasis==='weighted'?wtdSDE(years):recentSDE(years);
+          const rsde=resolveSDE(state).basis;
           const rNetCF=rsde-rTotalDS;
           const rCoC=rTotalCash>0?rNetCF/rTotalCash*100:0;
           const rroi2=state.roi||{};
@@ -3368,7 +3481,7 @@ const SignInScreen = ({denied}) => {
 
 /* ── Acquisition Calculator ─────────────────────────── */
 const TAcqCalc = ({state}) => {
-  const mpaSDE = state.sdeBasis==='weighted' ? wtdSDE(state.years) : recentSDE(state.years);
+  const mpaSDE = resolveSDE(state).basis;
   const [c,setC] = useState(() => ({
     liquidity: 113000,
     dpPct: state.dpPct || 10,
