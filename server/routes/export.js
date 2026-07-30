@@ -24,6 +24,7 @@ async function renderToPDF(html, outputPath, landscape = false) {
       pdfOptions.landscape = true;
     } else {
       pdfOptions.format = 'Letter';
+      pdfOptions.pageRanges = '1';
     }
     await page.pdf(pdfOptions);
   } finally {

@@ -143,45 +143,118 @@ router.post('/flyer', async (req, res) => {
       max_tokens: 8000,
       system: `You are a professional graphic designer and copywriter for Peterson Acquisitions.
 You generate single-page, print-ready HTML/CSS business listing flyers.
-CRITICAL RULES:
-- Output ONLY valid, self-contained HTML with inline or embedded CSS. No external dependencies except Google Fonts CDN.
-- ALL content must be BLIND (no business name, owner name, or specific street address).
-- NEVER invent or fabricate financial figures — use only what is provided.
-- The page must be exactly 8.5x11 inches portrait, designed for PDF printing.
-- Use ONLY the brand colors specified.
-- TEXT CONTRAST IS CRITICAL: All body text on white or light backgrounds MUST be #111111 (near-black). Never use gray lighter than #444444 for any readable text. Section headers must be #1A1A1A. Metric values must be #1A1A1A bold. Bullet text must be #111111. This is a print document — low-contrast light text is unacceptable.`,
+
+ABSOLUTE RULES — VIOLATION MEANS THE OUTPUT IS REJECTED:
+1. Output ONLY a complete, self-contained HTML document. No markdown, no commentary, no code fences.
+2. No external dependencies except the Google Fonts CDN link provided.
+3. ALL content must be BLIND — no business name, owner name, or specific street address.
+4. NEVER fabricate financial figures. Use only data provided.
+5. THE ENTIRE FLYER MUST FIT ON EXACTLY ONE PAGE. You MUST include this CSS exactly:
+   @page { size: 8.5in 11in; margin: 0; }
+   html, body { width: 8.5in; height: 11in; overflow: hidden; margin: 0; padding: 0; }
+   .page { width: 8.5in; height: 11in; display: flex; flex-direction: column; overflow: hidden; }
+6. NO paragraph-style "Business Analysis" or "Overview" sections. ALL body copy must be bullet points of 15 words or fewer. No exceptions.
+7. The advisor contact card goes INSIDE the right sidebar column — NOT as a separate footer or second page.
+8. TEXT CONTRAST: body text #111111, headers #1A1A1A, secondary #444444 minimum. This is a print document.`,
       messages: [{
         role: 'user',
-        content: `Generate the HTML/CSS for a single-page, print-ready business listing flyer.
+        content: `Generate a single-page print-ready business listing flyer. The page is exactly 8.5×11 inches. NOTHING may overflow.
 
-Brand system:
-- Background: white
-- Header bar: #1A1A1A with white text
-- Accent color: #C1622F (copper)
-- Section divider bars: 3px solid #C1622F
-- Body text: #111111 (REQUIRED — must be near-black for print readability)
-- Section headers: #1A1A1A bold Oswald uppercase
-- Metric numbers: #1A1A1A bold large
-- Bullet/body copy: #111111 Inter
-- Secondary/caption text: #444444 (darkest allowed for non-primary text)
-- Fonts: Oswald (headers/bold), Inter (body) — include this Google Fonts link: <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-- Page size: 8.5in x 11in
+FONTS (include exactly this link tag in <head>):
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
-Layout (top to bottom):
-1. HEADER BAR (black, ~60px tall): "OFFERED EXCLUSIVELY BY PETERSON ACQUISITIONS | THE DEAL TEAM" in white Oswald uppercase, right-aligned. Left side: "PETERSON ACQUISITIONS" in copper.
-2. HERO SECTION (light gray #F0F0F0, ~120px): BLIND headline (industry + region, no business name) in large Oswald bold uppercase #1A1A1A. Below: 2-sentence compelling overview in #111111 Inter.
-3. KEY METRICS GRID (2x2, ~140px total): Four copper-outlined boxes: "GROSS REVENUE", "CASH FLOW (SDE)", "ASKING PRICE", "DOWN PAYMENT". Large bold #1A1A1A number, #444444 label below. IMPORTANT: Use ONLY the most recent completed fiscal year figures — fields fin_year1_revenue and fin_year1_sde (or revenue_year1 / sde_year1 if the fin_year table is blank). Include the year label (fin_year1_year or revenue_year1_label) as a small caption under each metric so the reader knows which year is shown. Never use YTD, partial-year, or projected figures for these boxes.
-4. MAIN CONTENT (two columns, 60/40 split, ~280px):
-   LEFT (60%): "KEY HIGHLIGHTS" header with copper bar. 6-8 bullet points #111111 from highlights and competitive advantages.
-   RIGHT (40%): "GROWTH POTENTIAL" header with copper bar. 3-4 growth bullets #111111. Below: transaction info (financing, deal structure, transition summary) in #111111.
-5. FOOTER BAR (black, ~50px): "CONFIDENTIAL — ALL INQUIRIES HANDLED WITH DISCRETION | NDA REQUIRED" in copper Oswald. Right: "TheDeaITeam.com | Peterson Acquisitions" in white.
+BRAND COLORS:
+- Header/footer background: #1A1A1A
+- Accent / copper: #C1622F
+- Page background: #ffffff
+- Section header text: #1A1A1A bold Oswald uppercase
+- Body / bullet text: #111111 Inter
+- Captions / secondary: #444444
 
-FINANCIAL DATA RULE: All revenue, SDE, EBITDA, and cash flow figures displayed on this flyer MUST come from the most recent completed fiscal year (Year 1 = fin_year1_* fields, or revenue_year1 / sde_year1 / ebitda_year1 at the top level). Do NOT use YTD, trailing partial-year, or any projected/future figures. If only one year of data exists, use it and label it with its year.
+REQUIRED CSS (copy exactly into a <style> tag):
+@page { size: 8.5in 11in; margin: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+html, body { width: 8.5in; height: 11in; overflow: hidden; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+.page { width: 8.5in; height: 11in; display: flex; flex-direction: column; overflow: hidden; background: #fff; }
 
-Business data: ${JSON.stringify(interviewData, null, 2)}
-Advisor: ${deal.advisor_name}
+LAYOUT — FIVE ZONES, STRICT HEIGHT BUDGETS (must total ≤ 11in / 1056px at 96dpi):
 
-Output ONLY the complete HTML document. Nothing else.`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ZONE 1 — HEADER BAR  [height: 44px, flex-shrink: 0]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Background #1A1A1A. Single flex row, padding 0 20px.
+Left: "PETERSON ACQUISITIONS" in #C1622F Oswald 13px bold + "THE DEAL TEAM" in #888 Inter 10px below.
+Right: "OFFERED EXCLUSIVELY · CONFIDENTIAL · NDA REQUIRED" in white Oswald 10px uppercase letter-spacing.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ZONE 2 — HERO  [height: 190px, flex-shrink: 0]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Background #1A1A1A. Two columns: LEFT 55%, RIGHT 45%.
+LEFT (padding 20px 16px 16px 20px, vertical flex):
+  - Industry category chip: copper pill #C1622F, white Inter 9px bold uppercase, 4px 10px padding, border-radius 2px. Max 1 line.
+  - Headline: Oswald bold, white, font-size 26px, line-height 1.15, max 2 lines, margin-top 8px. BLIND (industry + region only, no business name).
+  - Tagline: #C1622F Oswald 12px uppercase letter-spacing 0.08em, margin-top 6px. Max 1 line, 10 words max.
+  - Description: white Inter 11px, line-height 1.5, margin-top 8px. MAX 2 SENTENCES, 30 words total. Do not start with "This business".
+RIGHT: If a photo URL is available use it as a cover image (object-fit: cover, width/height 100%); otherwise fill with a gradient from #2a2a2a to #1a1a1a with a large centered copper "✦" symbol at 48px.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ZONE 3 — METRICS STRIP  [height: 88px, flex-shrink: 0]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+White background. Four equal-width columns, border-right 1px solid #e5e5e5 on first three, padding 10px 16px.
+Each column: LABEL in #888 Inter 8px uppercase letter-spacing 0.1em; VALUE in #1A1A1A Oswald bold 22px; YEAR/CAPTION in #C1622F Inter 8px.
+Columns (left to right): ASKING PRICE | GROSS REVENUE | CASH FLOW / SDE | VALUATION MULTIPLE
+Values: Use the most recent completed fiscal year only (fin_year1_* or revenue_year1 / sde_year1 fields). Format currency as $X,XXX,XXX. Multiple as "X.Xx SDE".
+A 3px solid #C1622F bar runs across the full width at the bottom of this zone.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ZONE 4 — MAIN BODY  [flex: 1, min-height: 0, overflow: hidden]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Two columns. Left 62%, right 38%. Both overflow: hidden.
+
+LEFT COLUMN (padding 16px 14px 12px 20px, border-right 2px solid #f0f0f0):
+  SECTION A — "KEY HIGHLIGHTS" [Oswald 10px uppercase #C1622F letter-spacing 0.12em, border-bottom 2px solid #C1622F, padding-bottom 3px, margin-bottom 8px]
+  Bullet list: 8–10 bullets. Each bullet: copper "▸" marker, Inter 11px #111111, line-height 1.4, margin-bottom 4px.
+  RULE: Each bullet MUST be ≤ 15 words. No sub-bullets. No paragraphs. Cover: operating history, locations/fleet, services, competitive moats, workforce, SBA status, real estate, insurance relationships, customer base — whatever applies from the data.
+
+  SECTION B — "KEY FEATURES" [same header style, margin-top 12px]
+  2×3 grid of feature badges. Each badge: border 1.5px solid #C1622F, border-radius 4px, padding 5px 8px, display inline-flex, align-items center, gap 6px.
+  Badge content: copper circle with white number (Oswald 10px bold, 18px diameter, background #C1622F, border-radius 50%) + label text Inter 10px #111111 bold + value Inter 10px #444444.
+  Use exactly 6 badges from: Operating History, Real Estate, Service Type, Employees, Hours, SBA Pre-Approved, Turn-Key, Customer Database, Fleet/Locations, Established Year — pick the 6 most compelling.
+
+RIGHT COLUMN (padding 14px 18px 12px 14px, display flex flex-direction column gap 10px):
+  CARD 1 — DEAL TERMS (border 1.5px solid #e0e0e0, border-radius 4px, padding 10px):
+    Header: "DEAL TERMS" Oswald 9px #888 uppercase. Then a small table of 4–5 rows: label (#888 Inter 9px) + value (#111111 Inter 10px bold). Include: Price, Down Payment (est. 10% SBA), Financing, Real Estate, Transition.
+
+  CARD 2 — OPERATIONS (same card style):
+    Header: "OPERATIONS" Oswald 9px #888 uppercase. 3–4 rows: Hours, Employees, Established, Location (county/region only).
+
+  CARD 3 — ADVISOR (same card style, background #fafafa):
+    Header: "YOUR ADVISOR" Oswald 9px #888 uppercase.
+    Flex row: advisor name Inter 11px bold #1A1A1A + title Inter 9px #C1622F + phone Inter 10px #111111 + email Inter 9px #444444 + "The Deal Team | Peterson Acquisitions" Inter 8px #888.
+    NO photo in the advisor card (photo assets are not available in server context).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ZONE 5 — FOOTER BAR  [height: 36px, flex-shrink: 0]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Background #1A1A1A. Flex row, padding 0 20px, align-items center, justify-content space-between.
+Left: "CONFIDENTIAL — ALL INQUIRIES HANDLED WITH STRICT DISCRETION" #C1622F Oswald 9px uppercase letter-spacing 0.08em.
+Right: "TheDealTeam.co  ·  Peterson Acquisitions" white Inter 9px.
+
+FINANCIAL DATA RULE: ALL revenue, SDE, EBITDA, price, and multiple figures MUST come from the most recent completed fiscal year only. Do NOT use YTD, partial-year, or projected figures anywhere on the flyer.
+
+CONTENT RULES:
+- No paragraph text anywhere. Everything is a bullet, label, or short value.
+- Bullets: maximum 15 words each, no exceptions.
+- Hero description: maximum 2 sentences, 30 words total.
+- Do not add any section not listed above (no "Overview", no "Business Analysis", no "About", no second advisor block).
+- The advisor info is ONLY in Zone 4 Right Column Card 3. Nowhere else.
+
+Business data:
+${JSON.stringify(interviewData, null, 2)}
+
+Advisor name: ${deal.advisor_name || 'Your Advisor'}
+
+Output ONLY the complete HTML document starting with <!DOCTYPE html>. Nothing before or after.`
       }]
     });
 
