@@ -75,14 +75,23 @@ const annYTDSDE = (ytdData, ytdThrough) => {
   return m > 0 ? calcSDE(annualizeYTD(ytdData, m)).sde : 0;
 };
 // Central SDE resolver — used by all tabs
+// Buyer's Salary (normalization set on the Income Statement tab, defaults to $75,000) is a
+// forward-looking replacement-owner cost, not a historical add-back — it is subtracted here,
+// after weighting/annualization, so every tab's SDE-derived figure (valuation, DSCR, ROI, deal
+// report) reflects it consistently from a single global field (state.buyerSalary).
 const resolveSDE = (state) => {
-  const wt  = wtdSDE(state.years);
-  const rec = recentSDE(state.years);
-  const ann = (state.ytdEnabled && state.ytdThrough) ? annYTDSDE(state.ytdData, state.ytdThrough) : 0;
-  const basis = state.sdeBasis === 'weighted' ? wt
-              : state.sdeBasis === 'ytd'      ? ann
-              :                                 rec;
-  return { wt, rec, ann, basis };
+  const buyerSalary = pn(state.buyerSalary);
+  const rawWt  = wtdSDE(state.years);
+  const rawRec = recentSDE(state.years);
+  const rawAnn = (state.ytdEnabled && state.ytdThrough) ? annYTDSDE(state.ytdData, state.ytdThrough) : 0;
+  const rawBasis = state.sdeBasis === 'weighted' ? rawWt
+                 : state.sdeBasis === 'ytd'      ? rawAnn
+                 :                                 rawRec;
+  const wt  = rawWt - buyerSalary;
+  const rec = rawRec - buyerSalary;
+  const ann = rawAnn ? rawAnn - buyerSalary : 0;
+  const basis = rawBasis - buyerSalary;
+  return { wt, rec, ann, basis, rawWt, rawRec, rawAnn, rawBasis, buyerSalary };
 };
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -172,7 +181,8 @@ const initState = () => ({
   nlb:{pct:20,nextSDE:''},
   ind:{name:'',naics:'',source:'',reportYear:'',grossMarginPct:'',cogsPct:'',preTaxProfitPct:'',netMarginPct:'',sdeMult:'',revenueMultPct:'',ebitMult:'',ebitdaMult:'',sdeMultUnder1M:'',sdeMult1to5M:'',sdeMultOver5M:'',ebitdaMultUnder1M:'',ebitdaMult1to5M:'',ebitdaMultOver5M:''},
   roi:{growthPct:'0',exitYears:'10',exitMultiple:''},
-  seller:{askingPrice:'',buyerSalary:'',contingencyPct:'10'},
+  seller:{askingPrice:'',contingencyPct:'10'},
+  buyerSalary:'75000',
   notes:'',
   _net:0,
 });
@@ -455,7 +465,7 @@ const YearSec = ({yd,onChange,onImport,reVal=0}) => {
 const Analysis = ({state,set,primeRate}) => {
   const {years,sdeBasis,customMults,loanRate,loanAmort,dpPct,ytdEnabled,ytdThrough,ytdData}=state;
   const hasData=years.some(y=>pn(y.revenue)||calcSDE(y).sde);
-  const {wt,rec,ann}=resolveSDE(state);
+  const {wt,rec,ann,rawBasis,buyerSalary}=resolveSDE(state);
   const base=sdeBasis==='weighted'?wt:sdeBasis==='ytd'?ann:rec;
   const showYTD=ytdEnabled&&ytdMonthsFromStr(ytdThrough)>0;
   const mults=[2.5,3.0,3.5,...(customMults||[]).map(m=>parseFloat(m)).filter(m=>m>0)];
@@ -489,6 +499,9 @@ const Analysis = ({state,set,primeRate}) => {
             <div className="text-sm text-gray-500 mt-1">
               {sdeBasis==='weighted'?`Wtd Avg (3×/2×/1×) ÷ 6`:sdeBasis==='ytd'?`Annualized YTD (${ytdMonthsFromStr(ytdThrough)}mo × ${(12/ytdMonthsFromStr(ytdThrough)).toFixed(2)})`:`Most Recent Year`}
             </div>
+            {buyerSalary>0&&(
+              <div className="text-xs text-gray-600 mt-1">{fmtD(rawBasis)} raw SDE − {fmtD(buyerSalary)} buyer's salary</div>
+            )}
           </div>
           <div className="mb-4">
             <span className="lbl text-blue-400 mb-2 block">Fair Market Value Range</span>
@@ -601,6 +614,19 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
             </div>
           );
         })()}
+        {/* Buyer's Salary Normalization */}
+        <div className="card p-5" style={{marginBottom:20}}>
+          <div style={{fontSize:14,fontWeight:800,color:'#f1f5f9',marginBottom:4}}>Buyer's Salary Normalization</div>
+          <p style={{fontSize:12,color:'#64748b',marginBottom:12}}>
+            A replacement-owner salary the new buyer will need to pay themselves. Defaults to $75,000 and can be edited — it's subtracted from SDE globally across every tab (valuation, DSCR, ROI, Deal Report).
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <span className="lbl">Buyer's Salary</span>
+              <NI value={state.buyerSalary} placeholder="75,000" onChange={v=>set({...state,buyerSalary:v})}/>
+            </div>
+          </div>
+        </div>
         {/* Financial Performance Spread */}
         <div className="card p-5" style={{marginBottom:20}}>
           <div style={{fontSize:14,fontWeight:800,color:'#f1f5f9',marginBottom:14}}>Financial Performance &amp; Seller's Discretionary Earnings</div>
@@ -1048,12 +1074,17 @@ const T5 = ({state,set,primeRate}) => {
   const dp=(dpPct||10)/100;
   const basisSDE=resolveSDE(state).basis;
   const maxAt2x=sde=>{ if(!r)return(sde/2)/(12/n)/(1-dp); const pf=r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1); return((sde/2)/(pf*12))/(1-dp); };
-  // Per-year thresholds: index 0=oldest(2023), 1=middle(2024), 2=most recent(2025)
-  const thresholds=[
-    {green:1.5,yellow:1.25},  // oldest year
-    {green:1.7,yellow:1.25},  // middle year
-    {green:2.0,yellow:1.8},   // most recent year
-  ];
+  // Per-year thresholds: index 0=oldest(2023), 1=middle(2024), 2=most recent(2025).
+  // Once a buyer's salary is entered, the deal's cash-flow math already carries that extra
+  // conservatism, so every year drops to the flat 1.25 SBA minimum instead of the escalating scale.
+  const hasBuyerSalary=pn(state.buyerSalary)>0;
+  const thresholds=hasBuyerSalary
+    ? [{green:1.5,yellow:1.25},{green:1.5,yellow:1.25},{green:1.5,yellow:1.25}]
+    : [
+        {green:1.5,yellow:1.25},  // oldest year
+        {green:1.7,yellow:1.25},  // middle year
+        {green:2.0,yellow:1.8},   // most recent year
+      ];
   const dcFor=(d,idx)=>{ const t=thresholds[idx]||thresholds[2]; return d>=t.green?'text-green-400':d>=t.yellow?'text-yellow-400':'text-red-400'; };
   const dbgFor=(d,idx)=>{ const t=thresholds[idx]||thresholds[2]; return d>=t.green?'bg-green-900/30':d>=t.yellow?'bg-yellow-900/30':'bg-red-900/30'; };
   const labelFor=(d,idx)=>{ const t=thresholds[idx]||thresholds[2]; return d>=t.green?'✓ Strong':d>=t.yellow?'⚠ Marginal':'✗ Below Min'; };
@@ -1800,10 +1831,12 @@ const TBuyerROI = ({state,set}) => {
 /* ── Tab: Seller Reality Check ─────────────────────── */
 const TSeller = ({state, set}) => {
   const {years, sdeBasis, loanRate, loanAmort, dpPct, reAmort, su, loanStructure, re504Rate, ppLoan, ppRate, ppAmort} = state;
-  const seller = state.seller || {askingPrice:'', buyerSalary:'', contingencyPct:'10'};
+  const seller = state.seller || {askingPrice:'', contingencyPct:'10'};
   const setSeller = (f, v) => set({...state, seller:{...seller, [f]:v}});
 
-  const sde = resolveSDE(state).basis;
+  // Raw (pre-buyer-salary) SDE — this tab does its own salary breakdown below,
+  // so it needs the unadjusted figure to avoid subtracting buyer's salary twice.
+  const sde = resolveSDE(state).rawBasis;
   const basisLabel = sdeBasis==='weighted' ? 'Weighted Avg' : sdeBasis==='ytd' ? 'Ann. YTD' : 'Most Recent';
   const dp = (dpPct||10)/100;
   const r = (loanRate||10.75)/100/12, n = (loanAmort||10)*12;
@@ -1834,7 +1867,7 @@ const TSeller = ({state, set}) => {
 
   const askingPrice = pn(seller.askingPrice);
   const advisorPrice = pn(su?.marketPrice);
-  const buyerSalary = pn(seller.buyerSalary);
+  const buyerSalary = pn(state.buyerSalary);
   const contingencyPct = pn(seller.contingencyPct) || 10;
 
   const maxSupportable = (dscrTarget, salary) => {
@@ -1944,7 +1977,7 @@ const TSeller = ({state, set}) => {
           </div>
           <div>
             <span className="lbl">Buyer Annual Salary Requirement</span>
-            <NI value={seller.buyerSalary} onChange={v=>setSeller('buyerSalary',v)} placeholder="75,000"/>
+            <NI value={state.buyerSalary} onChange={v=>set({...state,buyerSalary:v})} placeholder="75,000"/>
           </div>
           <div>
             <span className="lbl">Contingency Reserve %</span>
@@ -1953,7 +1986,7 @@ const TSeller = ({state, set}) => {
           </div>
         </div>
         <div style={{fontSize:10,color:'#334155',marginTop:8}}>
-          Loan terms (rate, amortization, down payment %) are pulled from Sources & Uses / DSCR tab. Advisor's recommended price is pulled from Sources & Uses.
+          Buyer's Salary is set globally on the Income Statement tab's normalization section — editing it here updates it everywhere. Loan terms (rate, amortization, down payment %) are pulled from Sources & Uses / DSCR tab. Advisor's recommended price is pulled from Sources & Uses.
         </div>
       </div>
 
@@ -2595,15 +2628,18 @@ const REPORT_SECTIONS=[
 ];
 const T9 = ({state,narrative,narrativeStatus}) => {
   const {years,ytdEnabled,ytdData,sdeBasis,customMults,loanRate,loanAmort,dpPct,su,loanStructure,re504Rate,ppLoan,ppRate,ppAmort}=state;
-  const sellerData=state.seller||{askingPrice:'',buyerSalary:'',contingencyPct:'10'};
+  const sellerData=state.seller||{askingPrice:'',contingencyPct:'10'};
   const reAmort=state.reAmort||25;
   const [vis,setVis]=useState(()=>Object.fromEntries(REPORT_SECTIONS.map(s=>[s.id,true])));
   const toggle=id=>setVis(v=>({...v,[id]:!v[id]}));
   const setBuyer=()=>setVis(v=>Object.fromEntries(REPORT_SECTIONS.map(s=>[s.id,!s.seller])));
   const setSeller=()=>setVis(v=>Object.fromEntries(REPORT_SECTIONS.map(s=>[s.id,true])));
 
-  const {wt,rec,ann}=resolveSDE(state);
+  const {wt,rec,ann,rawWt,rawRec,rawAnn,buyerSalary}=resolveSDE(state);
   const base=sdeBasis==='weighted'?wt:sdeBasis==='ytd'?ann:rec;
+  // Raw (pre-buyer-salary) SDE — the Seller Reality section below does its own
+  // salary breakdown, so it needs the unadjusted figure to avoid subtracting twice.
+  const baseRaw=sdeBasis==='weighted'?rawWt:sdeBasis==='ytd'?rawAnn:rawRec;
   const basisLabel=sdeBasis==='weighted'?'Weighted Average':sdeBasis==='ytd'?'Annualized YTD':'Most Recent';
   const mults=[2.5,3.0,3.5,...(customMults||[]).map(m=>parseFloat(m)).filter(m=>m>0)];
   const dp=(dpPct||10)/100, r=(loanRate||10.75)/100/12, n=(loanAmort||10)*12;
@@ -2625,7 +2661,7 @@ const T9 = ({state,narrative,narrativeStatus}) => {
 
   // Seller Reality — report section computed values
   const sellerAskP=pn(sellerData.askingPrice);
-  const sellerSal=pn(sellerData.buyerSalary);
+  const sellerSal=buyerSalary;
   const sellerContP=pn(sellerData.contingencyPct)||10;
   // Blended amort for report (uses totalProject from S&U)
   const blendedAmortR9=totalProject>0&&reVal>0
@@ -2649,10 +2685,10 @@ const T9 = ({state,narrative,narrativeStatus}) => {
     if(!price||price<=0)return null;
     const mo=monthlyAtPriceR9(price);
     const ann=mo*12;
-    return{loan:price*(1-dp),mo,ann,rawD:ann>0?base/ann:0,adjD:ann>0?(base-sellerSal)/ann:0,cont:base*(sellerContP/100),cash:base-sellerSal-ann-base*(sellerContP/100)};
+    return{loan:price*(1-dp),mo,ann,rawD:ann>0?baseRaw/ann:0,adjD:ann>0?(baseRaw-sellerSal)/ann:0,cont:baseRaw*(sellerContP/100),cash:baseRaw-sellerSal-ann-baseRaw*(sellerContP/100)};
   };
   const sMax125=(()=>{
-    const a=base-sellerSal;if(a<=0)return 0;
+    const a=baseRaw-sellerSal;if(a<=0)return 0;
     let lo=0,hi=20000000,iters=0;
     while(hi-lo>100&&iters++<60){const mid=(lo+hi)/2;if(monthlyAtPriceR9(mid)*12<a/1.25)lo=mid;else hi=mid;}
     return(lo+hi)/2;
@@ -2765,6 +2801,9 @@ const T9 = ({state,narrative,narrativeStatus}) => {
             {ann>0&&<div><span style={{color:'#64748b'}}>Ann. YTD SDE: </span><span style={{fontFamily:'monospace',color:'#a78bfa',fontWeight:700}}>{fmtD(ann)}</span></div>}
             <div style={{marginLeft:'auto'}}><span style={{color:'#64748b'}}>Valuation Basis: </span><span style={{fontFamily:'monospace',color:'#2eb860',fontWeight:700}}>{basisLabel} — {fmtD(base)}</span></div>
           </div>
+          {buyerSalary>0&&<div style={{marginTop:8,fontSize:10,color:'#334155'}}>
+            SDE figures above are net of the {fmtD(buyerSalary)} Buyer's Salary normalization (set on the Income Statement tab); the table's per-year rows show SDE before that adjustment.
+          </div>}
         </div>}
 
         {/* Section 2 — Fair Market Value */}
@@ -2909,7 +2948,11 @@ const T9 = ({state,narrative,narrativeStatus}) => {
               {years.map((y,i)=>{
                 const sde=calcSDE(y).sde;
                 const d=totalDscrAnn>0?sde/totalDscrAnn:0;
-                const thresholds=[{g:1.5,y:1.25},{g:1.7,y:1.25},{g:2.0,y:1.8}];
+                // Mirrors the DSCR Analysis tab: once a buyer's salary is entered, every year
+                // drops to the flat 1.25 SBA minimum instead of the escalating scale.
+                const thresholds=buyerSalary>0
+                  ? [{g:1.5,y:1.25},{g:1.5,y:1.25},{g:1.5,y:1.25}]
+                  : [{g:1.5,y:1.25},{g:1.7,y:1.25},{g:2.0,y:1.8}];
                 const t=thresholds[i]||thresholds[2];
                 const clr=d>=t.g?'#059669':d>=t.y?'#d97706':'#dc2626';
                 const lbl=d>=t.g?'✓ Strong':d>=t.y?'⚠ Marginal':'✗ Below Min';
@@ -2973,12 +3016,12 @@ const T9 = ({state,narrative,narrativeStatus}) => {
                     {srow('SBA Loan',sprices.map(p=>p>0?p*(1-dp):null),()=>'#94a3b8')}
                     {srow('Monthly Payment',smets.map(m=>m?m.mo:null),()=>'#fbbf24')}
                     {srow('Annual Debt Service',smets.map(m=>m?m.ann:null),()=>'#f87171')}
-                    {srow('SDE Available',sprices.map(()=>base),()=>'#2eb860',true)}
+                    {srow('SDE Available',sprices.map(()=>baseRaw),()=>'#2eb860',true)}
                     {srow('− Buyer Salary',sprices.map(()=>sellerSal||0),()=>'#94a3b8')}
-                    {srow('= Adjusted SDE',sprices.map(()=>base-sellerSal),(v)=>v>=0?'#2eb860':'#f87171',true)}
+                    {srow('= Adjusted SDE',sprices.map(()=>baseRaw-sellerSal),(v)=>v>=0?'#2eb860':'#f87171',true)}
                     {sdRow('Raw DSCR',smets.map(m=>m?m.rawD:null))}
                     {sdRow('Adj. DSCR',smets.map(m=>m?m.adjD:null))}
-                    {srow(`− Contingency (${sellerContP}%)`,sprices.map(()=>base*(sellerContP/100)),()=>'#94a3b8')}
+                    {srow(`− Contingency (${sellerContP}%)`,sprices.map(()=>baseRaw*(sellerContP/100)),()=>'#94a3b8')}
                     <tr style={{borderBottom:'1px solid #1e2d45',background:'#071a0b'}}>
                       <td style={{padding:'4px 0',color:'#94a3b8',fontSize:11,fontWeight:700}}>= Cash Left Over</td>
                       {smets.map((m,i)=><td key={i} style={{textAlign:'right',fontFamily:'monospace',fontSize:13,fontWeight:800,padding:'4px 8px',color:m?sCC(m.cash):'#475569'}}>{m?fmtD(m.cash):'—'}</td>)}
@@ -3844,7 +3887,10 @@ function App() {
     }
   };
   const migrateBs=d=>{if(d.bs&&!Array.isArray(d.bs)){const o=d.bs;d={...d,bs:[{cash:o.cash||'',ar:o.ar||'',inv:o.inv||'',ca:o.ca||'',ta:o.ta||'',ap:o.ap||'',cl:o.cl||'',tl:o.tl||'',nw:o.nw||'',capex:o.capex||''},{cash:'',ar:'',inv:'',ca:'',ta:'',ap:'',cl:'',tl:'',nw:'',capex:''},{cash:'',ar:'',inv:'',ca:'',ta:'',ap:'',cl:'',tl:'',nw:'',capex:''}]};}return d;};
-  const load=data=>{data=migrateBs(data);setState({...initState(),...data,_net:0});setShowLoad(false);setTab('dashboard');};
+  // Older saved deals stored buyer's salary under seller.buyerSalary (Seller Reality Check tab only).
+  // Carry that value into the new global state.buyerSalary field instead of overwriting it with the $75,000 default.
+  const migrateBuyerSalary=d=>{if((d.buyerSalary===undefined||d.buyerSalary==='')&&d.seller?.buyerSalary){d={...d,buyerSalary:d.seller.buyerSalary};}return d;};
+  const load=data=>{data=migrateBuyerSalary(migrateBs(data));setState({...initState(),...data,_net:0});setShowLoad(false);setTab('dashboard');};
   const newDeal=()=>{if(window.confirm('Start a new deal? Unsaved data will be lost.'))setState(initState());};
   const exportDeal=()=>{
     const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
@@ -3862,7 +3908,7 @@ function App() {
       const file=e.target.files[0]; if(!file) return;
       const reader=new FileReader();
       reader.onload=ev=>{
-        try{let data=JSON.parse(ev.target.result);data=migrateBs(data);setState({...initState(),...data,_net:0});setTab('dashboard');}
+        try{let data=JSON.parse(ev.target.result);data=migrateBuyerSalary(migrateBs(data));setState({...initState(),...data,_net:0});setTab('dashboard');}
         catch{alert('Invalid deal file — could not import.');}
       };
       reader.readAsText(file);
