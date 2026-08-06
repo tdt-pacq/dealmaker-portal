@@ -1936,12 +1936,12 @@ const TSeller = ({state, set}) => {
     if(!sde) return 'Enter financial data on the Income Statement tab to generate talking points.';
     const lines = [];
     if(askingPrice>0&&askMetrics){
-      lines.push(`At your asking price of ${fmtD(askingPrice)}, the raw DSCR is ${askMetrics.rawDSCR.toFixed(2)}${askMetrics.rawDSCR<1.25?' — well below the 1.25× minimum SBA lenders require':askMetrics.rawDSCR<1.5?' — near the SBA minimum of 1.25×':''}.`);
-      if(buyerSalary>0) lines.push(`After accounting for a ${fmtD(buyerSalary)} buyer salary, the adjusted DSCR drops to ${askMetrics.adjDSCR.toFixed(2)}${askMetrics.adjDSCR<1.25?', which would make this loan very difficult to approve':''}.`);
+      lines.push(`At your asking price of ${fmtD(askingPrice)}, the raw DSCR is ${askMetrics.rawDSCR.toFixed(2)}${askMetrics.rawDSCR<dscrMin?` — well below the ${dscrMin}× minimum required`:askMetrics.rawDSCR<1.5?` — near the required minimum of ${dscrMin}×`:''}.`);
+      if(buyerSalary>0) lines.push(`After accounting for a ${fmtD(buyerSalary)} buyer salary, the adjusted DSCR drops to ${askMetrics.adjDSCR.toFixed(2)}${askMetrics.adjDSCR<dscrMin?', which would make this loan very difficult to approve':''}.`);
       if(askMetrics.cashLeft<0) lines.push(`At the seller's price, after debt service, salary, and a ${contingencyPct}% contingency reserve, the buyer would be ${fmtD(Math.abs(askMetrics.cashLeft))} short — the deal has a cash-flow deficit.`);
     }
-    if(max125>0) lines.push(`The maximum price this business can support at 1.25× DSCR${buyerSalary>0?` with a ${fmtD(buyerSalary)} buyer salary`:''} is ${fmtD(max125)}.`);
-    if(advisorPrice>0&&advisorMetrics&&advisorMetrics.adjDSCR>=1.25) lines.push(`The advisor's recommended price of ${fmtD(advisorPrice)} produces an adjusted DSCR of ${advisorMetrics.adjDSCR.toFixed(2)}, which meets lender requirements${advisorMetrics.cashLeft>0?` and leaves the buyer with ${fmtD(advisorMetrics.cashLeft)} after all obligations`:''}.`);
+    if(max125>0) lines.push(`The maximum price this business can support at ${dscrMin}× DSCR${buyerSalary>0?` with a ${fmtD(buyerSalary)} buyer salary`:''} is ${fmtD(max125)}.`);
+    if(advisorPrice>0&&advisorMetrics&&advisorMetrics.adjDSCR>=dscrMin) lines.push(`The advisor's recommended price of ${fmtD(advisorPrice)} produces an adjusted DSCR of ${advisorMetrics.adjDSCR.toFixed(2)}, which meets lender requirements${advisorMetrics.cashLeft>0?` and leaves the buyer with ${fmtD(advisorMetrics.cashLeft)} after all obligations`:''}.`);
     if(askingPrice>0&&max125>0&&askingPrice>max125) lines.push(`To make this deal lendable, the price would need to decrease by ${fmtD(askingPrice-max125)} (${((( askingPrice-max125)/askingPrice)*100).toFixed(0)}% reduction).`);
     return lines.join(' ') || 'Enter a seller asking price above to generate talking points.';
   };
