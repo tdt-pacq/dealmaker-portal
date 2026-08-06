@@ -172,7 +172,7 @@ const initState = () => ({
   dealName:'', advisorName:'', ytdEnabled:false, ytdThrough:'',
   years:[blankYear(curYear-3),blankYear(curYear-2),blankYear(curYear-1)],
   ytdData:blankYear('YTD'),
-  sdeBasis:'recent', customMults:[],
+  sdeBasis:'recent', customMults:[], dscrMin:1.25,
   loanRate:10.75, loanAmort:10, dpPct:10, reAmort:25,
   loanStructure:'7a', re504Rate:6.5, ppLoan:0, ppRate:7.5, ppAmort:10,
   su:{marketPrice:'',sellerFin:'',sfRate:'',sfAmort:'',reVal:'',wc:'',arVal:'',invVal:'',closing:15000},
@@ -1068,28 +1068,32 @@ const T4 = ({state,set}) => {
 /* ── Tab 5: DSCR ───────────────────────────────────── */
 const T5 = ({state,set,primeRate}) => {
   const {years,ytdData,ytdEnabled,loanRate,loanAmort,dpPct,reAmort,sdeBasis,su,loanStructure,re504Rate,ppLoan,ppRate,ppAmort}=state;
+  const dscrMin=state.dscrMin||1.25;
   const all=ytdEnabled?[...years,ytdData]:years;
   const r=(loanRate||10.75)/100/12, n=(loanAmort||10)*12;
   const pmt=loan=>r===0?loan/n:loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
   const dp=(dpPct||10)/100;
   const basisSDE=resolveSDE(state).basis;
-  const maxAt2x=sde=>{ if(!r)return(sde/2)/(12/n)/(1-dp); const pf=r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1); return((sde/2)/(pf*12))/(1-dp); };
+  // Max supportable price at required DSCR — matches loanbud.io's lending analysis.
+  const maxAtMin=sde=>{ if(!r)return(sde/dscrMin)/(12/n)/(1-dp); const pf=r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1); return((sde/dscrMin)/(pf*12))/(1-dp); };
   // Per-year thresholds: index 0=oldest(2023), 1=middle(2024), 2=most recent(2025).
   // Once a buyer's salary is entered, the deal's cash-flow math already carries that extra
-  // conservatism, so every year drops to the flat 1.25 SBA minimum instead of the escalating scale.
+  // conservatism, so every year drops to the flat required minimum instead of the escalating scale.
   const hasBuyerSalary=pn(state.buyerSalary)>0;
   const thresholds=hasBuyerSalary
-    ? [{green:1.5,yellow:1.25},{green:1.5,yellow:1.25},{green:1.5,yellow:1.25}]
+    ? [{green:1.5,yellow:dscrMin},{green:1.5,yellow:dscrMin},{green:1.5,yellow:dscrMin}]
     : [
-        {green:1.5,yellow:1.25},  // oldest year
-        {green:1.7,yellow:1.25},  // middle year
-        {green:2.0,yellow:1.8},   // most recent year
+        {green:1.5,yellow:dscrMin},               // oldest year
+        {green:1.7,yellow:dscrMin},               // middle year
+        {green:2.0,yellow:Math.max(1.8,dscrMin)}, // most recent year
       ];
   const dcFor=(d,idx)=>{ const t=thresholds[idx]||thresholds[2]; return d>=t.green?'text-green-400':d>=t.yellow?'text-yellow-400':'text-red-400'; };
   const dbgFor=(d,idx)=>{ const t=thresholds[idx]||thresholds[2]; return d>=t.green?'bg-green-900/30':d>=t.yellow?'bg-yellow-900/30':'bg-red-900/30'; };
   const labelFor=(d,idx)=>{ const t=thresholds[idx]||thresholds[2]; return d>=t.green?'✓ Strong':d>=t.yellow?'⚠ Marginal':'✗ Below Min'; };
   const reVal=pn(su?.reVal);
   const mp5=pn(su?.marketPrice);
+  // maxAt125x renamed maxAtMin — keep alias for any inline references below
+  const maxAt125x=maxAtMin;
   const totalProjectEst=mp5+reVal;
   const rePct=totalProjectEst>0?(reVal/totalProjectEst)*100:0;
   const basisLoan=basisSDE*3*(1-dp), basisMo=pmt(basisLoan), basisAnn=basisMo*12;
@@ -1142,6 +1146,7 @@ const T5 = ({state,set,primeRate}) => {
           <div><span className="lbl">Interest Rate (%)</span><NI value={loanRate} onChange={v=>set({...state,loanRate:v})}/><div className="text-xs text-gray-500 mt-1">{primeRate?`WSJ Prime (${primeRate}%) + 2.75% = ${(primeRate+2.75).toFixed(2)}%`:'WSJ Prime + 2.75%'}</div></div>
           <div><span className="lbl">Amortization (yrs)</span><NI value={loanAmort} onChange={v=>set({...state,loanAmort:v})}/></div>
           <div><span className="lbl">Down Payment (%)</span><NI value={dpPct} onChange={v=>set({...state,dpPct:v})}/></div>
+          <div><span className="lbl">Required DSCR</span><NI value={dscrMin} onChange={v=>set({...state,dscrMin:v||1.25})} placeholder="1.25"/><div className="text-xs text-gray-500 mt-1">SBA min: 1.25× · Conservative: 1.35–1.5×</div></div>
         </div>
       </div>
       {reVal>0&&(
@@ -1183,7 +1188,7 @@ const T5 = ({state,set,primeRate}) => {
             {all.map((yd,i)=>{
               const c=calcSDE(yd), sde=c.sde;
               const dscr=dealAnn>0?sde/dealAnn:0;
-              const mp=maxAt2x(sde);
+              const mp=maxAt125x(sde);
               const dc=dcFor(dscr,i), dbg=dbgFor(dscr,i), lbl=labelFor(dscr,i);
               const t=thresholds[i]||thresholds[2];
               return (
@@ -1202,7 +1207,7 @@ const T5 = ({state,set,primeRate}) => {
                       <div className={`text-xs ${dc}`}>{lbl}</div>
                       <div className="text-gray-600 mt-1">≥{t.green} green · ≥{t.yellow} yellow · below red</div>
                     </div>
-                    <div><span className="lbl">Max Price @ 2.0× DSCR</span><div className="mono text-blue-400">{sde>0?fmtD(mp):'—'}</div></div>
+                    <div><span className="lbl">Max Price @ {dscrMin}× DSCR</span><div className="mono text-blue-400">{sde>0?fmtD(mp):'—'}</div></div>
                   </div>
                 </div>
               );
@@ -1214,7 +1219,7 @@ const T5 = ({state,set,primeRate}) => {
           {all.map((yd,i)=>{
             const c=calcSDE(yd), sde=c.sde;
             const dscr=totalAnn>0?sde/totalAnn:0;
-            const mp=maxAt2x(sde);
+            const mp=maxAt125x(sde);
             const dc=dcFor(dscr,i), dbg=dbgFor(dscr,i), lbl=labelFor(dscr,i);
             const t=thresholds[i]||thresholds[2];
             return (
@@ -1233,7 +1238,7 @@ const T5 = ({state,set,primeRate}) => {
                     <div className={`text-xs ${dc}`}>{lbl}</div>
                     <div className="text-gray-600 mt-1">≥{t.green} green · ≥{t.yellow} yellow · below red</div>
                   </div>
-                  <div><span className="lbl">Max Price @ 2.0× DSCR</span><div className="mono text-blue-400">{sde>0?fmtD(mp):'—'}</div></div>
+                  <div><span className="lbl">Max Price @ {dscrMin}× DSCR</span><div className="mono text-blue-400">{sde>0?fmtD(mp):'—'}</div></div>
                 </div>
               </div>
             );
@@ -1831,6 +1836,7 @@ const TBuyerROI = ({state,set}) => {
 /* ── Tab: Seller Reality Check ─────────────────────── */
 const TSeller = ({state, set}) => {
   const {years, sdeBasis, loanRate, loanAmort, dpPct, reAmort, su, loanStructure, re504Rate, ppLoan, ppRate, ppAmort} = state;
+  const dscrMin = state.dscrMin || 1.25;
   const seller = state.seller || {askingPrice:'', contingencyPct:'10'};
   const setSeller = (f, v) => set({...state, seller:{...seller, [f]:v}});
 
@@ -1892,23 +1898,23 @@ const TSeller = ({state, set}) => {
     return {loan:price*(1-dp), monthlyPmt, annualDS, rawDSCR, adjDSCR, contingencyAmt, cashLeft};
   };
 
-  const max125 = maxSupportable(1.25, buyerSalary);
+  const max125 = maxSupportable(dscrMin, buyerSalary);
   const askMetrics = dscrMetrics(askingPrice);
   const advisorMetrics = dscrMetrics(advisorPrice);
   const max125Metrics = dscrMetrics(max125);
 
-  const dscrColor = d => d>=1.5 ? '#2eb860' : d>=1.25 ? '#fbbf24' : '#f87171';
+  const dscrColor = d => d>=1.5 ? '#2eb860' : d>=dscrMin ? '#fbbf24' : '#f87171';
   const cashColor = v => v>0 ? '#2eb860' : '#f87171';
   const statusBadge = m => {
     if(!m) return <span style={{color:'#475569'}}>—</span>;
     if(m.adjDSCR>=1.5) return <span style={{color:'#2eb860',fontWeight:700}}>✅ Strong</span>;
-    if(m.adjDSCR>=1.25) return <span style={{color:'#fbbf24',fontWeight:700}}>⚠ Marginal</span>;
+    if(m.adjDSCR>=dscrMin) return <span style={{color:'#fbbf24',fontWeight:700}}>⚠ Marginal</span>;
     return <span style={{color:'#f87171',fontWeight:700}}>❌ Below Min</span>;
   };
 
   const prices = [askingPrice, advisorPrice, max125];
   const mets = [askMetrics, advisorMetrics, max125Metrics];
-  const colLabels = ["Seller's Price", "Advisor's Price", "Max @ 1.25×"];
+  const colLabels = ["Seller's Price", "Advisor's Price", `Max @ ${dscrMin}×`];
   const colColors = ['#f87171', '#2eb860', '#60a5fa'];
 
   const adjSDE = sde - buyerSalary;
@@ -1944,7 +1950,7 @@ const TSeller = ({state, set}) => {
   const copyTP = () => { navigator.clipboard.writeText(talkingPoints()).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);}); };
 
   const dscrTargets = [
-    {label:'1.25×', sub:'Minimum', value:1.25},
+    {label:`${dscrMin}×`, sub:'Required', value:dscrMin},
     {label:'1.50×', sub:'Comfortable', value:1.50},
     {label:'2.00×', sub:'Strong', value:2.00},
   ];
@@ -2628,6 +2634,7 @@ const REPORT_SECTIONS=[
 ];
 const T9 = ({state,narrative,narrativeStatus}) => {
   const {years,ytdEnabled,ytdData,sdeBasis,customMults,loanRate,loanAmort,dpPct,su,loanStructure,re504Rate,ppLoan,ppRate,ppAmort}=state;
+  const dscrMin=state.dscrMin||1.25;
   const sellerData=state.seller||{askingPrice:'',contingencyPct:'10'};
   const reAmort=state.reAmort||25;
   const [vis,setVis]=useState(()=>Object.fromEntries(REPORT_SECTIONS.map(s=>[s.id,true])));
@@ -2690,13 +2697,13 @@ const T9 = ({state,narrative,narrativeStatus}) => {
   const sMax125=(()=>{
     const a=baseRaw-sellerSal;if(a<=0)return 0;
     let lo=0,hi=20000000,iters=0;
-    while(hi-lo>100&&iters++<60){const mid=(lo+hi)/2;if(monthlyAtPriceR9(mid)*12<a/1.25)lo=mid;else hi=mid;}
+    while(hi-lo>100&&iters++<60){const mid=(lo+hi)/2;if(monthlyAtPriceR9(mid)*12<a/dscrMin)lo=mid;else hi=mid;}
     return(lo+hi)/2;
   })();
   const sAskM=sDscrM(sellerAskP),sAdvM=sDscrM(mp),sMaxM=sDscrM(sMax125);
-  const sDC=d=>d>=1.5?'#059669':d>=1.25?'#d97706':'#dc2626';
+  const sDC=d=>d>=1.5?'#059669':d>=dscrMin?'#d97706':'#dc2626';
   const sCC=v=>v>0?'#059669':'#dc2626';
-  const sStatus=m=>!m?'—':m.adjD>=1.5?'✅ Strong':m.adjD>=1.25?'⚠ Marginal':'❌ Below Min';
+  const sStatus=m=>!m?'—':m.adjD>=1.5?'✅ Strong':m.adjD>=dscrMin?'⚠ Marginal':'❌ Below Min';
   const sfAnn=sfPmt*12;
 
   // DSCR loan sizing (3× SDE basis, matching T5)
@@ -2932,7 +2939,7 @@ const T9 = ({state,narrative,narrativeStatus}) => {
             does the business generate enough cash flow to comfortably make its own loan payments?
             It is calculated by dividing the business's SDE by the total annual loan payments.
             A DSCR of <strong style={{color:'#e2e8f0'}}>1.00</strong> means the business exactly covers its debt — nothing left over.
-            <strong style={{color:'#e2e8f0'}}> 1.25</strong> is the typical SBA minimum — 25 cents of cushion for every dollar of payment.
+            <strong style={{color:'#e2e8f0'}}> {dscrMin}</strong> is the required minimum — {((dscrMin-1)*100).toFixed(0)} cents of cushion for every dollar of payment.
             <strong style={{color:'#2eb860'}}> 2.00 or above</strong> is considered strong and signals that the buyer will have healthy cash flow after servicing the debt.
             The loan modeled here assumes a <strong style={{color:'#e2e8f0'}}>3× SDE price at {loanRate}% over {loanAmort} years with {dpPct}% down</strong>{reVal>0?<span> (real estate included — actual deal uses <strong style={{color:'#e2e8f0'}}>{(loanStructure||'7a')==='504'?`7(a)+504 structure`:`${blendedAmortR9}yr blended term`}</strong>)</span>:''}.
           </p>
@@ -2951,8 +2958,8 @@ const T9 = ({state,narrative,narrativeStatus}) => {
                 // Mirrors the DSCR Analysis tab: once a buyer's salary is entered, every year
                 // drops to the flat 1.25 SBA minimum instead of the escalating scale.
                 const thresholds=buyerSalary>0
-                  ? [{g:1.5,y:1.25},{g:1.5,y:1.25},{g:1.5,y:1.25}]
-                  : [{g:1.5,y:1.25},{g:1.7,y:1.25},{g:2.0,y:1.8}];
+                  ? [{g:1.5,y:dscrMin},{g:1.5,y:dscrMin},{g:1.5,y:dscrMin}]
+                  : [{g:1.5,y:dscrMin},{g:1.7,y:dscrMin},{g:2.0,y:Math.max(1.8,dscrMin)}];
                 const t=thresholds[i]||thresholds[2];
                 const clr=d>=t.g?'#059669':d>=t.y?'#d97706':'#dc2626';
                 const lbl=d>=t.g?'✓ Strong':d>=t.y?'⚠ Marginal':'✗ Below Min';
@@ -2980,14 +2987,14 @@ const T9 = ({state,narrative,narrativeStatus}) => {
           <div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
             <SH n={5} title="Seller Reality Check"/>
             <p style={{fontSize:12,lineHeight:1.75,color:'#94a3b8',marginBottom:14}}>
-              An SBA lender requires a <strong style={{color:'#e2e8f0'}}>DSCR of at least 1.25×</strong> — the business must generate
-              $1.25 of cash flow for every $1.00 of loan payment. After deducting a buyer salary and contingency reserve,
+              This analysis requires a <strong style={{color:'#e2e8f0'}}>DSCR of at least {dscrMin}×</strong> — the business must generate
+              ${dscrMin.toFixed(2)} of cash flow for every $1.00 of loan payment. After deducting a buyer salary and contingency reserve,
               the adjusted DSCR shows true borrower capacity. The table below compares the seller's asking price,
               the advisor's recommended price, and the maximum price the business can mathematically support.
             </p>
             {(()=>{
               const sprices=[sellerAskP,mp,sMax125];
-              const slabels=["Seller's Price","Advisor's Price","Max @ 1.25×"];
+              const slabels=["Seller's Price","Advisor's Price",`Max @ ${dscrMin}×`];
               const smets=[sAskM,sAdvM,sMaxM];
               const shdrC=['#dc2626','#059669','#60a5fa'];
               const srow=(lbl,vals,colFn,bold)=>(
@@ -3028,7 +3035,7 @@ const T9 = ({state,narrative,narrativeStatus}) => {
                     </tr>
                     <tr>
                       <td style={{padding:'5px 0',color:'#94a3b8',fontSize:11,fontWeight:700}}>Status</td>
-                      {smets.map((m,i)=><td key={i} style={{textAlign:'right',padding:'5px 8px',fontSize:11,fontWeight:700,color:m?(m.adjD>=1.5?'#059669':m.adjD>=1.25?'#d97706':'#dc2626'):'#475569'}}>{sStatus(m)}</td>)}
+                      {smets.map((m,i)=><td key={i} style={{textAlign:'right',padding:'5px 8px',fontSize:11,fontWeight:700,color:m?(m.adjD>=1.5?'#059669':m.adjD>=dscrMin?'#d97706':'#dc2626'):'#475569'}}>{sStatus(m)}</td>)}
                     </tr>
                   </tbody>
                 </table>
@@ -3037,10 +3044,10 @@ const T9 = ({state,narrative,narrativeStatus}) => {
             {(()=>{
               const slines=[];
               if(sellerAskP>0&&sAskM){
-                slines.push(`At the seller's asking price of ${fmtD(sellerAskP)}, the raw DSCR is ${sAskM.rawD.toFixed(2)}${sAskM.rawD<1.25?' — well below the 1.25× SBA minimum':sAskM.rawD<1.5?' — near the SBA minimum of 1.25×':''}.`);
-                if(sellerSal>0)slines.push(`After deducting a ${fmtD(sellerSal)} buyer salary, the adjusted DSCR drops to ${sAskM.adjD.toFixed(2)}${sAskM.adjD<1.25?', making loan approval unlikely at this price':''}.`);
+                slines.push(`At the seller's asking price of ${fmtD(sellerAskP)}, the raw DSCR is ${sAskM.rawD.toFixed(2)}${sAskM.rawD<dscrMin?` — well below the ${dscrMin}× required minimum`:sAskM.rawD<1.5?` — near the required minimum of ${dscrMin}×`:''}.`);
+                if(sellerSal>0)slines.push(`After deducting a ${fmtD(sellerSal)} buyer salary, the adjusted DSCR drops to ${sAskM.adjD.toFixed(2)}${sAskM.adjD<dscrMin?', making loan approval unlikely at this price':''}.`);
               }
-              if(sMax125>0)slines.push(`The maximum supportable price at 1.25× DSCR${sellerSal>0?` with a ${fmtD(sellerSal)} buyer salary`:''} is ${fmtD(sMax125)}.`);
+              if(sMax125>0)slines.push(`The maximum supportable price at ${dscrMin}× DSCR${sellerSal>0?` with a ${fmtD(sellerSal)} buyer salary`:''} is ${fmtD(sMax125)}.`);
               if(!slines.length)return null;
               return <div style={{background:'#0a1f05',border:'1px solid #1a5e35',borderRadius:7,padding:'12px 14px',fontSize:12,color:'#94a3b8',lineHeight:1.8,fontStyle:'italic'}}>{slines.join(' ')}</div>;
             })()}
