@@ -288,67 +288,291 @@ router.post('/cbr', async (req, res) => {
       system: `You are generating a Confidential Business Review (CBR) for a business acquisition listing.
 This is a CONFIDENTIAL document shared only with vetted, NDA-signed buyers.
 It must be professional, accurate, and compelling.
+
 CRITICAL RULES:
 - Do NOT invent or fabricate any facts, figures, or statistics.
 - Use ONLY data provided. If a field is blank, write "To be provided upon NDA execution" or omit gracefully.
 - Output ONLY a single, complete, valid HTML document. No preamble, no explanation, no markdown.
-- Use page-break-after: always on each .slide for clean PDF pagination.
-- The document must be landscape 1920x1080px per slide.
-- TEXT CONTRAST IS MANDATORY: All body text on white or light-colored slide backgrounds MUST be #111111. Never use any gray lighter than #444444 for readable body copy. Metric values and data figures must be #1A1A1A bold. Table body text must be #111111. This is a print/presentation document — light gray text on white is completely unacceptable and illegible.`,
+- TEXT CONTRAST IS MANDATORY: All body text on white/light backgrounds MUST be #111111. Never use gray lighter than #444444 for body copy. This is a print document — light gray on white is illegible.
+
+PAGE BREAK RULES — THIS IS THE MOST IMPORTANT SECTION:
+- Section divider pages get: page-break-before: always; page-break-after: always; (full isolated page)
+- Content pages get: page-break-before: always; (start fresh page) but NO page-break-after — content flows naturally to next content section
+- Every content block (section-block div) gets: page-break-inside: avoid; (never split a content block across pages)
+- NEVER put page-break-after on a content block — this creates near-blank pages when content is short
+- If two related content sections fit on one page, they SHARE the page — no forced break between them
+- Result: short sections pair together naturally; long sections flow onto the next page only when needed
+
+RIGHT SIDEBAR RULE:
+- Every content page has a right sidebar (28% width)
+- The sidebar MUST contain real, useful content — a callout box with 3-5 key stats, a highlighted bullet list, or a "Why This Deal" box
+- NEVER leave the sidebar empty or purely decorative — empty space looks unprofessional`,
       messages: [{
         role: 'user',
         content: `Generate a complete multi-page Confidential Business Review (CBR) as a single HTML document.
 
-Brand system:
-- Slide size: 1920x1080px landscape
+FONTS (include in <head>):
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+BRAND SYSTEM:
 - Primary dark: #1A1A1A
 - Accent copper: #C1622F
 - Brand/seller color: ${brandColor}
-- White: #FFFFFF
-- Body font: Inter 16px #111111 (REQUIRED — near-black for all body text on light backgrounds)
-- Secondary/caption text: #444444 maximum — never lighter than this on white/light backgrounds
-- Header font: Oswald bold uppercase
-- Load fonts: <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-- Every content slide footer: "©${new Date().getFullYear()} Proprietary and Confidential. All Rights Reserved." centered small gray text | Peterson Acquisitions bottom-left | page number bottom-right
-- Section divider slides: background #1A1A1A, large 72px Oswald white uppercase centered text
-- Content slides: white background, Oswald bold uppercase title top-left, 4px ${brandColor} bar under title
+- Body font: Inter 15px #111111
+- Secondary text: #444444 (never lighter on white bg)
+- Headers: Oswald bold uppercase
 
-Required slides IN ORDER:
-1. COVER: "CONFIDENTIAL BUSINESS REVIEW" large centered Oswald bold white on #1A1A1A bg. Industry/type descriptor (no business name) below in copper. Confidentiality statement italic white below. Peterson footer bar at bottom.
-2. TABLE OF CONTENTS: White bg. 3-column icon grid with these sections (use Unicode emoji as icons): Executive Summary 📋, Products & Services 🛍️, Marketing 📣, Sales 📈, Customers 👥, Employees 👤, Financial Information 💰, Growth Opportunities 🌱, Transaction Details 🤝, Deal Team 🏆
-3. SECTION DIVIDER: "EXECUTIVE SUMMARY"
-4. BUSINESS OVERVIEW: 2-col layout. Left: industry type, year founded, location (city/state), hours, entity type, licenses. Right: business description paragraph, key systems, owner tenure.
-5. OWNER BACKGROUND: Origin story, owner skills, typical day, vision/mission. (Do NOT name the owner)
-6. BUSINESS MODEL: Bullet list of how business operates, compensation method, SOPs, IP, entity.
-7. INDUSTRY OVERVIEW: 2-col. Left: key highlights, trends. Right: challenges, opportunities, profit drivers.
-8. KEY HIGHLIGHTS: 3-col info grid with icons — Revenue, SDE, EBITDA, Asking Price, Employees, Est. Year, FFE Value, Real Estate, Down Payment. IMPORTANT: Revenue, SDE, and EBITDA figures here MUST come from the most recent completed fiscal year only (fin_year1_* fields). Display the year label (fin_year1_year) as a small caption under each financial metric so it is clear which tax year is shown.
-9. SECTION DIVIDER: "PRODUCTS & SERVICES"
-10. PRODUCTS & SERVICES: 2-col. Left: core products/services list with descriptions. Right: pricing strategy, delivery process, unique offerings, diversification.
-11. SECTION DIVIDER: "MARKETING"
-12. MARKETING: 2-col. Left: branding, channels, online reputation/reviews. Right: positioning, why customers choose, strengths/weaknesses.
-13. SECTION DIVIDER: "SALES"
-14. SALES: Sales process, trends, channels, seasonality, MRR highlight in branded color box.
-15. SECTION DIVIDER: "CUSTOMERS"
-16. CUSTOMERS: 2-col. Left: total customers, repeat %, avg revenue per customer, geography, segmentation. Right: satisfaction approach, strengths, database size.
-17. SECTION DIVIDER: "EMPLOYEES"
-18. ORG CHART: Visual CSS org chart. Owner at top → key direct reports → crew/staff. Use flexbox columns.
-19. EMPLOYEE OVERVIEW: Total breakdown FT/PT/seasonal, benefits, compensation, HR systems, post-sale transitions.
-20. SECTION DIVIDER: "FINANCIAL INFORMATION"
-21. FINANCIAL TABLE: 4-year income summary table. Header row: ${brandColor} bg white text. Alternating white/#F0F5F0 rows. Bold rows for Gross Profit, EBITDA, SDE. Columns: Metric | Year1 | Year2 | Year3 | Year4 — replace "Year1/2/3/4" header labels with the actual year values from fin_year1_year, fin_year2_year, fin_year3_year, fin_year4_year fields (e.g. "2024", "2023", "2022", "2021"). Year 1 (fin_year1_*) is the most recent completed tax year and appears first. Omit columns where no data exists. Rows: Revenue, COGS, Gross Profit, Operating Expenses, Net Income, Depreciation, Interest, EBITDA, Owner Salary Addback, Other Addbacks, SDE. RULE: Only use completed fiscal year data from the fin_year* fields — never infer or use YTD/partial-year figures.
-22. REVENUE SEGMENTS: Pie chart visualization using CSS conic-gradient. Show segment names and percentages. Legend below chart.
-23. ASSETS: FFE description and value, land/real estate, inventory, total appraised assets table.
-24. SECTION DIVIDER: "GROWTH OPPORTUNITIES"
-25. GROWTH OPPORTUNITIES: Dark ${brandColor} full-bleed background. White Oswald title. 2-col grid of growth bullets with copper numbering. Compelling framing intro sentence.
-26. SECTION DIVIDER: "TRANSACTION DETAILS"
-27. TRANSACTION DETAILS: 3 large boxes side-by-side on ${brandColor} bg: "LISTING PRICE" | "DEAL STRUCTURE" | "TRANSITION PLAN". White text. Real estate note below if applicable.
-28. BUYER PROCESS: 9-step horizontal flow diagram. Steps: Pre-Qualification → Initial Consult → CBR Meeting → Seller Meeting → Funding Approval → Offer to Purchase → Due Diligence → Closing → Transition. Number each step. Copper connecting arrows. White bg.
-29. DEAL TEAM: 5-person grid. For each: Name in Oswald bold, Role/specialty in Inter. Background ${brandColor} cards. Team members from data or default to: Michael (Lead Broker | Deal Structure | Strategy | Negotiations), Robin (Acquisition Advisor | Operations | Due Diligence | Buyer Success), Alisha (Acquisition Advisor | Seller Success), Lee (Lender Liaison | SBA Lending Expert), Lance (Operations | Business Listings | Leads).
-30. NEXT STEPS: ${brandColor} bg. "NEXT STEPS" white Oswald title. Closing paragraph about the opportunity. List: 1) Sign NDA, 2) Review CBR, 3) Attend Seller Meeting, 4) Submit LOI. "Contact us today" CTA in copper box.
+BASE CSS (include in <style>):
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; font-size: 15px; color: #111111; background: white; }
+.section-divider { page-break-before: always; page-break-after: always; background: #1A1A1A; width: 100%; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.content-page { page-break-before: always; display: flex; flex-direction: column; min-height: 100vh; padding: 0; }
+.content-body { display: flex; flex: 1; }
+.main-col { flex: 1; padding: 40px 32px 32px 40px; }
+.sidebar { width: 28%; padding: 40px 28px 32px 24px; background: #f8f8f8; border-left: 3px solid ${brandColor}; }
+.section-label { font-family: 'Oswald', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.15em; color: #888; text-transform: uppercase; margin-bottom: 6px; }
+.page-title { font-family: 'Oswald', sans-serif; font-size: 28px; font-weight: 700; color: #1A1A1A; text-transform: uppercase; margin-bottom: 4px; }
+.title-bar { height: 4px; background: ${brandColor}; width: 56px; margin-bottom: 24px; }
+.section-block { page-break-inside: avoid; margin-bottom: 24px; }
+.sub-heading { font-family: 'Oswald', sans-serif; font-size: 12px; font-weight: 600; color: ${brandColor}; text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1.5px solid ${brandColor}; padding-bottom: 4px; margin-bottom: 10px; }
+p { line-height: 1.65; margin-bottom: 10px; color: #111111; }
+ul { list-style: none; padding: 0; }
+ul li { padding: 4px 0 4px 16px; position: relative; line-height: 1.5; color: #111111; }
+ul li::before { content: "▸"; position: absolute; left: 0; color: ${brandColor}; font-size: 10px; top: 6px; }
+.callout-box { background: #1A1A1A; color: white; border-radius: 4px; padding: 16px; margin-bottom: 16px; page-break-inside: avoid; }
+.callout-box .cb-label { font-size: 9px; font-family: 'Oswald', sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: #C1622F; margin-bottom: 4px; }
+.callout-box .cb-value { font-family: 'Oswald', sans-serif; font-size: 22px; font-weight: 700; color: white; line-height: 1.1; }
+.callout-box .cb-caption { font-size: 10px; color: #aaa; margin-top: 2px; }
+.stat-row { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; border-bottom: 1px solid #e8e8e8; }
+.stat-row:last-child { border-bottom: none; }
+.stat-label { font-size: 12px; color: #444; }
+.stat-value { font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: 600; color: #1A1A1A; }
+.page-footer { background: #f0f0f0; border-top: 1px solid #ddd; padding: 8px 40px; display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #666; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; page-break-inside: avoid; }
+th { background: ${brandColor}; color: white; font-family: 'Oswald', sans-serif; font-weight: 600; padding: 10px 12px; text-align: left; font-size: 12px; letter-spacing: 0.05em; }
+td { padding: 8px 12px; border-bottom: 1px solid #eee; color: #111111; }
+tr:nth-child(even) td { background: #f7f7f7; }
+tr.bold-row td { font-weight: 700; color: #1A1A1A; background: #eef0f8; }
+tr.sde-row td { font-weight: 700; color: ${brandColor}; font-size: 14px; background: #fff8f4; }
+
+REQUIRED PAGES IN ORDER:
+
+━━━ PAGE 1: COVER ━━━
+Class: (no page class — first page, no break needed)
+Full-page dark background #1A1A1A. Center-aligned vertically and horizontally.
+- Top: "CONFIDENTIAL BUSINESS REVIEW" — Oswald 13px #C1622F uppercase letter-spacing
+- Middle: Industry descriptor (no business name) — Oswald bold 52px white, max 2 lines
+- Tagline: italic Inter 16px #ccc, 1 sentence about the business opportunity
+- Separator: 3px line half copper half gray, 80px wide, margin 24px auto
+- Confidentiality notice: Inter 12px #888 italic
+- Bottom bar: #C1622F strip 60px tall — left: "PETERSON ACQUISITIONS | THE DEAL TEAM" Oswald 14px white; right: "Offered Exclusively · Strictly Confidential" Inter 11px white
+
+━━━ PAGE 2: TABLE OF CONTENTS ━━━
+Class: content-page (page-break-before: always)
+White background. No sidebar on this page (full width).
+Header: "TABLE OF CONTENTS" page-title, date subtitle "As of [current month year]"
+8-section grid (2 columns × 4 rows). Each cell: circle number in ${brandColor} bg, section name Oswald bold 15px, subtitle Inter 12px #444.
+Sections: 1 Executive Summary, 2 Business Description, 3 Operational Information, 4 Financial Information, 5 Market Price Valuation, 6 Growth Opportunities, 7 Transaction Details, 8 Next Steps
+Confidentiality notice in a bordered box below the grid.
+
+━━━ PAGE 3: SECTION DIVIDER — EXECUTIVE SUMMARY ━━━
+Class: section-divider
+Dark #1A1A1A full page. Center: "EXECUTIVE SUMMARY" Oswald bold 64px white uppercase. Gray/copper divider line below.
+
+━━━ PAGE 4: BUSINESS OVERVIEW + KEY HIGHLIGHTS ━━━
+Class: content-page
+Section label: EXECUTIVE SUMMARY
+Left column:
+  - "BUSINESS OVERVIEW" page-title + title-bar
+  - section-block: Business description paragraph (3-4 sentences on what the business does, how long established, operating structure)
+  - section-block: sub-heading "BUSINESS DETAILS" — stat-row table: Industry, Founded, City/State, Hours, Entity Type, Licenses, Employees, Owner Tenure
+  - section-block: sub-heading "KEY SYSTEMS & INFRASTRUCTURE" — bullet list of systems, SOPs, IP
+Right sidebar:
+  - callout-box: ASKING PRICE — value from listing_price or asking_price
+  - callout-box: MOST RECENT REVENUE — fin_year1_revenue with year label caption
+  - callout-box: CASH FLOW / SDE — fin_year1_sde with year label caption
+  - stat-row list: Est. Year, Real Estate, SBA Eligible, Down Payment Est.
+
+━━━ PAGE 5: OWNER BACKGROUND + INDUSTRY OVERVIEW ━━━
+Class: content-page (NO page-break-before — flows from page 4 only if needed, otherwise starts new page)
+IMPORTANT: If page 4 content is long, this starts a new page. Use page-break-before: always here.
+Section label: EXECUTIVE SUMMARY
+Left column:
+  - "OWNER BACKGROUND" page-title + title-bar
+  - section-block: Origin story / how business was founded paragraph
+  - section-block: sub-heading "OWNER'S ROLE TODAY" — typical day, primary responsibilities, how long owner could be absent
+  - section-block: sub-heading "REASON FOR SELLING" — seller's stated reason (1-2 sentences)
+  - sub-heading "INDUSTRY OVERVIEW" (new section within same page)
+  - section-block: Industry size, trends, outlook paragraph
+  - section-block: sub-heading "COMPETITIVE LANDSCAPE" — challenges, opportunities as bullets
+Right sidebar:
+  - sub-heading "OWNER PROFILE"
+  - bullet list: key skills, industry experience, transition willingness
+  - sub-heading "INDUSTRY AT A GLANCE"
+  - stat-row list: market size data, growth rate, SBA lending notes
+
+━━━ PAGE 6: SECTION DIVIDER — BUSINESS DESCRIPTION ━━━
+Class: section-divider
+
+━━━ PAGE 7: PRODUCTS & SERVICES + CUSTOMERS ━━━
+Class: content-page
+Section label: BUSINESS DESCRIPTION
+Left column:
+  - "PRODUCTS & SERVICES" page-title + title-bar
+  - section-block: 2-3 sentence overview of what the business sells/provides
+  - section-block: sub-heading "CORE OFFERINGS" — bullet list of products/services with short descriptions
+  - section-block: sub-heading "PRICING & DELIVERY" — pricing strategy, delivery process
+  - section-block: sub-heading "COMPETITIVE ADVANTAGES" — unique offerings, diversification, moats
+  - [new sub-section on same page]: sub-heading "CUSTOMER BASE"
+  - section-block: Total customers, repeat %, segmentation breakdown, geography paragraph
+Right sidebar:
+  - sub-heading "REVENUE MIX"
+  - If revenue segments available: show as a simple labeled list with % bars (CSS width-based)
+  - sub-heading "CUSTOMER HIGHLIGHTS"
+  - stat-rows: Total Customers, Repeat/Contract %, Avg Revenue/Customer, Database Size
+
+━━━ PAGE 8: MARKETING & SALES ━━━
+Class: content-page
+Section label: BUSINESS DESCRIPTION
+Left column:
+  - "MARKETING & SALES" page-title + title-bar
+  - section-block: sub-heading "MARKETING CHANNELS" — bullet list of channels, online reputation/reviews, branding approach
+  - section-block: sub-heading "MARKET POSITIONING" — why customers choose this business, positioning vs competitors
+  - section-block: sub-heading "SALES PROCESS" — how leads come in, sales cycle, who is responsible
+  - section-block: sub-heading "SALES PERFORMANCE" — trends, YoY growth, MRR if available, seasonality
+Right sidebar:
+  - sub-heading "REPUTATION"
+  - Review scores, social following stats, notable relationships
+  - sub-heading "SALES SNAPSHOT"
+  - stat-rows: Sales channel breakdown, close rate data, seasonality notes, MRR if applicable
+
+━━━ PAGE 9: SECTION DIVIDER — OPERATIONAL INFORMATION ━━━
+Class: section-divider
+
+━━━ PAGE 10: OPERATIONS + ORG STRUCTURE ━━━
+Class: content-page
+Section label: OPERATIONAL INFORMATION
+Left column:
+  - "OPERATIONS & MANAGEMENT" page-title + title-bar
+  - section-block: sub-heading "LOCATION & FACILITIES" — physical locations, sq footage, real estate situation
+  - section-block: sub-heading "DAILY OPERATIONS" — how the business runs day to day, key workflows, systems
+  - section-block: sub-heading "MANAGEMENT STRUCTURE" — visual CSS org chart using flexbox: Owner box at top, direct reports below, staff below that. Use colored boxes (${brandColor} bg for owner, #1A1A1A bg for managers, #444 bg for staff). White text. Small font. Name + title in each box.
+Right sidebar:
+  - sub-heading "KEY EMPLOYEES"
+  - For each key employee: name bold, title in copper, tenure, brief note (1 line)
+  - sub-heading "STAFFING OVERVIEW"
+  - stat-rows: FT count, PT/Seasonal count, Benefits offered, HR system, Post-sale transitions
+
+━━━ PAGE 11: SECTION DIVIDER — FINANCIAL INFORMATION ━━━
+Class: section-divider
+
+━━━ PAGE 12: FINANCIAL PERFORMANCE TABLE ━━━
+Class: content-page
+Section label: FINANCIAL INFORMATION
+Full-width layout (no sidebar — table needs the full width).
+  - "FINANCIAL PERFORMANCE & SELLER'S DISCRETIONARY EARNINGS" page-title + title-bar
+  - section-block: Brief intro sentence about the financials (accuracy rating, who prepares them, fiscal year end)
+  - FINANCIAL TABLE: Columns — Metric | [fin_year1_label] | [fin_year1_label] % Rev | [fin_year2_label] | [fin_year2_label] % Rev | [fin_year3_label] | [fin_year3_label] % Rev
+    Omit columns for years with no data. Year 1 is most recent.
+    Rows: Gross Revenue, Cost of Goods Sold, Gross Profit (bold-row), Operating Expenses, Net Income (bold-row), Depreciation/Amortization, Interest Expense, EBITDA (bold-row), Owner Salary Addback, Other Add-Backs, SDE (sde-row — highlighted in ${brandColor})
+    % Rev = that line / gross revenue for that year, formatted as percent
+  - Below table: 3 callout boxes in a row: Weighted Avg SDE (if calculable) | Most Recent Year SDE | Valuation Basis
+
+━━━ PAGE 13: ASSETS & REVENUE SEGMENTS ━━━
+Class: content-page
+Section label: FINANCIAL INFORMATION
+Left column:
+  - "ASSETS & REVENUE SEGMENTS" page-title + title-bar
+  - section-block: sub-heading "FURNITURE, FIXTURES & EQUIPMENT (FF&E)"
+    Description of FF&E included in sale, appraised value
+  - section-block: sub-heading "REAL ESTATE"
+    Situation (owned/leased), value, terms
+  - section-block: sub-heading "INVENTORY"
+    Inventory description and value
+  - section-block: sub-heading "TOTAL APPRAISED ASSETS"
+    Table: Asset | Value rows — FF&E, Real Estate, Inventory, Total
+Right sidebar:
+  - sub-heading "REVENUE SEGMENTS"
+  - Visual bar chart: for each revenue segment, show name + percentage as a CSS width bar in ${brandColor}
+  - sub-heading "ASSET SUMMARY"
+  - stat-rows: Total Assets, FF&E, Real Estate, Inventory
+
+━━━ PAGE 14: SECTION DIVIDER — MARKET PRICE VALUATION ━━━
+Class: section-divider
+
+━━━ PAGE 15: MARKET PRICE VALUATION ━━━
+Class: content-page
+Section label: MARKET PRICE VALUATION
+Left column:
+  - "MARKET PRICE VALUATION" page-title + title-bar
+  - section-block: Valuation methodology paragraph — explain SDE-based valuation, why multiples apply
+  - section-block: sub-heading "VALUATION SUMMARY" — table with: SDE Basis, Multiple Applied, Business Value, + Real Estate (if applicable), Total Asking Price
+  - section-block: sub-heading "SBA FINANCING OVERVIEW" — SBA 7(a) eligibility, down payment, estimated monthly payment, financing terms
+  - section-block: sub-heading "DEAL ECONOMICS" — how the numbers work for a buyer (purchase price, down payment, annual debt service, remaining cash flow after debt service)
+Right sidebar:
+  - Large callout-box: ASKING PRICE in big Oswald
+  - stat-rows: SDE Multiple, Down Payment (10% SBA), Est. Monthly Debt Service, Est. Annual Cash-on-Cash Return
+  - Note about real estate if applicable
+
+━━━ PAGE 16: SECTION DIVIDER — GROWTH OPPORTUNITIES ━━━
+Class: section-divider
+
+━━━ PAGE 17: GROWTH OPPORTUNITIES ━━━
+Class: content-page
+Section label: GROWTH OPPORTUNITIES
+Full page — dark ${brandColor} background. White text.
+  - "GROWTH OPPORTUNITIES" Oswald 36px white uppercase title, copper accent bar
+  - Intro sentence: compelling framing of the upside available to a buyer
+  - 2-column grid of numbered opportunities. Each: copper circle number, bold title in Oswald 14px white, 1-2 sentence description in Inter 13px #ddd
+  - At bottom: "ADVISOR'S PERSPECTIVE" — a brief 2-sentence synthesis of why these opportunities are actionable
+
+━━━ PAGE 18: SECTION DIVIDER — TRANSACTION DETAILS ━━━
+Class: section-divider
+
+━━━ PAGE 19: TRANSACTION DETAILS + BUYER PROCESS ━━━
+Class: content-page
+Section label: TRANSACTION DETAILS
+Left column:
+  - "TRANSACTION DETAILS" page-title + title-bar
+  - section-block: 3 large info boxes side by side:
+    Box 1 — LISTING PRICE: large value, structure note
+    Box 2 — DEAL STRUCTURE: asset vs stock, real estate note
+    Box 3 — TRANSITION PLAN: seller training, key employee retention
+  - section-block: sub-heading "THE QSI™ BUYER PROCESS"
+    Horizontal step flow: numbered steps with connecting arrows
+    Steps: 1 Pre-Qualification → 2 Initial Consult → 3 CBR Review → 4 Seller Meeting → 5 Funding Approval → 6 Offer to Purchase → 7 Due Diligence → 8 Closing → 9 Transition
+Right sidebar:
+  - sub-heading "KEY DEAL TERMS"
+  - stat-rows: Price, Down Payment, Financing, Real Estate, Inventory, FF&E, Training Period, Non-Compete
+  - sub-heading "IDEAL BUYER PROFILE"
+  - bullets: buyer background fit, experience needed, SBA qualification notes
+
+━━━ PAGE 20: DEAL TEAM + NEXT STEPS ━━━
+Class: content-page
+Section label: NEXT STEPS
+Left column (60%):
+  - "THE DEAL TEAM" page-title + title-bar
+  - 5-card grid of team members. Each card: ${brandColor} background, name Oswald bold 16px white, role Inter 12px #ddd, specialties as small copper pills.
+    Team members: Michael (Lead Broker | Deal Structure · Strategy · Negotiations), Robin (Acquisition Advisor | Operations · Due Diligence · Buyer Success), Alisha (Acquisition Advisor | Seller Success · CBR Production), Lee (Lender Liaison | SBA Lending Expert), Lance (Operations | Business Listings · Leads)
+    Override with any team members listed in deal data.
+Right column (40%):
+  - Full dark ${brandColor} background panel
+  - "NEXT STEPS" Oswald 24px white
+  - Numbered list: 1) Execute NDA 2) Review this CBR 3) Schedule Seller Meeting 4) Submit Letter of Intent
+  - Bottom CTA box in #C1622F: "READY TO MOVE FORWARD?" + "Contact your advisor today" + thedealteam.co
+  - Copyright footer: "©${new Date().getFullYear()} Peterson Acquisitions · Confidential Business Review · All Rights Reserved"
+
+━━━ FOOTER (on all content pages) ━━━
+Every content-page ends with a .page-footer div:
+Left: "© ${new Date().getFullYear()} Peterson Acquisitions"
+Center: "Confidential Business Review · [industry/type descriptor, no business name]"
+Right: "thedealteam.co"
 
 Business data: ${JSON.stringify(interviewData, null, 2)}
 Advisor: ${deal.advisor_name}
 
-IMPORTANT: Output ONLY the complete HTML document starting with <!DOCTYPE html>. No other text.`
+IMPORTANT: Output ONLY the complete HTML document starting with <!DOCTYPE html>. No other text.
+IMPORTANT: Follow the PAGE BREAK RULES exactly — content pages use page-break-before: always and page-break-inside: avoid on blocks. NEVER use page-break-after on content blocks.`
       }]
     });
 

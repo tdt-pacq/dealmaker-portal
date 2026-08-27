@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Dealmaker Portal** — Internal tool for Peterson Acquisitions / The Deal Team. A full-stack web app that helps M&A advisors manage business listings, generate AI-powered marketing documents, research buyers, and produce legal documents (Offer to Purchase).
 
-Deployed on Railway. The server serves both the API and the React SPA in production.
+Deployed on Render (dashboard.render.com). The server serves both the API and the React SPA in production. Persistent SQLite DB is at /data/pacq_deals.db (DB_PATH env var), mounted on a Render disk at /data.
 
 ## Commands
 
@@ -68,7 +68,7 @@ dealmaker-portal/
 
 **Auth:** HTTP Basic Auth everywhere. Credentials stored in `sessionStorage` as a base64 string (`pacq_auth`). The axios instance in `api.js` injects it on every request. A 401 response triggers a full-page reload (forces re-login).
 
-**Database:** SQLite via `better-sqlite3` (synchronous API). Single `getDb()` singleton. Schema is initialized inline in `initSchema()` — new columns are added via `ALTER TABLE` inside try/catch to handle idempotent migrations. In production, set `DB_PATH=/data/pacq_deals.db` and mount a Railway persistent volume at `/data`.
+**Database:** SQLite via `better-sqlite3` (synchronous API). Single `getDb()` singleton. Schema is initialized inline in `initSchema()` — new columns are added via `ALTER TABLE` inside try/catch to handle idempotent migrations. In production, set `DB_PATH=/data/pacq_deals.db` and mount a Render persistent disk at `/data`.
 
 **AI generation pattern:** All heavy AI work uses `@anthropic-ai/sdk`. Long-running jobs (Buyer Intel, Deal Finder) follow a fire-and-forget async pattern: POST returns a `{ jobId }`, client polls `GET .../jobs/:id`. Results are stored in an in-memory `Map` and auto-cleaned after 15–30 minutes. Short AI calls (blind ad, flyer, CBR, extract) are synchronous request/response.
 
