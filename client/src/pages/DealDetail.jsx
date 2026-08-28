@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   fetchDeal, updateDeal,
@@ -6,6 +6,42 @@ import {
   exportFlyer, exportCbr,
   downloadUrl, getAuth
 } from '../api';
+
+function friendlyError(err) {
+  const status = err.response?.status;
+  const msg = err.response?.data?.error || err.message || '';
+  if (status === 401) return 'Session expired — reload the page to log back in.';
+  if (status === 429) return 'Rate limit reached — wait a minute then retry.';
+  if (status === 504 || err.code === 'ECONNABORTED' || msg.includes('timeout'))
+    return 'Request timed out — the AI service was slow. Try again.';
+  if (status >= 500) return `Server error (${status}) — try again in a moment.`;
+  if (!navigator.onLine) return 'No internet connection — check your network and retry.';
+  return msg || 'Generation failed — please try again.';
+}
+
+function useElapsedTimer(running) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!running) { setElapsed(0); return; }
+    setElapsed(0);
+    const t = setInterval(() => setElapsed(s => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [running]);
+  return elapsed;
+}
+
+function ErrorAlert({ message, onRetry }) {
+  return (
+    <div className="alert alert-error" style={{ margin: '16px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+      <span>{message}</span>
+      {onRetry && (
+        <button className="btn-ghost btn-sm" onClick={onRetry} style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+          ↺ Retry
+        </button>
+      )}
+    </div>
+  );
+}
 
 function fmt(dateStr) {
   if (!dateStr) return null;
@@ -31,7 +67,7 @@ function BlindAdTab({ deal, onUpdate }) {
 
   useEffect(() => setText(deal.blind_ad_text || ''), [deal.blind_ad_text]);
 
-  const handleGenerate = async () => {
+  const handleGenerate = useCallback(async () => {
     setGenerating(true);
     setError('');
     try {
@@ -39,11 +75,11 @@ function BlindAdTab({ deal, onUpdate }) {
       setText(res.data.blind_ad_text);
       onUpdate();
     } catch (err) {
-      setError(err.response?.data?.error || 'Generation failed. Check your API key.');
+      setError(friendlyError(err));
     } finally {
       setGenerating(false);
     }
-  };
+  }, [deal.id, onUpdate]);
 
   const handleSaveEdit = async () => {
     await updateDeal(deal.id, { blind_ad_text: text });
@@ -88,7 +124,7 @@ function BlindAdTab({ deal, onUpdate }) {
           <span className="gen-time">Last generated: {fmt(deal.updated_at)}</span>
         )}
       </div>
-      {error && <div className="alert alert-error" style={{ margin: '16px 20px 0' }}>{error}</div>}
+      {error && <ErrorAlert message={error} onRetry={handleGenerate} />}
 
       {!text && !generating && (
         <div className="empty-state">
@@ -129,7 +165,7 @@ function FlyerTab({ deal, onUpdate }) {
 
   useEffect(() => setHtml(deal.flyer_html || ''), [deal.flyer_html]);
 
-  const handleGenerate = async () => {
+  const handleGenerate = useCallback(async () => {
     setGenerating(true);
     setError('');
     try {
@@ -137,19 +173,17 @@ function FlyerTab({ deal, onUpdate }) {
       setHtml(res.data.flyer_html);
       onUpdate();
     } catch (err) {
-      setError(err.response?.data?.error || 'Generation failed. Check your API key.');
+      setError(friendlyError(err));
     } finally {
       setGenerating(false);
     }
-  };
+  }, [deal.id, onUpdate]);
 
   const handleExportPdf = async () => {
     setExporting(true);
     setError('');
     try {
       await exportFlyer(deal.id);
-      // Download
-      const auth = getAuth();
       const link = document.createElement('a');
       link.href = downloadUrl(deal.id, 'flyer');
       link.setAttribute('download', '');
@@ -157,7 +191,7 @@ function FlyerTab({ deal, onUpdate }) {
       link.click();
       document.body.removeChild(link);
     } catch (err) {
-      setError(err.response?.data?.error || 'PDF export failed');
+      setError(friendlyError(err));
     } finally {
       setExporting(false);
     }
@@ -180,7 +214,7 @@ function FlyerTab({ deal, onUpdate }) {
           <span className="gen-time">Last generated: {fmt(deal.updated_at)}</span>
         )}
       </div>
-      {error && <div className="alert alert-error" style={{ margin: '16px 20px 0' }}>{error}</div>}
+      {error && <ErrorAlert message={error} onRetry={!exporting ? handleGenerate : undefined} />}
 
       {!html && !generating && (
         <div className="empty-state">
@@ -218,10 +252,11 @@ function CbrTab({ deal, onUpdate }) {
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
   const [html, setHtml] = useState(deal.cbr_html || '');
+  const elapsed = useElapsedTimer(generating);
 
   useEffect(() => setHtml(deal.cbr_html || ''), [deal.cbr_html]);
 
-  const handleGenerate = async () => {
+  const handleGenerate = useCallback(async () => {
     setGenerating(true);
     setError('');
     try {
@@ -229,11 +264,11 @@ function CbrTab({ deal, onUpdate }) {
       setHtml(res.data.cbr_html);
       onUpdate();
     } catch (err) {
-      setError(err.response?.data?.error || 'Generation failed. Check your API key.');
+      setError(friendlyError(err));
     } finally {
       setGenerating(false);
     }
-  };
+  }, [deal.id, onUpdate]);
 
   const handleExportPdf = async () => {
     setExporting(true);
@@ -247,7 +282,7 @@ function CbrTab({ deal, onUpdate }) {
       link.click();
       document.body.removeChild(link);
     } catch (err) {
-      setError(err.response?.data?.error || 'PDF export failed');
+      setError(friendlyError(err));
     } finally {
       setExporting(false);
     }
@@ -258,7 +293,7 @@ function CbrTab({ deal, onUpdate }) {
       <div className="output-toolbar">
         <button className="btn-primary" onClick={handleGenerate} disabled={generating}>
           {generating
-            ? <><span className="spinner" />{html ? 'Regenerating…' : 'Generating…'}</>
+            ? <><span className="spinner" />{html ? `Regenerating… ${elapsed}s` : 'Generating…'}</>
             : html ? '↺ Regenerate CBR' : '⚡ Generate CBR'}
         </button>
         {html && (
@@ -270,7 +305,7 @@ function CbrTab({ deal, onUpdate }) {
           <span className="gen-time">Last generated: {fmt(deal.updated_at)}</span>
         )}
       </div>
-      {error && <div className="alert alert-error" style={{ margin: '16px 20px 0' }}>{error}</div>}
+      {error && <ErrorAlert message={error} onRetry={!exporting ? handleGenerate : undefined} />}
 
       {!html && !generating && (
         <div className="empty-state">
@@ -287,7 +322,11 @@ function CbrTab({ deal, onUpdate }) {
         <div style={{ padding: 60, textAlign: 'center', color: '#888' }}>
           <div className="spinner spinner-dark" style={{ width: 32, height: 32, borderWidth: 4, display: 'inline-block' }} />
           <div style={{ marginTop: 14, fontSize: 14 }}>Generating Confidential Business Review…</div>
-          <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>Generating 30 slides — this takes 30–90 seconds</div>
+          <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>
+            {elapsed < 60
+              ? `${elapsed}s elapsed — usually takes 30–90 seconds`
+              : `${elapsed}s elapsed — still working, almost there…`}
+          </div>
           <div style={{ marginTop: 20, background: '#1e293b', borderRadius: 8, padding: '12px 20px', display: 'inline-block', fontSize: 12, color: '#64748b' }}>
             Cover → TOC → Executive Summary → Products → Marketing → Sales → Customers → Employees → Financials → Growth → Transaction → Deal Team
           </div>
