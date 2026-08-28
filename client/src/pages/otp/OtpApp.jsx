@@ -10,7 +10,7 @@ import { getAuth } from '../../api';
 
 function authHeaders() {
   const auth = getAuth();
-  return auth ? { Authorization: `Basic ${btoa(`${auth.user}:${auth.pass}`)}` } : {};
+  return auth ? { Authorization: `Basic ${auth}` } : {};
 }
 
 function parseMoney(val) {

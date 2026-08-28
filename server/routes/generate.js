@@ -21,7 +21,7 @@ router.post('/blind-ad', async (req, res) => {
   const client = getClient();
   try {
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       max_tokens: 2000,
       system: `You are a professional business broker copywriter for Peterson Acquisitions / The Deal Team.
 You write compelling, factual blind ads for BizBuySell that follow a strict structure.
@@ -139,7 +139,7 @@ router.post('/flyer', async (req, res) => {
   const client = getClient();
   try {
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       max_tokens: 8000,
       system: `You are a professional graphic designer and copywriter for Peterson Acquisitions.
 You generate single-page, print-ready HTML/CSS business listing flyers.
@@ -283,7 +283,7 @@ router.post('/cbr', async (req, res) => {
 
   try {
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       max_tokens: 16000,
       system: `You are generating a Confidential Business Review (CBR) for a business acquisition listing.
 This is a CONFIDENTIAL document shared only with vetted, NDA-signed buyers.

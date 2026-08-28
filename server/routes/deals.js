@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const fs = require('fs');
 const { getDb } = require('../database');
+const { OUTPUT_ROOT } = require('../paths');
 
 const router = express.Router();
 
@@ -72,7 +73,7 @@ router.delete('/:id', (req, res) => {
   if (!deal) return res.status(404).json({ error: 'Deal not found' });
   getDb().prepare('DELETE FROM deals WHERE id = ?').run(req.params.id);
   // Clean up output files
-  const outputDir = path.join(__dirname, '..', '..', 'output', req.params.id);
+  const outputDir = path.join(OUTPUT_ROOT, req.params.id);
   if (fs.existsSync(outputDir)) fs.rmSync(outputDir, { recursive: true });
   res.json({ success: true });
 });
@@ -81,7 +82,7 @@ router.delete('/:id', (req, res) => {
 router.get('/:id/download/:type', (req, res) => {
   const { id, type } = req.params;
   if (!['flyer', 'cbr'].includes(type)) return res.status(400).json({ error: 'Invalid type' });
-  const filePath = path.join(__dirname, '..', '..', 'output', id, `${type}.pdf`);
+  const filePath = path.join(OUTPUT_ROOT, id, `${type}.pdf`);
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'PDF not yet generated' });
   const deal = getDb().prepare('SELECT deal_name FROM deals WHERE id = ?').get(id);
   const filename = `${(deal?.deal_name || id).replace(/[^a-z0-9]/gi, '_')}_${type}.pdf`;

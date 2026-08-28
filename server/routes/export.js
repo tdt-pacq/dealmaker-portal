@@ -3,6 +3,7 @@ const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs');
 const { getDb } = require('../database');
+const { OUTPUT_ROOT } = require('../paths');
 
 const router = express.Router();
 
@@ -38,7 +39,7 @@ router.post('/flyer/:id', async (req, res) => {
   if (!deal) return res.status(404).json({ error: 'Deal not found' });
   if (!deal.flyer_html) return res.status(400).json({ error: 'Flyer not yet generated. Run Generate Flyer first.' });
 
-  const outputDir = path.join(__dirname, '..', '..', 'output', req.params.id);
+  const outputDir = path.join(OUTPUT_ROOT, req.params.id);
   fs.mkdirSync(outputDir, { recursive: true });
   const outputPath = path.join(outputDir, 'flyer.pdf');
 
@@ -57,7 +58,7 @@ router.post('/cbr/:id', async (req, res) => {
   if (!deal) return res.status(404).json({ error: 'Deal not found' });
   if (!deal.cbr_html) return res.status(400).json({ error: 'CBR not yet generated. Run Generate CBR first.' });
 
-  const outputDir = path.join(__dirname, '..', '..', 'output', req.params.id);
+  const outputDir = path.join(OUTPUT_ROOT, req.params.id);
   fs.mkdirSync(outputDir, { recursive: true });
   const outputPath = path.join(outputDir, 'cbr.pdf');
 

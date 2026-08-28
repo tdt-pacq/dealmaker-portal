@@ -43,7 +43,7 @@ async function researchBuyer(buyer) {
 
   // ── Call 1: Web research ──────────────────────────────────────────────────
   const researchResp = await anthropic.messages.create({
-    model: 'claude-sonnet-4-5',
+    model: 'claude-sonnet-5',
     max_tokens: 6000,
     tools: [{ type: 'web_search_20250305', name: 'web_search' }],
     system: `You are a buyer intelligence researcher for Peterson Acquisitions — The Deal Team, a top SBA acquisition advisory firm. Research potential business acquisition buyers online to help advisors prepare for sales calls. Search LinkedIn, news articles, company websites, social media, and public directories. Report everything you find about their background, career, business experience, personality signals, and online presence. Be thorough and factual — only report what you actually find.`,
@@ -76,7 +76,7 @@ Report all findings in plain text.`,
 
   // ── Call 2: Generate structured report ───────────────────────────────────
   const reportResp = await anthropic.messages.create({
-    model: 'claude-sonnet-4-5',
+    model: 'claude-sonnet-5',
     max_tokens: 6000,
     system: `You are an expert sales strategist and buyer psychologist for Peterson Acquisitions — The Deal Team. Based on online research and buyer info, generate a structured buyer intelligence report. The five framework sections (Desire, Identity, Block, Capacity, Future) represent stages of a sales conversation — generate customized questions and advisor talking points for each stage based on what you know about this specific person. Make everything highly personalized to this individual. Return only valid JSON.`,
     messages: [{

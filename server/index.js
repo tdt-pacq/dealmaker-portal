@@ -39,8 +39,9 @@ const redactRouter      = require('./routes/redact');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Ensure output directory exists
-fs.mkdirSync(path.join(__dirname, '..', 'output'), { recursive: true });
+// Ensure output directory exists (persisted at /data/output on Render; local fallback for dev)
+const { OUTPUT_ROOT } = require('./paths');
+fs.mkdirSync(OUTPUT_ROOT, { recursive: true });
 
 // In production Express serves the React build directly (same origin — no CORS needed).
 // In dev the Vite dev server runs on :3000 and needs CORS to reach the API on :3001.
@@ -71,7 +72,7 @@ app.use('/api/otp',          otpRouter);
 app.use('/api/redact',       redactRouter);
 
 // Serve generated output files (auth required)
-app.use('/output', basicAuth, express.static(path.join(__dirname, '..', 'output')));
+app.use('/output', basicAuth, express.static(OUTPUT_ROOT));
 
 // Health check (no auth)
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));

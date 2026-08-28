@@ -206,7 +206,7 @@ async function searchOnMarket(profile) {
 
   // ── Call 1: Search and gather raw listing data ────────────────────────────
   const searchResp = await anthropic.messages.create({
-    model: 'claude-sonnet-4-5',
+    model: 'claude-sonnet-5',
     max_tokens: 6000,
     tools: [{ type: 'web_search_20250305', name: 'web_search' }],
     system: `You are a business listing researcher. Use web_search to find real, current, for-sale business listings on BizBuySell, BizQuest, Sunbelt, Murphy Business, and BusinessBroker.net. For each listing you find, extract: the business name, asking price, gross revenue, cash flow, city/state, a brief description, the source platform, the full listing URL, and the broker name. Report everything you find in plain text.`,
@@ -236,7 +236,7 @@ For every real listing you find, write out all the details: name, asking price, 
 
   // ── Call 2: Extract gathered data into clean JSON ─────────────────────────
   const extractResp = await anthropic.messages.create({
-    model: 'claude-sonnet-4-5',
+    model: 'claude-sonnet-5',
     max_tokens: 4000,
     system: `You are a data extraction assistant. Extract every business-for-sale listing mentioned from research notes into a JSON array. IMPORTANT: Include listings even if only partial data is available — a listing with just a name and platform is still useful. Use "Not Disclosed" for any missing financial fields. Never return an empty array if any listing was mentioned.`,
     messages: [{
@@ -280,7 +280,7 @@ async function searchOffMarket(profile) {
   console.log(`[Deal Finder] Starting off-market search — industry: ${profile.industry}, location: ${profile.location}`);
 
   const resp = await anthropic.messages.create({
-    model: 'claude-sonnet-4-5',
+    model: 'claude-sonnet-5',
     max_tokens: 4000,
     tools: [{ type: 'web_search_20250305', name: 'web_search' }],
     system: `You are a business prospecting researcher for Peterson Acquisitions — The Deal Team, a top SBA acquisition advisory firm.
