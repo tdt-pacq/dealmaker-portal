@@ -64,3 +64,6 @@ export const extractInterview = (formData) =>
 
 // Users
 export const fetchCurrentUser = () => api.get('/users/me');
+
+// Deal events / audit trail
+export const fetchDealEvents = (id) => api.get(`/deals/${id}/events`);

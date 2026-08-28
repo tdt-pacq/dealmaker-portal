@@ -75,7 +75,9 @@ export default function Dashboard() {
               <option value="">All Statuses</option>
               <option value="draft">Draft</option>
               <option value="active">Active</option>
+              <option value="under_contract">Under Contract</option>
               <option value="closed">Closed</option>
+              <option value="withdrawn">Withdrawn</option>
             </select>
             <select
               value={filterAdvisor}

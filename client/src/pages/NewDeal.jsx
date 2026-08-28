@@ -112,7 +112,9 @@ export default function NewDeal() {
                   <select value={status} onChange={e => setStatus(e.target.value)}>
                     <option value="draft">Draft</option>
                     <option value="active">Active</option>
+                    <option value="under_contract">Under Contract</option>
                     <option value="closed">Closed</option>
+                    <option value="withdrawn">Withdrawn</option>
                   </select>
                 </div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
@@ -166,12 +168,14 @@ export default function NewDeal() {
                 {ADVISORS.map(a => <option key={a} value={a}>{a}</option>)}
               </select>
             </div>
-            <div style={{ width: 130 }}>
+            <div style={{ width: 160 }}>
               <label>Status</label>
               <select value={status} onChange={e => setStatus(e.target.value)} onBlur={handleMetaUpdate}>
                 <option value="draft">Draft</option>
                 <option value="active">Active</option>
+                <option value="under_contract">Under Contract</option>
                 <option value="closed">Closed</option>
+                <option value="withdrawn">Withdrawn</option>
               </select>
             </div>
           </div>

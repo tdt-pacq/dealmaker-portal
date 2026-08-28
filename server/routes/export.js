@@ -2,7 +2,7 @@ const express = require('express');
 const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs');
-const { getDb } = require('../database');
+const { getDb, logEvent } = require('../database');
 const { OUTPUT_ROOT } = require('../paths');
 
 const router = express.Router();
@@ -45,6 +45,7 @@ router.post('/flyer/:id', async (req, res) => {
 
   try {
     await renderToPDF(deal.flyer_html, outputPath, false);
+    logEvent(req.params.id, req.user, 'pdf_exported', 'One-page flyer exported to PDF');
     res.json({ success: true, path: `/output/${req.params.id}/flyer.pdf` });
   } catch (err) {
     console.error('Flyer PDF error:', err);
@@ -64,6 +65,7 @@ router.post('/cbr/:id', async (req, res) => {
 
   try {
     await renderToPDF(deal.cbr_html, outputPath, true);
+    logEvent(req.params.id, req.user, 'pdf_exported', 'CBR exported to PDF');
     res.json({ success: true, path: `/output/${req.params.id}/cbr.pdf` });
   } catch (err) {
     console.error('CBR PDF error:', err);

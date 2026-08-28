@@ -4,8 +4,155 @@ import {
   fetchDeal, updateDeal,
   generateBlindAd, generateFlyer, generateCbr,
   exportFlyer, exportCbr,
-  downloadUrl, getAuth
+  downloadUrl, getAuth, fetchDealEvents
 } from '../api';
+
+const PIPELINE_STAGES = ['draft', 'active', 'under_contract', 'closed'];
+const STAGE_LABELS = { draft: 'Draft', active: 'Active', under_contract: 'Under Contract', closed: 'Closed' };
+
+function PipelineBar({ status, dealId, onUpdate }) {
+  const [saving, setSaving] = useState(false);
+  const isWithdrawn = status === 'withdrawn';
+
+  const handleStageClick = async (stage) => {
+    if (stage === status || saving) return;
+    setSaving(true);
+    try {
+      await updateDeal(dealId, { status: stage });
+      onUpdate();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const activeIdx = PIPELINE_STAGES.indexOf(status);
+
+  return (
+    <div style={{ background: '#1e293b', border: '1px solid #2d3748', borderRadius: 8, padding: '14px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 0 }}>
+      {isWithdrawn ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+          <span style={{ fontSize: 13, color: '#ef4444', fontWeight: 600 }}>⊗ Withdrawn</span>
+          <button className="btn-ghost btn-sm" style={{ marginLeft: 'auto' }} onClick={() => handleStageClick('draft')}>
+            Reactivate as Draft
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: 0 }}>
+          {PIPELINE_STAGES.map((stage, i) => {
+            const isPast = i < activeIdx;
+            const isCurrent = i === activeIdx;
+            const isFuture = i > activeIdx;
+            return (
+              <React.Fragment key={stage}>
+                <button
+                  onClick={() => handleStageClick(stage)}
+                  disabled={saving}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                    background: 'none', border: 'none', cursor: isCurrent ? 'default' : 'pointer',
+                    padding: '4px 12px', borderRadius: 6, transition: 'background 0.15s',
+                    opacity: saving ? 0.6 : 1,
+                  }}
+                  title={isCurrent ? `Current stage: ${STAGE_LABELS[stage]}` : `Move to ${STAGE_LABELS[stage]}`}
+                >
+                  <div style={{
+                    width: 28, height: 28, borderRadius: '50%', border: `2px solid ${isCurrent ? '#2eb860' : isPast ? '#1a5e35' : '#2d3748'}`,
+                    background: isCurrent ? '#2eb860' : isPast ? '#1a5e35' : '#0f1117',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, color: isCurrent ? '#fff' : isPast ? '#4ade80' : '#475569',
+                    fontWeight: 700,
+                  }}>
+                    {isPast ? '✓' : i + 1}
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: isCurrent ? 700 : 400, color: isCurrent ? '#e2e8f0' : isPast ? '#4ade80' : '#475569', whiteSpace: 'nowrap' }}>
+                    {STAGE_LABELS[stage]}
+                  </span>
+                </button>
+                {i < PIPELINE_STAGES.length - 1 && (
+                  <div style={{ flex: 1, height: 2, background: isPast ? '#1a5e35' : '#2d3748', minWidth: 20 }} />
+                )}
+              </React.Fragment>
+            );
+          })}
+          <button
+            className="btn-ghost btn-sm"
+            onClick={() => handleStageClick('withdrawn')}
+            disabled={saving}
+            style={{ marginLeft: 16, color: '#ef4444', flexShrink: 0 }}
+            title="Mark as withdrawn"
+          >
+            ✕ Withdraw
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const EVENT_ICONS = {
+  deal_created: '🆕',
+  status_changed: '🔄',
+  blind_ad_generated: '📋',
+  flyer_generated: '🗂️',
+  cbr_generated: '📊',
+  pdf_exported: '↓',
+};
+
+function ActivityTab({ dealId }) {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDealEvents(dealId)
+      .then(r => setEvents(r.data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [dealId]);
+
+  function fmtTime(iso) {
+    const d = new Date(iso);
+    return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+
+  return (
+    <div className="output-panel" style={{ padding: 24 }}>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>
+          <div className="spinner spinner-dark" style={{ width: 24, height: 24, borderWidth: 3, display: 'inline-block' }} />
+        </div>
+      ) : events.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">📋</div>
+          <div className="empty-state-title">No Activity Yet</div>
+          <p>Events are logged when documents are generated, PDFs exported, or the deal status changes.</p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {events.map((ev, i) => (
+            <div key={ev.id} style={{ display: 'flex', gap: 16, paddingBottom: 20, position: 'relative' }}>
+              {/* Connector line */}
+              {i < events.length - 1 && (
+                <div style={{ position: 'absolute', left: 14, top: 30, bottom: 0, width: 2, background: '#1e293b' }} />
+              )}
+              <div style={{
+                width: 30, height: 30, borderRadius: '50%', background: '#1e293b', border: '1px solid #2d3748',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0, zIndex: 1,
+              }}>
+                {EVENT_ICONS[ev.event_type] || '•'}
+              </div>
+              <div style={{ paddingTop: 4 }}>
+                <div style={{ fontSize: 14, color: '#e2e8f0', fontWeight: 500 }}>{ev.description}</div>
+                <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+                  {ev.user_display_name} · {fmtTime(ev.created_at)}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function friendlyError(err) {
   const status = err.response?.status;
@@ -439,12 +586,16 @@ export default function DealDetail() {
         </div>
       )}
 
+      {/* Pipeline stage bar */}
+      <PipelineBar status={deal.status} dealId={deal.id} onUpdate={loadDeal} />
+
       {/* Output tabs */}
       <div className="tabs">
         {[
           { id: 'blind-ad', label: '📋 Blind Ad', hasContent: !!deal.blind_ad_text },
           { id: 'flyer', label: '🗂️ One-Page Flyer', hasContent: !!deal.flyer_html },
           { id: 'cbr', label: '📊 CBR', hasContent: !!deal.cbr_html },
+          { id: 'activity', label: '🕐 Activity', hasContent: false },
         ].map(tab => (
           <button
             key={tab.id}
@@ -465,6 +616,7 @@ export default function DealDetail() {
       {activeTab === 'blind-ad' && <BlindAdTab deal={deal} onUpdate={loadDeal} />}
       {activeTab === 'flyer' && <FlyerTab deal={deal} onUpdate={loadDeal} />}
       {activeTab === 'cbr' && <CbrTab deal={deal} onUpdate={loadDeal} />}
+      {activeTab === 'activity' && <ActivityTab dealId={deal.id} />}
     </>
   );
 }

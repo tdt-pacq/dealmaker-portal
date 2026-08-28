@@ -3501,7 +3501,7 @@ const ReviewModal=({reviewData,onApply,onCancel})=>{
 };
 
 /* ── Auth ──────────────────────────────────────────── */
-const ALLOWED_DOMAINS = ['thedealteam.co'];
+const ALLOWED_DOMAINS = ['petersonacquisitions.com', 'thedealteam.co'];
 const isAllowed = email => ALLOWED_DOMAINS.some(d => email.endsWith('@' + d));
 
 const SignInScreen = ({denied}) => {

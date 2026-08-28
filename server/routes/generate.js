@@ -1,6 +1,6 @@
 const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
-const { getDb } = require('../database');
+const { getDb, logEvent } = require('../database');
 
 const router = express.Router();
 
@@ -119,6 +119,7 @@ Output the ad exactly as formatted above. Plain text only.`
     const blindAdText = message.content[0].text;
     getDb().prepare('UPDATE deals SET blind_ad_text = ?, updated_at = ? WHERE id = ?')
       .run(blindAdText, new Date().toISOString(), deal_id);
+    logEvent(deal_id, req.user, 'blind_ad_generated', 'Blind ad generated');
     res.json({ blind_ad_text: blindAdText });
   } catch (err) {
     console.error('Blind ad generation error:', err);
@@ -261,6 +262,7 @@ Output ONLY the complete HTML document starting with <!DOCTYPE html>. Nothing be
     const flyerHtml = message.content[0].text;
     getDb().prepare('UPDATE deals SET flyer_html = ?, updated_at = ? WHERE id = ?')
       .run(flyerHtml, new Date().toISOString(), deal_id);
+    logEvent(deal_id, req.user, 'flyer_generated', 'One-page flyer generated');
     res.json({ flyer_html: flyerHtml });
   } catch (err) {
     console.error('Flyer generation error:', err);
@@ -559,14 +561,14 @@ Right column (40%):
   - Full dark ${brandColor} background panel
   - "NEXT STEPS" Oswald 24px white
   - Numbered list: 1) Execute NDA 2) Review this CBR 3) Schedule Seller Meeting 4) Submit Letter of Intent
-  - Bottom CTA box in #C1622F: "READY TO MOVE FORWARD?" + "Contact your advisor today" + thedealteam.co
+  - Bottom CTA box in #C1622F: "READY TO MOVE FORWARD?" + "Contact your advisor today" + petersonacquisitions.com
   - Copyright footer: "©${new Date().getFullYear()} Peterson Acquisitions · Confidential Business Review · All Rights Reserved"
 
 ━━━ FOOTER (on all content pages) ━━━
 Every content-page ends with a .page-footer div:
 Left: "© ${new Date().getFullYear()} Peterson Acquisitions"
 Center: "Confidential Business Review · [industry/type descriptor, no business name]"
-Right: "thedealteam.co"
+Right: "petersonacquisitions.com"
 
 Business data: ${JSON.stringify(interviewData, null, 2)}
 Advisor: ${deal.advisor_name}
@@ -581,6 +583,7 @@ IMPORTANT: Follow the PAGE BREAK RULES exactly — content pages use page-break-
     const cleanHtml = cbrHtml.replace(/^```html\n?/, '').replace(/\n?```$/, '').trim();
     getDb().prepare('UPDATE deals SET cbr_html = ?, updated_at = ? WHERE id = ?')
       .run(cleanHtml, new Date().toISOString(), deal_id);
+    logEvent(deal_id, req.user, 'cbr_generated', 'Confidential Business Review generated');
     res.json({ cbr_html: cleanHtml });
   } catch (err) {
     console.error('CBR generation error:', err);

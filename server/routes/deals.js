@@ -2,7 +2,7 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const fs = require('fs');
-const { getDb } = require('../database');
+const { getDb, logEvent } = require('../database');
 const { OUTPUT_ROOT } = require('../paths');
 
 const router = express.Router();
@@ -35,6 +35,7 @@ router.post('/', (req, res) => {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).run(id, deal_name, status, now, now, advisor_name, '{}', listing_platform_notes || '');
   const deal = getDb().prepare('SELECT * FROM deals WHERE id = ?').get(id);
+  logEvent(id, req.user, 'deal_created', `Deal "${deal_name}" created`);
   res.status(201).json(deal);
 });
 
@@ -61,6 +62,16 @@ router.patch('/:id', (req, res) => {
     }
   }
   if (!updates.length) return res.status(400).json({ error: 'No valid fields to update' });
+
+  // Log status change before updating
+  if ('status' in req.body) {
+    const oldDeal = getDb().prepare('SELECT status FROM deals WHERE id = ?').get(req.params.id);
+    if (oldDeal && oldDeal.status !== req.body.status) {
+      logEvent(req.params.id, req.user, 'status_changed',
+        `Status changed from "${oldDeal.status}" to "${req.body.status}"`);
+    }
+  }
+
   updates.push('updated_at = ?');
   params.push(new Date().toISOString());
   params.push(req.params.id);
@@ -78,6 +89,14 @@ router.delete('/:id', (req, res) => {
   const outputDir = path.join(OUTPUT_ROOT, req.params.id);
   if (fs.existsSync(outputDir)) fs.rmSync(outputDir, { recursive: true });
   res.json({ success: true });
+});
+
+// GET /api/deals/:id/events
+router.get('/:id/events', (req, res) => {
+  const events = getDb()
+    .prepare('SELECT * FROM deal_events WHERE deal_id = ? ORDER BY created_at DESC LIMIT 100')
+    .all(req.params.id);
+  res.json(events);
 });
 
 // GET /api/deals/:id/download/:type  (flyer | cbr)

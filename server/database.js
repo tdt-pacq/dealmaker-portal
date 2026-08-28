@@ -66,6 +66,23 @@ function initSchema() {
   `);
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS deal_events (
+      id               TEXT PRIMARY KEY,
+      deal_id          TEXT NOT NULL,
+      user_id          TEXT,
+      user_display_name TEXT,
+      event_type       TEXT NOT NULL,
+      description      TEXT NOT NULL,
+      created_at       TEXT NOT NULL,
+      FOREIGN KEY (deal_id) REFERENCES deals(id) ON DELETE CASCADE
+    )
+  `);
+  // Index for fast per-deal event lookup
+  try {
+    db.exec('CREATE INDEX IF NOT EXISTS idx_deal_events_deal_id ON deal_events (deal_id, created_at DESC)');
+  } catch (_) { /* already exists */ }
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS deal_finder_searches (
       id          TEXT PRIMARY KEY,
       buyer_name  TEXT NOT NULL,
@@ -308,4 +325,22 @@ function seedUsers() {
   }
 }
 
-module.exports = { getDb, seedTestDeal, seedUsers };
+// Log a deal event. user may be null for system events.
+function logEvent(dealId, user, eventType, description) {
+  try {
+    getDb().prepare(`
+      INSERT INTO deal_events (id, deal_id, user_id, user_display_name, event_type, description, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      uuidv4(), dealId,
+      user?.id || null,
+      user?.display_name || 'System',
+      eventType, description,
+      new Date().toISOString()
+    );
+  } catch (e) {
+    console.error('[Events] logEvent failed:', e.message);
+  }
+}
+
+module.exports = { getDb, seedTestDeal, seedUsers, logEvent };
