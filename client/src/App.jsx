@@ -5,7 +5,9 @@ import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 
 const Home = lazy(() => import('./pages/Home'));
-const DealMarketingApp = lazy(() => import('./pages/marketing/DealMarketingApp'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const NewDeal = lazy(() => import('./pages/NewDeal'));
+const DealDetail = lazy(() => import('./pages/DealDetail'));
 const AnalyzerApp = lazy(() => import('./pages/analyzer/AnalyzerApp'));
 const DiscoveryPrepApp = lazy(() => import('./pages/discovery/DiscoveryPrepApp'));
 const AcqCalcApp = lazy(() => import('./pages/buyers/AcqCalcApp'));
@@ -199,7 +201,10 @@ export default function App() {
             }>
               <Routes>
                 <Route path="/" element={<Home />} />
-                <Route path="/marketing/*" element={<DealMarketingApp />} />
+                <Route path="/marketing" element={<Dashboard />} />
+                <Route path="/marketing/deals/new" element={<NewDeal />} />
+                <Route path="/marketing/deals/:id/edit" element={<NewDeal />} />
+                <Route path="/marketing/deals/:id" element={<DealDetail />} />
                 <Route path="/discovery" element={<DiscoveryPrepApp />} />
                 <Route path="/analyzer" element={<AnalyzerApp />} />
                 <Route path="/analyzer/*" element={<AnalyzerApp />} />

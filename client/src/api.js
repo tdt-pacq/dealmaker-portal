@@ -61,3 +61,6 @@ export const extractInterview = (formData) =>
     headers: { 'Content-Type': 'multipart/form-data' },
     timeout: 120000 // 2 min — Claude may take 20-30s for large docs
   });
+
+// Users
+export const fetchCurrentUser = () => api.get('/users/me');

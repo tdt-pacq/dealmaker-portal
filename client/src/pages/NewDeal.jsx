@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { fetchDeal, createDeal, updateDeal } from '../api';
+import { fetchDeal, createDeal, updateDeal, fetchCurrentUser } from '../api';
 import InterviewForm from '../components/InterviewForm';
 import DocumentExtractor from '../components/DocumentExtractor';
 
@@ -21,6 +21,15 @@ export default function NewDeal() {
   const [advisorName, setAdvisorName] = useState('');
   const [status, setStatus] = useState('draft');
   const [step, setStep] = useState(isEdit ? 'form' : 'meta');
+
+  // Pre-fill advisor from the logged-in user
+  useEffect(() => {
+    if (!isEdit) {
+      fetchCurrentUser().then(r => {
+        setAdvisorName(r.data.display_name || '');
+      }).catch(() => {});
+    }
+  }, [isEdit]);
 
   useEffect(() => {
     if (isEdit) {
