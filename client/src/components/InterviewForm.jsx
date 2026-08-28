@@ -93,30 +93,63 @@ function FinancialYear({ yearNum, data, onChange, onBlur }) {
   );
 }
 
+const DRAFT_KEY = id => `interview_draft_${id}`;
+
+function saveDraft(id, data) {
+  try { localStorage.setItem(DRAFT_KEY(id), JSON.stringify(data)); } catch { /* storage full */ }
+}
+
+function loadDraft(id) {
+  try { return JSON.parse(localStorage.getItem(DRAFT_KEY(id)) || 'null'); } catch { return null; }
+}
+
+function clearDraft(id) {
+  try { localStorage.removeItem(DRAFT_KEY(id)); } catch {}
+}
+
 export default function InterviewForm({ deal, onUpdate }) {
+  const serverData = (() => { try { return JSON.parse(deal.interview_data || '{}'); } catch { return {}; } })();
   const [data, setData] = useState(() => {
-    try { return JSON.parse(deal.interview_data || '{}'); } catch { return {}; }
+    const draft = loadDraft(deal.id);
+    // Restore draft if it has content the server doesn't
+    if (draft && JSON.stringify(draft) !== JSON.stringify(serverData)) return draft;
+    return serverData;
   });
   const [saveStatus, setSaveStatus] = useState('');
+  const [draftRestored, setDraftRestored] = useState(() => {
+    const draft = loadDraft(deal.id);
+    return !!(draft && JSON.stringify(draft) !== JSON.stringify(serverData));
+  });
   const saveTimeout = useRef(null);
 
-  // Update local state when deal prop changes
+  // When the deal prop updates from server (after save), sync only if no pending draft
   useEffect(() => {
-    try { setData(JSON.parse(deal.interview_data || '{}')); } catch { /* */ }
+    try {
+      const fresh = JSON.parse(deal.interview_data || '{}');
+      // Don't overwrite if user has a draft in progress
+      if (!loadDraft(deal.id)) setData(fresh);
+    } catch { /* */ }
   }, [deal.interview_data]);
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    setData(prev => ({ ...prev, [name]: value }));
-  }, []);
+    setData(prev => {
+      const next = { ...prev, [name]: value };
+      saveDraft(deal.id, next);
+      return next;
+    });
+  }, [deal.id]);
 
   const handleCheckbox = useCallback((name, checked) => {
     setData(prev => {
       const arr = prev[name] ? [...prev[name]] : [];
-      if (checked) return { ...prev, [name]: [...arr, name.startsWith('deal_team') ? checked : checked] };
-      return prev;
+      const next = checked
+        ? { ...prev, [name]: [...arr, name.startsWith('deal_team') ? checked : checked] }
+        : prev;
+      saveDraft(deal.id, next);
+      return next;
     });
-  }, []);
+  }, [deal.id]);
 
   const handleTeamToggle = useCallback((memberName) => {
     setData(prev => {
@@ -124,14 +157,18 @@ export default function InterviewForm({ deal, onUpdate }) {
       const updated = current.includes(memberName)
         ? current.filter(m => m !== memberName)
         : [...current, memberName];
-      return { ...prev, deal_team_members: updated };
+      const next = { ...prev, deal_team_members: updated };
+      saveDraft(deal.id, next);
+      return next;
     });
-  }, []);
+  }, [deal.id]);
 
   const triggerSave = useCallback(async (latestData) => {
     setSaveStatus('saving');
     try {
       await updateDeal(deal.id, { interview_data: JSON.stringify(latestData) });
+      clearDraft(deal.id);
+      setDraftRestored(false);
       setSaveStatus('saved');
       if (onUpdate) onUpdate();
       setTimeout(() => setSaveStatus(''), 2500);
@@ -652,6 +689,31 @@ export default function InterviewForm({ deal, onUpdate }) {
           <F label="Seller Brand Color (for CBR section accents)" name="seller_brand_color" type="color"
             hint="Pulled from seller's branding. Defaults to dark green #2D5016 if not specified." />
         </Section>
+
+        {/* Draft restored banner */}
+        {draftRestored && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: '#fff8e1', border: '1px solid #f59e0b', borderRadius: 6,
+            padding: '10px 16px', margin: '16px 0', fontSize: 13, gap: 12,
+          }}>
+            <span>
+              <strong>Draft restored</strong> — you have unsaved edits from your last session.
+              Click any field and tab away to sync to the server.
+            </span>
+            <button
+              className="btn-ghost btn-sm"
+              style={{ flexShrink: 0 }}
+              onClick={() => {
+                clearDraft(deal.id);
+                setDraftRestored(false);
+                try { setData(JSON.parse(deal.interview_data || '{}')); } catch { /* */ }
+              }}
+            >
+              Discard draft
+            </button>
+          </div>
+        )}
 
         {/* Autosave indicator */}
         <div className={`autosave-indicator ${saveStatus ? 'visible' : ''}`}>
