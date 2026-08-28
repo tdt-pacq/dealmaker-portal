@@ -1,8 +1,9 @@
 const Database = require('better-sqlite3');
+const bcrypt = require('bcryptjs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
-// In production set DB_PATH=/data/pacq_deals.db and mount a Railway persistent volume at /data.
+// In production set DB_PATH=/data/pacq_deals.db and mount a Render persistent disk at /data.
 // Falls back to server/pacq_deals.db for local dev.
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'pacq_deals.db');
 
@@ -18,6 +19,18 @@ function getDb() {
 }
 
 function initSchema() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id           TEXT PRIMARY KEY,
+      username     TEXT NOT NULL UNIQUE,
+      display_name TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      role         TEXT NOT NULL DEFAULT 'advisor',
+      active       INTEGER NOT NULL DEFAULT 1,
+      created_at   TEXT NOT NULL
+    )
+  `);
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS discovery_reports (
       id          TEXT PRIMARY KEY,
@@ -268,4 +281,31 @@ function seedTestDeal() {
   console.log(`Seeded test deal: ${testDeal.deal_name} (${testDeal.id})`);
 }
 
-module.exports = { getDb, seedTestDeal };
+// Seed the initial advisor accounts if the users table is empty.
+// Initial password = username (e.g. michael/michael). Change via PATCH /api/users/:id/password.
+function seedUsers() {
+  const existing = getDb().prepare('SELECT COUNT(*) as n FROM users').get();
+  if (existing.n > 0) return;
+
+  const now = new Date().toISOString();
+  const advisors = [
+    { username: 'michael', display_name: 'Michael',  role: 'admin'   },
+    { username: 'robin',   display_name: 'Robin',    role: 'advisor' },
+    { username: 'alisha',  display_name: 'Alisha',   role: 'advisor' },
+    { username: 'lee',     display_name: 'Lee',      role: 'advisor' },
+    { username: 'lance',   display_name: 'Lance',    role: 'advisor' },
+  ];
+
+  const insert = getDb().prepare(`
+    INSERT INTO users (id, username, display_name, password_hash, role, active, created_at)
+    VALUES (?, ?, ?, ?, ?, 1, ?)
+  `);
+
+  for (const a of advisors) {
+    const hash = bcrypt.hashSync(a.username, 10);
+    insert.run(uuidv4(), a.username, a.display_name, hash, a.role, now);
+    console.log(`[Auth] Seeded user: ${a.username} (${a.role}) — initial password: "${a.username}"`);
+  }
+}
+
+module.exports = { getDb, seedTestDeal, seedUsers };

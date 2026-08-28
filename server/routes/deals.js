@@ -23,7 +23,9 @@ router.get('/', (req, res) => {
 
 // POST /api/deals
 router.post('/', (req, res) => {
-  const { deal_name, advisor_name, status = 'draft', listing_platform_notes } = req.body;
+  const { deal_name, status = 'draft', listing_platform_notes } = req.body;
+  // Auto-populate advisor_name from the authenticated user; allow override for admin/migration use
+  const advisor_name = req.body.advisor_name || (req.user?.display_name ?? '');
   if (!deal_name) return res.status(400).json({ error: 'deal_name required' });
   const id = uuidv4();
   const now = new Date().toISOString();
@@ -31,7 +33,7 @@ router.post('/', (req, res) => {
     INSERT INTO deals (id, deal_name, status, created_at, updated_at, advisor_name,
       interview_data, listing_platform_notes)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(id, deal_name, status, now, now, advisor_name || '', '{}', listing_platform_notes || '');
+  `).run(id, deal_name, status, now, now, advisor_name, '{}', listing_platform_notes || '');
   const deal = getDb().prepare('SELECT * FROM deals WHERE id = ?').get(id);
   res.status(201).json(deal);
 });

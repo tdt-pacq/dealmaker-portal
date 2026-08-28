@@ -25,8 +25,9 @@ const aiLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'AI request limit reached. Please wait a few minutes before trying again.' },
 });
-const { getDb, seedTestDeal } = require('./database');
+const { getDb, seedTestDeal, seedUsers } = require('./database');
 const dealsRouter = require('./routes/deals');
+const usersRouter = require('./routes/users');
 const generateRouter = require('./routes/generate');
 const exportRouter = require('./routes/export');
 const extractRouter = require('./routes/extract');
@@ -61,6 +62,7 @@ app.post('/api/discovery',            aiLimiter);
 app.use('/api/buyer-intel/research', aiLimiter);
 app.use('/api/deal-finder/:id/run',  aiLimiter);
 
+app.use('/api/users',        usersRouter);
 app.use('/api/deals',        dealsRouter);
 app.use('/api/generate',     generateRouter);
 app.use('/api/export',       exportRouter);
@@ -98,7 +100,10 @@ if (fs.existsSync(clientBuild)) {
   app.get('*', (req, res) => res.sendFile(path.join(clientBuild, 'index.html')));
 }
 
-// Seed test data in development only
+// Seed initial users (idempotent — only runs if users table is empty)
+seedUsers();
+
+// Seed test deal data in development only
 if (process.env.NODE_ENV !== 'production') {
   seedTestDeal();
 }
@@ -123,5 +128,5 @@ cron.schedule('0 7 * * *', async () => {
 
 app.listen(PORT, () => {
   console.log(`PACQ server running on http://localhost:${PORT}`);
-  console.log(`Auth: ${process.env.TEAM_USERNAME} / [password from .env]`);
+  console.log(`Auth: per-user bcrypt (initial password = username)`);
 });
