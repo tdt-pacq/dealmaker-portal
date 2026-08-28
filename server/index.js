@@ -26,6 +26,7 @@ const aiLimiter = rateLimit({
   message: { error: 'AI request limit reached. Please wait a few minutes before trying again.' },
 });
 const { getDb, seedTestDeal, seedUsers } = require('./database');
+const { runBackup } = require('./backup');
 const dealsRouter = require('./routes/deals');
 const usersRouter = require('./routes/users');
 const generateRouter = require('./routes/generate');
@@ -79,6 +80,13 @@ app.use('/output', basicAuth, express.static(OUTPUT_ROOT));
 // Health check (no auth)
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
+// Manual backup trigger (admin only)
+app.post('/api/admin/backup', basicAuth, async (req, res) => {
+  if (req.user?.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+  res.json({ message: 'Backup started — check server logs for result.' });
+  runBackup().catch(e => console.error('[Backup] Manual trigger failed:', e.message));
+});
+
 // Serve root index.html (Deal Marketing — has its own Firebase auth, no basic auth needed)
 const rootHtml = path.join(__dirname, '..', 'index.html');
 app.get('/pacq-app', (req, res) => res.sendFile(rootHtml));
@@ -107,6 +115,12 @@ seedUsers();
 if (process.env.NODE_ENV !== 'production') {
   seedTestDeal();
 }
+
+// ─── Database Backup — Daily Cron ────────────────────────────────────────────
+// Runs at 2:00am Eastern — before business hours, after Deal Finder emails
+cron.schedule('0 2 * * *', () => {
+  runBackup().catch(e => console.error('[Backup] Unhandled error:', e.message));
+}, { timezone: 'America/New_York' });
 
 // ─── Deal Finder — Daily Cron ─────────────────────────────────────────────────
 // Runs every morning at 7:00am Mountain Time for all active search profiles
