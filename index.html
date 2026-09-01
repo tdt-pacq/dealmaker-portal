@@ -479,7 +479,8 @@ label{display:block;font-size:13px;font-weight:500;color:#94a3b8;margin-bottom:4
 <script>
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
-const ALLOWED_DOMAIN   = 'petersonacquisitions.com';
+const ALLOWED_DOMAINS  = ['petersonacquisitions.com', 'thedealteam.co'];
+const ALLOWED_DOMAIN   = ALLOWED_DOMAINS[0]; // primary domain for Google OAuth hint
 const PACQ_FOLDER_NAME = 'PACQ Deals';
 const GOOGLE_CLIENT_ID = '364758287464-2p3ulpojl7kkg4gi3d66b9vpsuohcfkd.apps.googleusercontent.com';
 const DRIVE_SCOPE      = 'https://www.googleapis.com/auth/drive';
@@ -489,7 +490,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 function getApiKey() { return localStorage.getItem('pacq_api_key') || DEFAULT_API_KEY; }
-function isAllowedEmail(e) { return e && e.toLowerCase().endsWith('@' + ALLOWED_DOMAIN); }
+function isAllowedEmail(e) { return e && ALLOWED_DOMAINS.some(d => e.toLowerCase().endsWith('@' + d)); }
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
 
@@ -3115,7 +3116,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (user) {
       firebase.auth().signOut();
       const err = document.getElementById('l-err');
-      err.textContent = 'Access restricted to @' + ALLOWED_DOMAIN + ' accounts.';
+      err.textContent = 'Access restricted to @' + ALLOWED_DOMAINS.join(' or @') + ' accounts.';
       err.classList.remove('hidden');
       document.getElementById('login-loading').style.display = 'none';
     } else {
