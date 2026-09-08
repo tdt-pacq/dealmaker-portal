@@ -171,7 +171,7 @@ export default function EngagementsList() {
           </div>
           <div style={{ marginTop: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ fontSize: 12, color: '#64748b', maxWidth: 640 }}>
-              Per-seller packet only. Firmwide 12-section skeleton is fixed. MPA sellability / FMV stay blank until sourced — no invented numbers.
+              Per-seller packet only. 12-section skeleton is fixed. Stack seeds the Lead Engine 13-item list (editable). Engagement fee is fill-in — no invented numbers.
             </div>
             <button type="submit" className="btn-primary btn-lg" disabled={creating}>
               {creating ? 'Creating…' : 'Create private proposal →'}

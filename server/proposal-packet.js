@@ -1,31 +1,45 @@
 /**
- * Seller Engagement Proposal — data packet + commercial defaults.
+ * Seller Engagement Proposal — data packet defaults.
  *
- * Commercial figures are provisional-canonical from the PACQ Leader call
- * (Drive commercial packet). Overrideable later — do not invent new numbers.
+ * §8 stack: Lead Engine reconciled 13-item firm list (Michael Decide).
+ * Still editable per proposal. Representation term on item 13 is a fill-in.
+ *
+ * §9 engagement fee: fill-in only — do not default $2,500 or $23,000.
+ * Success commission % is fill-in; $25,000 floor is the EA template pattern.
  */
 
-const ENGAGEMENT_STACK_ITEMS = [
-  'QSI™ Discovery Experience',
-  'Trifecta Market Price Analysis™',
-  'PFAScore™ (Potential for Acquisition Self-Assessment)',
-  'Business Intelligence Report™',
-  'Complete QSI™ Business Model Review',
-  'Business Value Optimization Report™ (BVO)',
-  'QSI™ Confidential Buyer Network',
-  'Buyer Intelligence Report™ (per vetted buyer)',
-  'Dedicated Deal Team™',
-  'QSI™ Seller Mastery Training',
+const ENGAGEMENT_STACK_LABELS = [
+  'QSI Discovery Experience',
+  'Trifecta Market Price Analysis',
+  'PFAScore',
+  'Business Intelligence Report',
+  'Complete QSI Business Model Review',
+  'BVO',
+  'QSI Seller Mastery (Seller’s Club)',
+  'Confidential Business Review (CBR)',
+  'Confidentiality Protection',
+  'Market Launch & Targeted Buyer Outreach',
+  'Buyer Qualification & Buyer Intelligence Report',
+  'Lender Positioning, Offer & Structure Support',
+  'Dedicated Deal Team through Close (DD + representation term fill-in)',
 ];
 
+function defaultStackItems() {
+  return ENGAGEMENT_STACK_LABELS.map((label, i) => (
+    i === 12
+      ? { label, representationTermMonths: '' }
+      : { label }
+  ));
+}
+
 const COMMERCIAL_PACKET = {
-  status: 'provisional_canonical',
-  source: 'Drive commercial packet (PACQ Leader call)',
-  launchFee: 2500,
-  marketValueSum: 22250,
-  successCommissionPct: '', // fill-in — do not invent a %
+  status: 'lead_engine_reconciled',
+  source: 'Lead Engine reconciled firm stack (Michael Decide)',
+  launchFee: '',
+  marketValueSum: '',
+  successCommissionPct: '',
   successCommissionFloor: 25000,
-  engagementStackItems: ENGAGEMENT_STACK_ITEMS,
+  engagementStackItems: ENGAGEMENT_STACK_LABELS,
 };
 
 function emptyCover() {
@@ -39,6 +53,26 @@ function emptyCover() {
   };
 }
 
+function normalizeStackItem(item, index) {
+  if (typeof item === 'string') {
+    return index === 12
+      ? { label: item, representationTermMonths: '' }
+      : { label: item };
+  }
+  if (item && typeof item === 'object') {
+    const label = item.label || '';
+    const isCloseItem = index === 12 || /dedicated deal team through close/i.test(label);
+    if (isCloseItem) {
+      return {
+        label,
+        representationTermMonths: item.representationTermMonths ?? '',
+      };
+    }
+    return { label };
+  }
+  return { label: '' };
+}
+
 function defaultPacket(overrides = {}) {
   return mergePacket({
     cover: emptyCover(),
@@ -48,13 +82,13 @@ function defaultPacket(overrides = {}) {
     bir: { highlights: '' },
     engagementStack: {
       source: COMMERCIAL_PACKET.source,
-      items: [...ENGAGEMENT_STACK_ITEMS],
+      items: defaultStackItems(),
     },
     investment: {
-      source: COMMERCIAL_PACKET.source,
-      launchFee: COMMERCIAL_PACKET.launchFee,
-      marketValueSum: COMMERCIAL_PACKET.marketValueSum,
-      successCommissionPct: COMMERCIAL_PACKET.successCommissionPct,
+      source: 'Per-deal fill-in',
+      launchFee: '',
+      marketValueSum: '',
+      successCommissionPct: '',
       successCommissionFloor: COMMERCIAL_PACKET.successCommissionFloor,
       marketingExpense: '',
       thirdPartyCosts: '',
@@ -80,6 +114,12 @@ function mergePacket(base, incoming) {
     } else if (val !== undefined) {
       out[key] = val;
     }
+  }
+  if (Array.isArray(out.engagementStack?.items)) {
+    out.engagementStack = {
+      ...out.engagementStack,
+      items: out.engagementStack.items.map(normalizeStackItem),
+    };
   }
   return out;
 }
@@ -113,7 +153,8 @@ function publicRow(row) {
 
 module.exports = {
   COMMERCIAL_PACKET,
-  ENGAGEMENT_STACK_ITEMS,
+  ENGAGEMENT_STACK_LABELS,
+  defaultStackItems,
   defaultPacket,
   mergePacket,
   parsePacket,

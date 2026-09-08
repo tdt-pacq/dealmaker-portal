@@ -206,7 +206,14 @@ export default function ProposalPage() {
 
   const cover = packet.cover || {};
   const inv = packet.investment || {};
-  const stackItems = packet.engagementStack?.items || [];
+  const stackItems = Array.isArray(packet.engagementStack?.items) ? packet.engagementStack.items : [];
+  const setStackItems = (items) => setPacket(pk => ({
+    ...pk,
+    engagementStack: { ...pk.engagementStack, items },
+  }));
+  const stackLabel = (item) => (typeof item === 'string' ? item : (item?.label || ''));
+  const stackTerm = (item) => (typeof item === 'object' && item ? (item.representationTermMonths || '') : '');
+  const isCloseItem = (item, i) => i === 12 || /dedicated deal team through close/i.test(stackLabel(item));
   const hookBits = [
     proposal.analyzer_deal_slug && `MPA: ${proposal.analyzer_deal_slug}`,
     proposal.discovery_report_id && 'BIR linked',
@@ -381,37 +388,96 @@ export default function ProposalPage() {
       </Section>
 
       {/* 8 Stack */}
-      <Section id="stack" n="08" title="Engagement stack" kicker="What’s in the fee · Drive commercial packet">
-        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 14 }}>
-          Provisional-canonical from the PACQ Leader commercial packet. Overrideable later — not invented on this page.
+      <Section id="stack" n="08" title="Engagement stack" kicker="What’s in the fee · Lead Engine reconciled list">
+        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 14, lineHeight: 1.55 }}>
+          Default seed is the 13-item firm stack from Lead Engine (Michael Decide). Editable per proposal. Item 13 representation term is a fill-in — not a hardcoded duration.
         </div>
-        <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {stackItems.length === 0 && (
+          <Placeholder>Stack is empty on this packet. Add items or recreate the proposal to load the 13-item default seed.</Placeholder>
+        )}
+        <ol style={{ margin: stackItems.length ? '0 0 12px' : '12px 0 12px', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
           {stackItems.map((item, i) => (
-            <li key={item} style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              background: '#0d1117', border: '1px solid #1a2235', borderRadius: 8, padding: '10px 14px',
+            <li key={i} style={{
+              background: '#0d1117', border: '1px solid #1a2235', borderRadius: 8, padding: '10px 12px',
             }}>
-              <span style={{
-                fontFamily: 'Oswald, sans-serif', fontSize: 13, color: '#2eb860', minWidth: 22,
-              }}>{String(i + 1).padStart(2, '0')}</span>
-              <span style={{ fontSize: 14, color: '#e2e8f0' }}>{item}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{
+                  fontFamily: 'Oswald, sans-serif', fontSize: 13, color: '#2eb860', minWidth: 22,
+                }}>{String(i + 1).padStart(2, '0')}</span>
+                <input
+                  value={stackLabel(item)}
+                  onChange={e => {
+                    const next = [...stackItems];
+                    const cur = typeof item === 'object' && item ? { ...item } : { label: '' };
+                    cur.label = e.target.value;
+                    next[i] = cur;
+                    setStackItems(next);
+                  }}
+                  placeholder="Stack item"
+                />
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm"
+                  onClick={() => setStackItems(stackItems.filter((_, idx) => idx !== i))}
+                >
+                  Remove
+                </button>
+              </div>
+              {isCloseItem(item, i) && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, paddingLeft: 32 }}>
+                  <label style={{ marginBottom: 0, flexShrink: 0 }}>Representation term</label>
+                  <input
+                    value={stackTerm(item)}
+                    onChange={e => {
+                      const next = [...stackItems];
+                      const cur = typeof item === 'object' && item ? { ...item } : { label: stackLabel(item) };
+                      cur.representationTermMonths = e.target.value;
+                      next[i] = cur;
+                      setStackItems(next);
+                    }}
+                    placeholder="____ months"
+                    style={{ maxWidth: 160 }}
+                  />
+                  <span style={{ fontSize: 12, color: '#64748b' }}>months (fill-in — not a firm claim)</span>
+                </div>
+              )}
             </li>
           ))}
         </ol>
+        <button
+          type="button"
+          className="btn-ghost btn-sm"
+          onClick={() => setStackItems([...stackItems, { label: '' }])}
+        >
+          + Add stack item
+        </button>
       </Section>
 
       {/* 9 Investment */}
-      <Section id="invest" n="09" title="Investment" kicker="Fee / terms / in-out">
+      <Section id="invest" n="09" title="Investment" kicker="Fee / terms / in-out — fill-in">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
           <div style={{ background: '#0d1117', border: '1px solid #1a5e35', borderRadius: 8, padding: '18px 20px' }}>
-            <div style={{ fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: '#64748b', marginBottom: 6 }}>Launch engagement fee</div>
-            <div style={{ fontFamily: 'Oswald, sans-serif', fontSize: 32, color: '#2eb860' }}>{fmtMoney(inv.launchFee)}</div>
-            <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>From QSI Value Stack / Seller Program Overview (commercial packet)</div>
+            <Field
+              label="Engagement fee"
+              value={inv.launchFee === 0 || inv.launchFee ? String(inv.launchFee) : ''}
+              onChange={v => setPacket(pk => ({ ...pk, investment: { ...pk.investment, launchFee: v } }))}
+              placeholder="TBD — enter fee"
+              hint="Fill-in only. Do not assume $2,500 or $23,000 — enter the fee for this engagement."
+            />
+            {inv.launchFee !== '' && inv.launchFee != null && Number(String(inv.launchFee).replace(/[$,]/g, '')) > 0 && (
+              <div style={{ fontFamily: 'Oswald, sans-serif', fontSize: 28, color: '#2eb860', marginTop: 4 }}>
+                {fmtMoney(String(inv.launchFee).replace(/[$,]/g, ''))}
+              </div>
+            )}
           </div>
           <div style={{ background: '#0d1117', border: '1px solid #1a2235', borderRadius: 8, padding: '18px 20px' }}>
-            <div style={{ fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: '#64748b', marginBottom: 6 }}>Packet market-value anchors</div>
-            <div style={{ fontFamily: 'Oswald, sans-serif', fontSize: 32, color: '#e2e8f0' }}>{fmtMoney(inv.marketValueSum)}</div>
-            <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>Optional sum from the commercial packet — not an additional invoice line</div>
+            <Field
+              label="Optional market-value sum"
+              value={inv.marketValueSum === 0 || inv.marketValueSum ? String(inv.marketValueSum) : ''}
+              onChange={v => setPacket(pk => ({ ...pk, investment: { ...pk.investment, marketValueSum: v } }))}
+              placeholder="Optional — leave blank"
+              hint="Not an invoice line. Leave blank unless this deal has a labeled packet anchor."
+            />
           </div>
         </div>
         <div style={{ background: '#0d1117', border: '1px solid #1e2d45', borderRadius: 8, padding: '16px 18px', marginBottom: 12 }}>
