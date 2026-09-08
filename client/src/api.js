@@ -65,5 +65,17 @@ export const extractInterview = (formData) =>
 // Users
 export const fetchCurrentUser = () => api.get('/users/me');
 
+// Discovery (BIR / Business Intel hooks)
+export const fetchDiscoveryRecent = () => api.get('/discovery/recent');
+export const fetchDiscoveryReport = (id) => api.get(`/discovery/reports/${id}`);
+
+// Seller Engagement Proposals
+export const fetchProposals = () => api.get('/proposals');
+export const fetchProposal = (id) => api.get(`/proposals/${id}`);
+export const fetchProposalByToken = (token) => api.get(`/proposals/t/${token}`);
+export const createProposal = (data) => api.post('/proposals', data);
+export const updateProposal = (id, data) => api.patch(`/proposals/${id}`, data);
+export const deleteProposal = (id) => api.delete(`/proposals/${id}`);
+
 // Deal events / audit trail
 export const fetchDealEvents = (id) => api.get(`/deals/${id}/events`);

@@ -29,9 +29,10 @@ const TOOLS = [
   {
     id: 'engagements',
     icon: '🤝',
-    label: 'Engagements',
-    description: 'Track engagement agreements and seller onboarding status.',
-    live: false,
+    label: 'Engagement Proposal',
+    description: 'Private long-scroll seller engagement proposal — after MPA + BIR, for the Zoom walkthrough.',
+    href: '/engagements',
+    live: true,
   },
   {
     id: 'success-plan',
