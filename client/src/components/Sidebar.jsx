@@ -34,11 +34,20 @@ const PORTAL_SECTIONS = [
       { id: 'otp',          label: 'OTP',             icon: '📝', basePath: '/otp',            live: true },
     ],
   },
+  {
+    id: 'resources',
+    label: 'Resources',
+    items: [
+      { id: 'deal-sop',     label: 'Deal Workflow SOP', icon: '📋', href: 'https://docs.google.com/document/d/REPLACE_WITH_DEAL_SOP_ID/edit',     live: true },
+      { id: 'marketing-sop', label: 'Marketing SOP',    icon: '📄', href: 'https://docs.google.com/document/d/REPLACE_WITH_MARKETING_SOP_ID/edit', live: true },
+      { id: 'training-doc', label: 'Advisor Training',   icon: '🎓', href: 'https://docs.google.com/document/d/REPLACE_WITH_TRAINING_DOC_ID/edit',  live: true },
+    ],
+  },
 ];
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 export default function Sidebar({ collapsed, onToggle, onSignOut }) {
-  const [openSections, setOpenSections] = useState({ advisors: true, sellers: true, buyers: true });
+  const [openSections, setOpenSections] = useState({ advisors: true, sellers: true, buyers: true, resources: false });
   const location = useLocation();
 
   const toggleSection = (id) =>
@@ -274,6 +283,8 @@ export default function Sidebar({ collapsed, onToggle, onSignOut }) {
                         <li key={item.id}>
                           <a
                             href={item.href}
+                            target="_blank"
+                            rel="noreferrer"
                             title={collapsed ? item.label : undefined}
                             style={{ textDecoration: 'none', display: 'block', marginBottom: 1 }}
                           >
