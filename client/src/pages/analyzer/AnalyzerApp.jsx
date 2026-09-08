@@ -187,6 +187,20 @@ const initState = () => ({
   _net:0,
 });
 
+const ANALYZER_DRAFT_KEY = 'analyzer_draft';
+
+function saveDraft(data) {
+  try { localStorage.setItem(ANALYZER_DRAFT_KEY, JSON.stringify(data)); } catch { /* storage full */ }
+}
+
+function loadDraft() {
+  try { return JSON.parse(localStorage.getItem(ANALYZER_DRAFT_KEY) || 'null'); } catch { return null; }
+}
+
+function clearDraft() {
+  try { localStorage.removeItem(ANALYZER_DRAFT_KEY); } catch { /* */ }
+}
+
 /* ── Number Input ──────────────────────────────────── */
 const NI = ({value,onChange,placeholder='',disabled=false,cls=''}) => {
   const [disp,setDisp]=useState('');
@@ -3811,7 +3825,10 @@ const TABS=[
 
 function App() {
   const [tab,setTab]=useState('dashboard');
-  const [state,setState]=useState(initState());
+  const [state,setState]=useState(()=>{
+    const draft=loadDraft();
+    return draft?{...initState(),...draft,_net:0}:initState();
+  });
   const [showLoad,setShowLoad]=useState(false);
   const [saveStatus,setSaveStatus]=useState('idle');
   const saveTimer=useRef(null);
@@ -3834,6 +3851,10 @@ function App() {
       setAuthLoading(false);
     });
   },[]);
+  // Keep a local draft for every change, including work without a deal/advisor name.
+  useEffect(()=>{
+    saveDraft(state);
+  },[state]);
   // Autosave — debounced 2.5s after any state change
   useEffect(()=>{
     if(!state.dealName?.trim()||!state.advisorName?.trim()) return;
@@ -3898,7 +3919,12 @@ function App() {
   // Carry that value into the new global state.buyerSalary field instead of overwriting it with the $75,000 default.
   const migrateBuyerSalary=d=>{if((d.buyerSalary===undefined||d.buyerSalary==='')&&d.seller?.buyerSalary){d={...d,buyerSalary:d.seller.buyerSalary};}return d;};
   const load=data=>{data=migrateBuyerSalary(migrateBs(data));setState({...initState(),...data,_net:0});setShowLoad(false);setTab('dashboard');};
-  const newDeal=()=>{if(window.confirm('Start a new deal? Unsaved data will be lost.'))setState(initState());};
+  const newDeal=()=>{
+    if(window.confirm('Start a new deal? Unsaved data will be lost.')){
+      clearDraft();
+      setState(initState());
+    }
+  };
   const exportDeal=()=>{
     const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);
