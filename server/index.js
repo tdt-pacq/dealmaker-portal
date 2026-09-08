@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const cron = require('node-cron');
 const { basicAuth }  = require('./auth');
-const rateLimit      = require('express-rate-limit');
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 
 // General API limiter — 120 req/min per IP (protects CRUD routes)
 const apiLimiter = rateLimit({
@@ -17,10 +17,11 @@ const apiLimiter = rateLimit({
   message: { error: 'Too many requests — please slow down.' },
 });
 
-// AI limiter — 10 AI research kicks per 10 min per IP (each call costs real money)
+// AI limiter — 10 AI research kicks per 10 min per advisor (each call costs real money)
 const aiLimiter = rateLimit({
   windowMs: 10 * 60_000,
   max: 10,
+  keyGenerator: (req) => req.user?.id || ipKeyGenerator(req.ip),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'AI request limit reached. Please wait a few minutes before trying again.' },
