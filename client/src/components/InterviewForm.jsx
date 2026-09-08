@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useContext, createContext } from 'react';
 import { updateDeal } from '../api';
 
 const TEAM_MEMBERS = [
@@ -8,6 +8,16 @@ const TEAM_MEMBERS = [
   { name: 'Lee', role: 'Lender Liaison | SBA Lending Expert' },
   { name: 'Lance', role: 'Operations | Business Listings | Leads' },
 ];
+
+// Module-level context so F is a stable component reference across renders.
+// Defined outside InterviewForm to prevent the "new component type on every
+// render" bug that causes text inputs to lose focus on each keystroke.
+const FormCtx = createContext(null);
+
+function F({ name, ...rest }) {
+  const { data, handleChange, handleBlur } = useContext(FormCtx);
+  return <Field name={name} value={data[name] || ''} onChange={handleChange} onBlur={handleBlur} {...rest} />;
+}
 
 const REQUIRED_FIELDS = [
   'business_description', 'year_founded', 'business_city_state',
@@ -189,7 +199,6 @@ export default function InterviewForm({ deal, onUpdate }) {
   }, [triggerSave]);
 
   const f = name => data[name] || '';
-  const F = (props) => <Field {...props} value={f(props.name)} onChange={handleChange} onBlur={handleBlur} />;
 
   const sectionComplete = (fields) => fields.every(f => data[f]);
   const completedSections = [
@@ -212,6 +221,18 @@ export default function InterviewForm({ deal, onUpdate }) {
   ];
 
   return (
+    <FormCtx.Provider value={{ data, handleChange, handleBlur }}>
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12,
+      padding: '10px 16px', background: '#f0fdf4', border: '1px solid #bbf7d0',
+      borderRadius: 6, fontSize: 13, color: '#166534'
+    }}>
+      <span style={{ fontWeight: 700 }}>Step 2 — Review &amp; fill the form.</span>
+      <span style={{ color: '#15803d' }}>
+        If you uploaded your interview notes above, click "Apply to Form" and most fields will be pre-filled.
+        Fill in any blanks, then use the <strong>View Outputs</strong> button to generate your blind ad and CIM.
+      </span>
+    </div>
     <div className="interview-layout">
       {/* Sidebar nav */}
       <div className="section-nav">
@@ -723,5 +744,6 @@ export default function InterviewForm({ deal, onUpdate }) {
         </div>
       </div>
     </div>
+    </FormCtx.Provider>
   );
 }

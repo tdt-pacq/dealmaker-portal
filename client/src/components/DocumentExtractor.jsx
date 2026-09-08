@@ -203,10 +203,10 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
             fontFamily: 'Oswald, sans-serif', fontWeight: 700, fontSize: 14,
             textTransform: 'uppercase', letterSpacing: '.8px', color: '#e2e8f0'
           }}>
-            AI Interview Extraction
+            Step 1 — Upload Interview Notes
           </div>
           <div style={{ fontSize: 12, color: '#64748b', marginTop: 1 }}>
-            Upload your Google Doc or paste interview notes to auto-populate the form
+            Upload your Google Doc (.docx) or paste notes → AI fills the form below → then generate your blind ad &amp; CIM
           </div>
         </div>
         <span style={{ color: '#2eb860', fontSize: 16, transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
