@@ -16,6 +16,8 @@ const DealFinderApp = lazy(() => import('./pages/buyers/DealFinderApp'));
 const OtpApp = lazy(() => import('./pages/otp/OtpApp'));
 const RedactApp = lazy(() => import('./pages/redact/RedactApp'));
 const CommissionCalcApp = lazy(() => import('./pages/advisors/CommissionCalcApp'));
+const EngagementsList = lazy(() => import('./pages/engagements/EngagementsList'));
+const ProposalPage = lazy(() => import('./pages/engagements/ProposalPage'));
 
 
 function LoginScreen({ onLogin, error }) {
@@ -214,6 +216,8 @@ export default function App() {
                 <Route path="/otp" element={<OtpApp />} />
                 <Route path="/redact" element={<RedactApp />} />
                 <Route path="/commission" element={<CommissionCalcApp />} />
+                <Route path="/engagements" element={<EngagementsList />} />
+                <Route path="/engagements/:token" element={<ProposalPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>

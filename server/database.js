@@ -116,6 +116,25 @@ function initSchema() {
   try {
     db.exec('CREATE INDEX IF NOT EXISTS idx_dfs_profile ON deal_finder_sent(profile_id, type)');
   } catch (_) {}
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS seller_engagement_proposals (
+      id                      TEXT PRIMARY KEY,
+      share_token             TEXT NOT NULL UNIQUE,
+      status                  TEXT NOT NULL DEFAULT 'draft',
+      created_by_user_id      TEXT,
+      created_by_display_name TEXT,
+      deal_id                 TEXT,
+      discovery_report_id     TEXT,
+      analyzer_deal_slug      TEXT,
+      packet                  TEXT NOT NULL,
+      created_at              TEXT NOT NULL,
+      updated_at              TEXT NOT NULL
+    )
+  `);
+  try {
+    db.exec('CREATE INDEX IF NOT EXISTS idx_sep_updated ON seller_engagement_proposals (updated_at DESC)');
+  } catch (_) { /* already exists */ }
 }
 
 function seedTestDeal() {
