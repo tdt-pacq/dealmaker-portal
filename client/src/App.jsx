@@ -151,6 +151,25 @@ function LoginScreen({ onLogin, error }) {
   );
 }
 
+function LoadingFallback() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 240, color: '#64748b' }}>
+      <div className="spinner spinner-dark" style={{ width: 28, height: 28, borderWidth: 3, display: 'inline-block', marginRight: 10 }} />
+      Loading…
+    </div>
+  );
+}
+
+function PublicShareLayout() {
+  return (
+    <div style={{ minHeight: '100vh', background: '#0f1117' }}>
+      <Suspense fallback={<LoadingFallback />}>
+        <ProposalPage />
+      </Suspense>
+    </div>
+  );
+}
+
 export default function App() {
   const [authed, setAuthed] = useState(!!getAuth());
   const [loginError, setLoginError] = useState('');
@@ -180,50 +199,48 @@ export default function App() {
     setAuthed(false);
   };
 
-  if (!authed) {
-    return <LoginScreen onLogin={handleLogin} error={loginError} />;
-  }
-
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <div className="portal-shell">
-        <Sidebar
-          collapsed={sidebarCollapsed}
-          onToggle={() => setSidebarCollapsed(c => !c)}
-          onSignOut={handleLogout}
-        />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-          <div data-portal-topbar><Topbar /></div>
-          <main className="portal-content">
-            <Suspense fallback={
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b' }}>
-                <div className="spinner spinner-dark" style={{ width: 28, height: 28, borderWidth: 3, display: 'inline-block', marginRight: 10 }} />
-                Loading…
-              </div>
-            }>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/marketing" element={<Dashboard />} />
-                <Route path="/marketing/deals/new" element={<NewDeal />} />
-                <Route path="/marketing/deals/:id/edit" element={<NewDeal />} />
-                <Route path="/marketing/deals/:id" element={<DealDetail />} />
-                <Route path="/discovery" element={<DiscoveryPrepApp />} />
-                <Route path="/analyzer" element={<AnalyzerApp />} />
-                <Route path="/analyzer/*" element={<AnalyzerApp />} />
-                <Route path="/acqcalc" element={<AcqCalcApp />} />
-                <Route path="/buyer-strategy" element={<BuyerStrategyApp />} />
-                <Route path="/deal-finder" element={<DealFinderApp />} />
-                <Route path="/otp" element={<OtpApp />} />
-                <Route path="/redact" element={<RedactApp />} />
-                <Route path="/commission" element={<CommissionCalcApp />} />
-                <Route path="/engagements" element={<EngagementsList />} />
-                <Route path="/engagements/:token" element={<ProposalPage />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Suspense>
-          </main>
+      {authed ? (
+        <div className="portal-shell">
+          <Sidebar
+            collapsed={sidebarCollapsed}
+            onToggle={() => setSidebarCollapsed(c => !c)}
+            onSignOut={handleLogout}
+          />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+            <div data-portal-topbar><Topbar /></div>
+            <main className="portal-content">
+              <Suspense fallback={<LoadingFallback />}>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/marketing" element={<Dashboard />} />
+                  <Route path="/marketing/deals/new" element={<NewDeal />} />
+                  <Route path="/marketing/deals/:id/edit" element={<NewDeal />} />
+                  <Route path="/marketing/deals/:id" element={<DealDetail />} />
+                  <Route path="/discovery" element={<DiscoveryPrepApp />} />
+                  <Route path="/analyzer" element={<AnalyzerApp />} />
+                  <Route path="/analyzer/*" element={<AnalyzerApp />} />
+                  <Route path="/acqcalc" element={<AcqCalcApp />} />
+                  <Route path="/buyer-strategy" element={<BuyerStrategyApp />} />
+                  <Route path="/deal-finder" element={<DealFinderApp />} />
+                  <Route path="/otp" element={<OtpApp />} />
+                  <Route path="/redact" element={<RedactApp />} />
+                  <Route path="/commission" element={<CommissionCalcApp />} />
+                  <Route path="/engagements" element={<EngagementsList />} />
+                  <Route path="/engagements/:token" element={<ProposalPage />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Suspense>
+            </main>
+          </div>
         </div>
-      </div>
+      ) : (
+        <Routes>
+          <Route path="/engagements/:token" element={<PublicShareLayout />} />
+          <Route path="*" element={<LoginScreen onLogin={handleLogin} error={loginError} />} />
+        </Routes>
+      )}
     </BrowserRouter>
   );
 }

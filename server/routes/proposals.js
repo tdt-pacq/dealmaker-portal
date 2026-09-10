@@ -1,13 +1,15 @@
 /**
- * Seller Engagement Proposal — authenticated broker/advisor CRUD.
- * Private URLs use an unguessable share_token. Viewing stays behind Basic Auth
- * (no existing unauthenticated private-link pattern in the app).
+ * Seller Engagement Proposal — broker/advisor CRUD behind Basic Auth.
+ * GET /t/:token is the public seller share view: unguessable token, no login.
+ * List / create / patch / delete stay authenticated.
  */
 
 const express = require('express');
 const crypto = require('crypto');
 const { getDb } = require('../database');
-const { defaultPacket, mergePacket, parsePacket, publicRow } = require('../proposal-packet');
+const { defaultPacket, mergePacket, parsePacket, publicRow, shareViewRow } = require('../proposal-packet');
+
+const SHARE_TOKEN_RE = /^[A-Za-z0-9_-]{20,64}$/;
 
 const router = express.Router();
 
@@ -153,12 +155,18 @@ router.post('/', (req, res) => {
   }
 });
 
-// GET /api/proposals/t/:token — lookup by unguessable share token
+// GET /api/proposals/t/:token — public seller share (auth middleware skips 401).
+// Anonymous viewers get the packet only. Authenticated brokers get the full row.
 router.get('/t/:token', (req, res) => {
   try {
-    const row = getDb().prepare('SELECT * FROM seller_engagement_proposals WHERE share_token = ?').get(req.params.token);
+    const token = req.params.token || '';
+    if (!SHARE_TOKEN_RE.test(token)) {
+      return res.status(404).json({ error: 'Proposal not found' });
+    }
+    const row = getDb().prepare('SELECT * FROM seller_engagement_proposals WHERE share_token = ?').get(token);
     if (!row) return res.status(404).json({ error: 'Proposal not found' });
-    res.json(publicRow(row));
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    res.json(req.user ? publicRow(row) : shareViewRow(row));
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

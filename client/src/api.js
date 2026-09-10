@@ -15,12 +15,19 @@ api.interceptors.request.use(config => {
   return config;
 });
 
+function isPublicSharePath() {
+  return typeof window !== 'undefined' && /^\/engagements\/[^/]+$/.test(window.location.pathname);
+}
+
 api.interceptors.response.use(
   res => res,
   err => {
     if (err.response?.status === 401) {
       sessionStorage.removeItem('pacq_auth');
-      window.location.reload();
+      // Sellers on a token URL have no credentials — do not bounce them to login.
+      if (!isPublicSharePath()) {
+        window.location.reload();
+      }
     }
     return Promise.reject(err);
   }

@@ -145,13 +145,13 @@ export default function EngagementsList() {
               <input value={form.blindCompanyLabel} onChange={e => set('blindCompanyLabel', e.target.value)} placeholder="e.g. Specialty manufacturer — SE" />
             </div>
             <div className="field-group" style={{ marginBottom: 0 }}>
-              <label>MPA hook (analyzer deal slug)</label>
-              <input value={form.analyzer_deal_slug} onChange={e => set('analyzer_deal_slug', e.target.value)} placeholder="firestore deal slug — no invented numbers" />
+              <label>MPA / Analyzer <span style={{ fontWeight: 400, color: '#64748b' }}>(optional)</span></label>
+              <input value={form.analyzer_deal_slug} onChange={e => set('analyzer_deal_slug', e.target.value)} placeholder="Firestore deal slug — no invented numbers" />
             </div>
             <div className="field-group" style={{ marginBottom: 0 }}>
-              <label>BIR / Business Intel hook</label>
+              <label>BIR / Business Intel <span style={{ fontWeight: 400, color: '#64748b' }}>(optional)</span></label>
               <select value={form.discovery_report_id} onChange={e => set('discovery_report_id', e.target.value)}>
-                <option value="">None — fill later</option>
+                <option value="">None — not required</option>
                 {reports.map(r => (
                   <option key={r.id} value={r.id}>
                     {(r.business_name || r.industry || 'Report')} {r.seller_name ? `· ${r.seller_name}` : ''}
@@ -160,18 +160,20 @@ export default function EngagementsList() {
               </select>
             </div>
             <div className="field-group" style={{ marginBottom: 0, gridColumn: '1 / 3' }}>
-              <label>Deal Marketing hook</label>
+              <label>Deal Marketing account <span style={{ fontWeight: 400, color: '#64748b' }}>(optional)</span></label>
               <select value={form.deal_id} onChange={e => set('deal_id', e.target.value)}>
-                <option value="">None — fill later</option>
+                <option value="">None — marketing starts after engagement is signed</option>
                 {deals.map(d => (
                   <option key={d.id} value={d.id}>{d.deal_name} {d.advisor_name ? `· ${d.advisor_name}` : ''}</option>
                 ))}
               </select>
             </div>
           </div>
-          <div style={{ marginTop: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ marginTop: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
             <div style={{ fontSize: 12, color: '#64748b', maxWidth: 640 }}>
-              Per-seller packet only. 12-section skeleton is fixed. Stack seeds the Lead Engine 13-item list (editable). Engagement fee is fill-in — no invented numbers.
+              MPA, BIR, Discovery, and Deal Marketing links are optional — none are required to create a proposal.
+              Marketing does not run until after the engagement fee is signed. 12-section skeleton is fixed.
+              Stack seeds the Lead Engine 13-item list (editable). Engagement fee is fill-in — no invented numbers.
             </div>
             <button type="submit" className="btn-primary btn-lg" disabled={creating}>
               {creating ? 'Creating…' : 'Create private proposal →'}
@@ -214,7 +216,7 @@ export default function EngagementsList() {
                 const hooks = [];
                 if (p.analyzer_deal_slug) hooks.push('MPA');
                 if (p.discovery_report_id) hooks.push('BIR');
-                if (p.deal_id) hooks.push('Deal');
+                if (p.deal_id) hooks.push('Marketing account');
                 return (
                   <tr key={p.id}>
                     <td>

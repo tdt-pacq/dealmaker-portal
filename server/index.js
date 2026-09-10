@@ -57,7 +57,26 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Auth + general rate limit on all API routes
+// Private share URLs must never be indexed. Token in the path is the access key.
+app.use((req, res, next) => {
+  if (
+    req.method === 'GET' && (
+      /^\/engagements\/[^/]+\/?$/.test(req.path) ||
+      /^\/api\/proposals\/t\/[^/]+\/?$/.test(req.path)
+    )
+  ) {
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+  }
+  next();
+});
+
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send('User-agent: *\nDisallow: /engagements/\nDisallow: /api/\n');
+});
+
+// Auth + general rate limit on all API routes.
+// GET /api/proposals/t/:token is the exception (see basicAuth) — sellers open
+// the unguessable share URL with no login. List/create/edit/delete stay authed.
 app.use('/api', basicAuth, apiLimiter);
 
 // Tighter rate limits on expensive AI endpoints (POST-only — polls must never be rate-limited)
@@ -166,7 +185,12 @@ if (fs.existsSync(rootAssets)) {
 const clientBuild = path.join(__dirname, '..', 'client', 'dist');
 if (fs.existsSync(clientBuild)) {
   app.use(express.static(clientBuild));
-  app.get('*', (req, res) => res.sendFile(path.join(clientBuild, 'index.html')));
+  app.get('*', (req, res) => {
+    if (/^\/engagements\/[^/]+\/?$/.test(req.path)) {
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    }
+    res.sendFile(path.join(clientBuild, 'index.html'));
+  });
 }
 
 // Seed initial users (idempotent — only runs if users table is empty)
