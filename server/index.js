@@ -185,7 +185,12 @@ if (fs.existsSync(rootAssets)) {
 const clientBuild = path.join(__dirname, '..', 'client', 'dist');
 if (fs.existsSync(clientBuild)) {
   app.use(express.static(clientBuild));
-  app.get('*', (req, res) => res.sendFile(path.join(clientBuild, 'index.html')));
+  app.get('*', (req, res) => {
+    if (/^\/engagements\/[^/]+\/?$/.test(req.path)) {
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    }
+    res.sendFile(path.join(clientBuild, 'index.html'));
+  });
 }
 
 // Seed initial users (idempotent — only runs if users table is empty)
