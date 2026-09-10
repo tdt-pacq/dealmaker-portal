@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { fetchProposalByToken, updateProposal } from '../../api';
+import { fetchProposalByToken, updateProposal, getAuth } from '../../api';
 
 const SECTIONS = [
   { id: 'cover', n: '01', label: 'Cover' },
@@ -54,7 +54,24 @@ function Placeholder({ children }) {
   );
 }
 
-function Field({ label, value, onChange, placeholder, multiline, hint }) {
+function Field({ label, value, onChange, placeholder, multiline, hint, readOnly }) {
+  if (readOnly) {
+    const text = (value || '').toString().trim();
+    return (
+      <div style={{ marginBottom: 12 }}>
+        <label>{label}</label>
+        <div style={{
+          fontSize: 14,
+          color: text ? '#e2e8f0' : '#64748b',
+          lineHeight: 1.55,
+          whiteSpace: 'pre-wrap',
+          minHeight: multiline ? 48 : undefined,
+        }}>
+          {text || '—'}
+        </div>
+      </div>
+    );
+  }
   return (
     <div style={{ marginBottom: 12 }}>
       <label>{label}</label>
@@ -110,6 +127,7 @@ function Section({ id, n, title, kicker, children }) {
 
 export default function ProposalPage() {
   const { token } = useParams();
+  const canEdit = !!getAuth();
   const [proposal, setProposal] = useState(null);
   const [error, setError] = useState('');
   const [saveStatus, setSaveStatus] = useState('idle');
@@ -151,7 +169,7 @@ export default function ProposalPage() {
   const patchCover = (key, value) => setPacket(pk => ({ ...pk, cover: { ...pk.cover, [key]: value } }));
 
   useEffect(() => {
-    if (!proposal?.id) return;
+    if (!canEdit || !proposal?.id) return;
     if (skipSave.current) {
       skipSave.current = false;
       return;
@@ -173,7 +191,7 @@ export default function ProposalPage() {
       }
     }, 900);
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
-  }, [proposal]);
+  }, [proposal, canEdit]);
 
   const copyUrl = async () => {
     const url = window.location.href;
@@ -188,9 +206,11 @@ export default function ProposalPage() {
 
   if (error) {
     return (
-      <div className="page-content">
+      <div className="page-content" style={{ maxWidth: 640, margin: '0 auto', padding: '48px 24px' }}>
         <div className="alert alert-error">{error}</div>
-        <Link to="/engagements"><button className="btn-ghost">← Back to proposals</button></Link>
+        {canEdit && (
+          <Link to="/engagements"><button className="btn-ghost">← Back to proposals</button></Link>
+        )}
       </div>
     );
   }
@@ -214,11 +234,12 @@ export default function ProposalPage() {
   const stackLabel = (item) => (typeof item === 'string' ? item : (item?.label || ''));
   const stackTerm = (item) => (typeof item === 'object' && item ? (item.representationTermMonths || '') : '');
   const isCloseItem = (item, i) => i === 12 || /dedicated deal team through close/i.test(stackLabel(item));
-  const hookBits = [
+  const hookBits = canEdit ? [
     proposal.analyzer_deal_slug && `MPA: ${proposal.analyzer_deal_slug}`,
     proposal.discovery_report_id && 'BIR linked',
-    proposal.deal_id && 'Deal linked',
-  ].filter(Boolean);
+    proposal.deal_id && 'Optional marketing account linked',
+  ].filter(Boolean) : [];
+  const F = (props) => <Field readOnly={!canEdit} {...props} />;
 
   return (
     <div style={{ maxWidth: 920, margin: '0 auto', padding: '28px 24px 80px' }}>
@@ -226,9 +247,17 @@ export default function ProposalPage() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         marginBottom: 18, gap: 12, flexWrap: 'wrap',
       }}>
-        <Link to="/engagements" style={{ color: '#94a3b8', fontSize: 13, textDecoration: 'none' }}>← All proposals</Link>
+        {canEdit ? (
+          <Link to="/engagements" style={{ color: '#94a3b8', fontSize: 13, textDecoration: 'none' }}>← All proposals</Link>
+        ) : (
+          <span style={{ color: '#64748b', fontSize: 12, letterSpacing: 0.6, textTransform: 'uppercase' }}>
+            Private proposal · noindex
+          </span>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: '#64748b' }}>
-          <span>{saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved' : saveStatus === 'error' ? 'Save failed' : 'Private · noindex'}</span>
+          {canEdit && (
+            <span>{saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved' : saveStatus === 'error' ? 'Save failed' : 'Private · noindex'}</span>
+          )}
           <button className="btn-ghost btn-sm" onClick={copyUrl}>{copied ? 'Copied' : 'Copy private URL'}</button>
         </div>
       </div>
@@ -254,12 +283,12 @@ export default function ProposalPage() {
           Seller Engagement Proposal
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          <Field label="Seller name(s)" value={cover.sellerNames} onChange={v => patchCover('sellerNames', v)} placeholder="Per-seller packet" />
-          <Field label="Spouse" value={cover.spouseName} onChange={v => patchCover('spouseName', v)} placeholder="If part of the decision" />
-          <Field label="Broker / advisor" value={cover.brokerName} onChange={v => patchCover('brokerName', v)} />
-          <Field label="Proposal ID" value={cover.proposalId} onChange={v => patchCover('proposalId', v)} />
-          <Field label="Date" value={cover.date} onChange={v => patchCover('date', v)} placeholder="YYYY-MM-DD" />
-          <Field label="Blind company label" value={cover.blindCompanyLabel} onChange={v => patchCover('blindCompanyLabel', v)} placeholder="Never the legal name on this page" />
+          <F label="Seller name(s)" value={cover.sellerNames} onChange={v => patchCover('sellerNames', v)} placeholder="Per-seller packet" />
+          <F label="Spouse" value={cover.spouseName} onChange={v => patchCover('spouseName', v)} placeholder="If part of the decision" />
+          <F label="Broker / advisor" value={cover.brokerName} onChange={v => patchCover('brokerName', v)} />
+          <F label="Proposal ID" value={cover.proposalId} onChange={v => patchCover('proposalId', v)} />
+          <F label="Date" value={cover.date} onChange={v => patchCover('date', v)} placeholder="YYYY-MM-DD" />
+          <F label="Blind company label" value={cover.blindCompanyLabel} onChange={v => patchCover('blindCompanyLabel', v)} placeholder="Never the legal name on this page" />
         </div>
         {hookBits.length > 0 && (
           <div style={{ marginTop: 8, fontSize: 11, color: '#475569' }}>Data hooks: {hookBits.join(' · ')}</div>
@@ -268,7 +297,7 @@ export default function ProposalPage() {
 
       {/* 2 Why we’re here */}
       <Section id="why" n="02" title="Why we’re here" kicker="Situation frame">
-        <Field
+        <F
           label="From discovery notes"
           multiline
           value={packet.whyHere?.situationFrame}
@@ -276,7 +305,7 @@ export default function ProposalPage() {
           placeholder="Advisor-sourced situation frame. Leave blank until discovery notes exist — do not invent."
           hint="Hook: discovery notes / BIR context. Empty is correct if this is not yet written."
         />
-        {!packet.whyHere?.situationFrame && (
+        {!packet.whyHere?.situationFrame && canEdit && (
           <Placeholder>No situation frame on file yet. Fill from discovery notes after the call — this page is for the post–MPA + BIR engagement conversation.</Placeholder>
         )}
       </Section>
@@ -299,27 +328,27 @@ export default function ProposalPage() {
       {/* 4 Sellability */}
       <Section id="sellability" n="04" title="Sellability snapshot" kicker="From MPA — no invented numbers">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-          <Field
+          <F
             label="PFA / PFAScore™"
             value={packet.sellability?.pfa}
             onChange={v => setPacket(pk => ({ ...pk, sellability: { ...pk.sellability, pfa: v } }))}
             placeholder="From MPA only"
             hint={proposal.analyzer_deal_slug ? `Hooked to MPA slug: ${proposal.analyzer_deal_slug}` : 'No MPA slug hooked yet'}
           />
-          <Field
+          <F
             label="Cash flow (SDE / basis)"
             value={packet.sellability?.cashFlow}
             onChange={v => setPacket(pk => ({ ...pk, sellability: { ...pk.sellability, cashFlow: v } }))}
             placeholder="From MPA only"
           />
-          <Field
+          <F
             label="Passion Cycle"
             value={packet.sellability?.passionCycle}
             onChange={v => setPacket(pk => ({ ...pk, sellability: { ...pk.sellability, passionCycle: v } }))}
             placeholder="From MPA only"
           />
         </div>
-        {!packet.sellability?.pfa && !packet.sellability?.cashFlow && !packet.sellability?.passionCycle && (
+        {!packet.sellability?.pfa && !packet.sellability?.cashFlow && !packet.sellability?.passionCycle && canEdit && (
           <Placeholder>MPA fields are empty on purpose. Pull PFA, cash flow, and Passion Cycle from the Market Price Analyzer — never estimate them here.</Placeholder>
         )}
       </Section>
@@ -327,34 +356,34 @@ export default function ProposalPage() {
       {/* 5 Trifecta */}
       <Section id="trifecta" n="05" title="Trifecta Market Price" kicker="FMV band from MPA">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <Field
+          <F
             label="FMV low"
             value={packet.trifecta?.fmvLow}
             onChange={v => setPacket(pk => ({ ...pk, trifecta: { ...pk.trifecta, fmvLow: v } }))}
             placeholder="From MPA FMV range"
           />
-          <Field
+          <F
             label="FMV high"
             value={packet.trifecta?.fmvHigh}
             onChange={v => setPacket(pk => ({ ...pk, trifecta: { ...pk.trifecta, fmvHigh: v } }))}
             placeholder="From MPA FMV range"
           />
         </div>
-        <Field
+        <F
           label="Support notes"
           multiline
           value={packet.trifecta?.supportNotes}
           onChange={v => setPacket(pk => ({ ...pk, trifecta: { ...pk.trifecta, supportNotes: v } }))}
           placeholder="What the MPA actually supports — multiples, SDE basis, lender lens. Leave blank if not yet pulled."
         />
-        {!packet.trifecta?.fmvLow && !packet.trifecta?.fmvHigh && (
+        {!packet.trifecta?.fmvLow && !packet.trifecta?.fmvHigh && canEdit && (
           <Placeholder>No FMV band on this packet yet. Source from Trifecta Market Price Analysis™ — do not invent a range on the Zoom.</Placeholder>
         )}
       </Section>
 
       {/* 6 BIR */}
       <Section id="bir" n="06" title="BIR highlights" kicker="Buyer / bank view">
-        <Field
+        <F
           label="Highlights from Business Intelligence Report™"
           multiline
           value={packet.bir?.highlights}
@@ -362,7 +391,7 @@ export default function ProposalPage() {
           placeholder="Buyer appetite, lender lens, transferability flags — from BIR, not from memory."
           hint={proposal.discovery_report_id ? 'BIR / discovery report is hooked on this proposal.' : 'No BIR report hooked yet — link one from the proposal list or paste sourced highlights.'}
         />
-        {!packet.bir?.highlights && (
+        {!packet.bir?.highlights && canEdit && (
           <Placeholder>BIR highlights are a data hook. Discovery-only is not the full proposal moment — wait for the report, then fill.</Placeholder>
         )}
       </Section>
@@ -389,10 +418,12 @@ export default function ProposalPage() {
 
       {/* 8 Stack */}
       <Section id="stack" n="08" title="Engagement stack" kicker="What’s in the fee · Lead Engine reconciled list">
-        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 14, lineHeight: 1.55 }}>
-          Default seed is the 13-item firm stack from Lead Engine (Michael Decide). Editable per proposal. Item 13 representation term is a fill-in — not a hardcoded duration.
-        </div>
-        {stackItems.length === 0 && (
+        {canEdit && (
+          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 14, lineHeight: 1.55 }}>
+            Default seed is the 13-item firm stack from Lead Engine (Michael Decide). Editable per proposal. Item 13 representation term is a fill-in — not a hardcoded duration.
+          </div>
+        )}
+        {stackItems.length === 0 && canEdit && (
           <Placeholder>Stack is empty on this packet. Add items or recreate the proposal to load the 13-item default seed.</Placeholder>
         )}
         <ol style={{ margin: stackItems.length ? '0 0 12px' : '12px 0 12px', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -404,60 +435,76 @@ export default function ProposalPage() {
                 <span style={{
                   fontFamily: 'Oswald, sans-serif', fontSize: 13, color: '#2eb860', minWidth: 22,
                 }}>{String(i + 1).padStart(2, '0')}</span>
-                <input
-                  value={stackLabel(item)}
-                  onChange={e => {
-                    const next = [...stackItems];
-                    const cur = typeof item === 'object' && item ? { ...item } : { label: '' };
-                    cur.label = e.target.value;
-                    next[i] = cur;
-                    setStackItems(next);
-                  }}
-                  placeholder="Stack item"
-                />
-                <button
-                  type="button"
-                  className="btn-ghost btn-sm"
-                  onClick={() => setStackItems(stackItems.filter((_, idx) => idx !== i))}
-                >
-                  Remove
-                </button>
+                {canEdit ? (
+                  <input
+                    value={stackLabel(item)}
+                    onChange={e => {
+                      const next = [...stackItems];
+                      const cur = typeof item === 'object' && item ? { ...item } : { label: '' };
+                      cur.label = e.target.value;
+                      next[i] = cur;
+                      setStackItems(next);
+                    }}
+                    placeholder="Stack item"
+                  />
+                ) : (
+                  <div style={{ fontSize: 14, color: '#e2e8f0', lineHeight: 1.45 }}>{stackLabel(item) || '—'}</div>
+                )}
+                {canEdit && (
+                  <button
+                    type="button"
+                    className="btn-ghost btn-sm"
+                    onClick={() => setStackItems(stackItems.filter((_, idx) => idx !== i))}
+                  >
+                    Remove
+                  </button>
+                )}
               </div>
               {isCloseItem(item, i) && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, paddingLeft: 32 }}>
                   <label style={{ marginBottom: 0, flexShrink: 0 }}>Representation term</label>
-                  <input
-                    value={stackTerm(item)}
-                    onChange={e => {
-                      const next = [...stackItems];
-                      const cur = typeof item === 'object' && item ? { ...item } : { label: stackLabel(item) };
-                      cur.representationTermMonths = e.target.value;
-                      next[i] = cur;
-                      setStackItems(next);
-                    }}
-                    placeholder="____ months"
-                    style={{ maxWidth: 160 }}
-                  />
-                  <span style={{ fontSize: 12, color: '#64748b' }}>months (fill-in — not a firm claim)</span>
+                  {canEdit ? (
+                    <>
+                      <input
+                        value={stackTerm(item)}
+                        onChange={e => {
+                          const next = [...stackItems];
+                          const cur = typeof item === 'object' && item ? { ...item } : { label: stackLabel(item) };
+                          cur.representationTermMonths = e.target.value;
+                          next[i] = cur;
+                          setStackItems(next);
+                        }}
+                        placeholder="____ months"
+                        style={{ maxWidth: 160 }}
+                      />
+                      <span style={{ fontSize: 12, color: '#64748b' }}>months (fill-in — not a firm claim)</span>
+                    </>
+                  ) : (
+                    <span style={{ fontSize: 14, color: '#94a3b8' }}>
+                      {stackTerm(item) ? `${stackTerm(item)} months` : '____ months'}
+                    </span>
+                  )}
                 </div>
               )}
             </li>
           ))}
         </ol>
-        <button
-          type="button"
-          className="btn-ghost btn-sm"
-          onClick={() => setStackItems([...stackItems, { label: '' }])}
-        >
-          + Add stack item
-        </button>
+        {canEdit && (
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            onClick={() => setStackItems([...stackItems, { label: '' }])}
+          >
+            + Add stack item
+          </button>
+        )}
       </Section>
 
       {/* 9 Investment */}
       <Section id="invest" n="09" title="Investment" kicker="Fee / terms / in-out — fill-in">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
           <div style={{ background: '#0d1117', border: '1px solid #1a5e35', borderRadius: 8, padding: '18px 20px' }}>
-            <Field
+            <F
               label="Engagement fee"
               value={inv.launchFee === 0 || inv.launchFee ? String(inv.launchFee) : ''}
               onChange={v => setPacket(pk => ({ ...pk, investment: { ...pk.investment, launchFee: v } }))}
@@ -471,7 +518,7 @@ export default function ProposalPage() {
             )}
           </div>
           <div style={{ background: '#0d1117', border: '1px solid #1a2235', borderRadius: 8, padding: '18px 20px' }}>
-            <Field
+            <F
               label="Optional market-value sum"
               value={inv.marketValueSum === 0 || inv.marketValueSum ? String(inv.marketValueSum) : ''}
               onChange={v => setPacket(pk => ({ ...pk, investment: { ...pk.investment, marketValueSum: v } }))}
@@ -490,32 +537,34 @@ export default function ProposalPage() {
             % of purchase price, floor not less than {fmtMoney(inv.successCommissionFloor)}.
           </div>
           <div style={{ fontSize: 11, color: '#475569', marginTop: 8 }}>
-            Fill-in from the Engagement Agreement template — no invented percentage.
+            {canEdit ? 'Fill-in from the Engagement Agreement template — no invented percentage.' : 'Percent and floor as agreed on the Engagement Agreement.'}
           </div>
           <div style={{ marginTop: 12, maxWidth: 200 }}>
-            <Field
-              label="Commission % (fill-in)"
-              value={inv.successCommissionPct}
-              onChange={v => setPacket(pk => ({ ...pk, investment: { ...pk.investment, successCommissionPct: v } }))}
-              placeholder="Leave blank until EA"
-            />
+            {canEdit && (
+              <F
+                label="Commission % (fill-in)"
+                value={inv.successCommissionPct}
+                onChange={v => setPacket(pk => ({ ...pk, investment: { ...pk.investment, successCommissionPct: v } }))}
+                placeholder="Leave blank until EA"
+              />
+            )}
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <Field
+          <F
             label="Marketing expense (fill-in)"
             value={inv.marketingExpense}
             onChange={v => setPacket(pk => ({ ...pk, investment: { ...pk.investment, marketingExpense: v } }))}
             placeholder="Blank — do not invent an amount"
           />
-          <Field
+          <F
             label="Third-party costs (fill-in)"
             value={inv.thirdPartyCosts}
             onChange={v => setPacket(pk => ({ ...pk, investment: { ...pk.investment, thirdPartyCosts: v } }))}
             placeholder="Blank — do not invent an amount"
           />
         </div>
-        <Field
+        <F
           label="In / out notes"
           multiline
           value={inv.termsNotes}
@@ -534,12 +583,18 @@ export default function ProposalPage() {
           ].map(([key, title, fallback]) => (
             <div key={key} style={{ background: '#0d1117', border: '1px solid #1a2235', borderRadius: 8, padding: '14px 16px' }}>
               <div style={{ fontFamily: 'Oswald, sans-serif', fontSize: 13, letterSpacing: 1, textTransform: 'uppercase', color: '#2eb860', marginBottom: 8 }}>{title}</div>
-              <textarea
-                value={packet.noBs?.[key] || ''}
-                onChange={e => setPacket(pk => ({ ...pk, noBs: { ...pk.noBs, [key]: e.target.value } }))}
-                placeholder={fallback}
-                rows={4}
-              />
+              {canEdit ? (
+                <textarea
+                  value={packet.noBs?.[key] || ''}
+                  onChange={e => setPacket(pk => ({ ...pk, noBs: { ...pk.noBs, [key]: e.target.value } }))}
+                  placeholder={fallback}
+                  rows={4}
+                />
+              ) : (
+                <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.55 }}>
+                  {(packet.noBs?.[key] || '').trim() || fallback}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -547,13 +602,15 @@ export default function ProposalPage() {
 
       {/* 11 Next step */}
       <Section id="next" n="11" title="Next step" kicker="One clear ask">
-        <Field
-          label="The ask"
-          multiline
-          value={packet.nextStep?.ask}
-          onChange={v => setPacket(pk => ({ ...pk, nextStep: { ...pk.nextStep, ask: v } }))}
-          placeholder="Default: decide on this Zoom — engage, prepare-then-engage, or wait. Leave the private URL for spouse / CPA."
-        />
+        {(canEdit || (packet.nextStep?.ask || '').trim()) && (
+          <F
+            label="The ask"
+            multiline
+            value={packet.nextStep?.ask}
+            onChange={v => setPacket(pk => ({ ...pk, nextStep: { ...pk.nextStep, ask: v } }))}
+            placeholder="Default: decide on this Zoom — engage, prepare-then-engage, or wait. Leave the private URL for spouse / CPA."
+          />
+        )}
         {!packet.nextStep?.ask && (
           <div style={{ fontSize: 15, color: '#e2e8f0', lineHeight: 1.6, marginTop: 4 }}>
             Decide on this walkthrough: <strong style={{ color: '#2eb860' }}>engage</strong>, prepare-then-engage, or wait.
@@ -569,7 +626,7 @@ export default function ProposalPage() {
           <li>Do not forward the link beyond seller, spouse, and CPA without the advisor’s OK.</li>
           <li>The company appears only as a <strong style={{ color: '#e2e8f0' }}>blind label</strong>. Do not add the legal name to this page.</li>
           <li>Guessing or sharing the token is treated as a confidentiality break. Tokens are unguessable by design.</li>
-          <li>Creation and sharing stay inside authenticated broker/advisor flows. Portal Basic Auth is unchanged.</li>
+          <li>Sellers, spouse, and CPA open this URL with no login. Brokers sign in to create, edit, or delete.</li>
         </ul>
         <div style={{ marginTop: 16, fontSize: 11, color: '#334155', letterSpacing: 0.4 }}>
           {cover.proposalId || 'Proposal'} · {cover.date || ''} · Peterson Acquisitions — The Deal Team

@@ -151,6 +151,19 @@ function publicRow(row) {
   };
 }
 
+// Seller/spouse/CPA share payload: packet only. No user ids, deal/marketing
+// hooks, or other broker admin fields.
+function shareViewRow(row) {
+  if (!row) return null;
+  return {
+    share_token: row.share_token,
+    status: row.status,
+    packet: parsePacket(row.packet),
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
 module.exports = {
   COMMERCIAL_PACKET,
   ENGAGEMENT_STACK_LABELS,
@@ -159,4 +172,5 @@ module.exports = {
   mergePacket,
   parsePacket,
   publicRow,
+  shareViewRow,
 };
