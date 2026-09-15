@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useContext, createContext } from 'react';
+import { Link } from 'react-router-dom';
 import { updateDeal } from '../api';
 
 const TEAM_MEMBERS = [
@@ -230,7 +231,8 @@ export default function InterviewForm({ deal, onUpdate }) {
       <span style={{ fontWeight: 700 }}>Step 2 — Review &amp; fill the form.</span>
       <span style={{ color: '#15803d' }}>
         If you uploaded your interview notes above, click "Apply to Form" and most fields will be pre-filled.
-        Fill in any blanks, then use the <strong>View Outputs</strong> button to generate your blind ad and CIM.
+        Filling these boxes does not create the files. After you review, click{' '}
+        <strong>Generate &amp; Download Marketing Docs</strong> to create the Blind Ad, Flyer, and CBR.
       </span>
     </div>
     <div className="interview-layout">
@@ -710,6 +712,31 @@ export default function InterviewForm({ deal, onUpdate }) {
           <F label="Seller Brand Color (for CBR section accents)" name="seller_brand_color" type="color"
             hint="Pulled from seller's branding. Defaults to dark green #2D5016 if not specified." />
         </Section>
+
+        <div style={{
+          marginTop: 24,
+          padding: '16px 20px',
+          background: '#ecfdf5',
+          border: '2px solid #2eb860',
+          borderRadius: 8,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16,
+          flexWrap: 'wrap',
+        }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#14532d' }}>
+              Step 3 — Generate &amp; download the marketing pack
+            </div>
+            <div style={{ fontSize: 13, color: '#166534', marginTop: 4, lineHeight: 1.5 }}>
+              Next page: generate the Blind Ad, one-page Flyer, and CBR (Confidential Business Review), then download each file. This is the branded Portal pack — not a one-off Claude export.
+            </div>
+          </div>
+          <Link to={`/marketing/deals/${deal.id}`}>
+            <button className="btn-primary" type="button">Generate &amp; Download Marketing Docs →</button>
+          </Link>
+        </div>
 
         {/* Draft restored banner */}
         {draftRestored && (

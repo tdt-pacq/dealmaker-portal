@@ -137,10 +137,10 @@ export default function Dashboard() {
                   <td>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button className="btn-ghost btn-sm" onClick={() => navigate(`/marketing/deals/${deal.id}`)}>
-                        View
+                        Marketing Docs
                       </button>
                       <button className="btn-ghost btn-sm" onClick={() => navigate(`/marketing/deals/${deal.id}/edit`)}>
-                        Edit
+                        Edit Interview
                       </button>
                       <button className="btn-danger btn-sm" onClick={() => setDeleteConfirm(deal)}>
                         Delete
@@ -179,9 +179,9 @@ export default function Dashboard() {
 function OutputDots({ dealId }) {
   return (
     <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-      <DotLink to={`/marketing/deals/${dealId}`} label="Ad" />
-      <DotLink to={`/marketing/deals/${dealId}`} label="Flyer" />
-      <DotLink to={`/marketing/deals/${dealId}`} label="CBR" />
+      <DotLink to={`/marketing/deals/${dealId}#blind-ad`} label="Ad" />
+      <DotLink to={`/marketing/deals/${dealId}#flyer`} label="Flyer" />
+      <DotLink to={`/marketing/deals/${dealId}#cbr`} label="CBR" />
     </div>
   );
 }

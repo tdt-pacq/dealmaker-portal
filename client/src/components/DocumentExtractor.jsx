@@ -206,7 +206,7 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
             Step 1 — Upload Interview Notes
           </div>
           <div style={{ fontSize: 12, color: '#64748b', marginTop: 1 }}>
-            Upload your Google Doc (.docx) or paste notes → AI fills the form below → then generate your blind ad &amp; CIM
+            Upload your Google Doc (.docx) or paste notes → AI fills the form below → then generate the Blind Ad, Flyer, and CBR
           </div>
         </div>
         <span style={{ color: '#2eb860', fontSize: 16, transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>

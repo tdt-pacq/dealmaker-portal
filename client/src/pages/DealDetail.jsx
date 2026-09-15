@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import {
   fetchDeal, updateDeal,
   generateBlindAd, generateFlyer, generateCbr,
   exportFlyer, exportCbr,
-  downloadUrl, getAuth, fetchDealEvents
+  downloadDealPdf, fetchDealEvents
 } from '../api';
 
 const PIPELINE_STAGES = ['draft', 'active', 'under_contract', 'closed'];
@@ -331,12 +331,8 @@ function FlyerTab({ deal, onUpdate }) {
     setError('');
     try {
       await exportFlyer(deal.id);
-      const link = document.createElement('a');
-      link.href = downloadUrl(deal.id, 'flyer');
-      link.setAttribute('download', '');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const filename = `${(deal.deal_name || 'flyer').replace(/[^a-z0-9]/gi, '_')}_flyer.pdf`;
+      await downloadDealPdf(deal.id, 'flyer', filename);
     } catch (err) {
       setError(friendlyError(err));
     } finally {
@@ -367,7 +363,7 @@ function FlyerTab({ deal, onUpdate }) {
         <div className="empty-state">
           <div className="empty-state-icon">🗂️</div>
           <div className="empty-state-title">No Flyer Yet</div>
-          <p>Fill out the interview form, then click "Generate Flyer" to create a branded one-page PDF flyer.</p>
+          <p>Fill out the interview form, then click Generate Flyer. Download PDF appears after generation — that file is the branded Portal flyer.</p>
         </div>
       )}
 
@@ -422,12 +418,8 @@ function CbrTab({ deal, onUpdate }) {
     setError('');
     try {
       await exportCbr(deal.id);
-      const link = document.createElement('a');
-      link.href = downloadUrl(deal.id, 'cbr');
-      link.setAttribute('download', '');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const filename = `${(deal.deal_name || 'cbr').replace(/[^a-z0-9]/gi, '_')}_cbr.pdf`;
+      await downloadDealPdf(deal.id, 'cbr', filename);
     } catch (err) {
       setError(friendlyError(err));
     } finally {
@@ -458,7 +450,7 @@ function CbrTab({ deal, onUpdate }) {
         <div className="empty-state">
           <div className="empty-state-icon">📊</div>
           <div className="empty-state-title">No CBR Yet</div>
-          <p>Complete the interview form, then click "Generate CBR" to create the full Confidential Business Review.</p>
+          <p>Complete the interview form, then click Generate CBR (Confidential Business Review). Download PDF appears after generation.</p>
           <div className="alert alert-info" style={{ maxWidth: 400, margin: '16px auto 0', textAlign: 'left' }}>
             <strong>Note:</strong> CBR generation uses more AI tokens and may take 30–60 seconds. Ensure the interview form is thoroughly filled out for best results.
           </div>
@@ -504,13 +496,21 @@ function CbrTab({ deal, onUpdate }) {
   );
 }
 
+const OUTPUT_TABS = ['blind-ad', 'flyer', 'cbr', 'activity'];
+
+function tabFromHash(hash) {
+  const tab = (hash || '').replace('#', '');
+  return OUTPUT_TABS.includes(tab) ? tab : 'blind-ad';
+}
+
 // ─── MAIN DEAL DETAIL PAGE ────────────────────────────────────────────────────
 export default function DealDetail() {
   const { id } = useParams();
+  const { hash } = useLocation();
   const [deal, setDeal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('blind-ad');
+  const [activeTab, setActiveTab] = useState(() => tabFromHash(window.location.hash));
 
   const loadDeal = async () => {
     try {
@@ -524,6 +524,14 @@ export default function DealDetail() {
   };
 
   useEffect(() => { loadDeal(); }, [id]);
+  useEffect(() => { setActiveTab(tabFromHash(hash)); }, [hash]);
+
+  const selectTab = (tabId) => {
+    setActiveTab(tabId);
+    if (window.location.hash !== `#${tabId}`) {
+      window.history.replaceState(null, '', `#${tabId}`);
+    }
+  };
 
   if (loading) {
     return (
@@ -551,6 +559,9 @@ export default function DealDetail() {
             {interviewData.business_city_state && (
               <span style={{ fontSize: 13, color: '#64748b' }}>📍 {interviewData.business_city_state}</span>
             )}
+          </div>
+          <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 8, maxWidth: 640, lineHeight: 1.45 }}>
+            Portal marketing pack: open each tab, click Generate, then Download. Blind Ad (.txt), Flyer (PDF), CBR (PDF).
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
@@ -594,13 +605,13 @@ export default function DealDetail() {
         {[
           { id: 'blind-ad', label: '📋 Blind Ad', hasContent: !!deal.blind_ad_text },
           { id: 'flyer', label: '🗂️ One-Page Flyer', hasContent: !!deal.flyer_html },
-          { id: 'cbr', label: '📊 CBR', hasContent: !!deal.cbr_html },
+          { id: 'cbr', label: '📊 CBR (CIM)', hasContent: !!deal.cbr_html },
           { id: 'activity', label: '🕐 Activity', hasContent: false },
         ].map(tab => (
           <button
             key={tab.id}
             className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => selectTab(tab.id)}
           >
             {tab.label}
             {tab.hasContent && (
