@@ -53,6 +53,29 @@ export const updateDeal = (id, data) => api.patch(`/deals/${id}`, data);
 export const deleteDeal = (id) => api.delete(`/deals/${id}`);
 export const downloadUrl = (id, type) => `/api/deals/${id}/download/${type}`;
 
+/** Authenticated blob download. A plain <a href> omits Basic Auth and 401s. */
+export async function downloadDealPdf(id, type, filename) {
+  const creds = getAuth();
+  const res = await fetch(downloadUrl(id, type), {
+    headers: creds ? { Authorization: `Basic ${creds}` } : {},
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const err = new Error(body.error || `Download failed (${res.status})`);
+    err.response = { status: res.status, data: body };
+    throw err;
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 // Generate
 export const generateBlindAd = (deal_id) => api.post('/generate/blind-ad', { deal_id });
 export const generateFlyer = (deal_id) => api.post('/generate/flyer', { deal_id });
