@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import {
   fetchDeal, updateDeal,
   generateBlindAd, generateFlyer, generateCbr,
   exportFlyer, exportCbr,
-  downloadUrl, getAuth, fetchDealEvents
+  downloadDealPdf, fetchDealEvents
 } from '../api';
 
 const PIPELINE_STAGES = ['draft', 'active', 'under_contract', 'closed'];
@@ -277,7 +277,7 @@ function BlindAdTab({ deal, onUpdate }) {
         <div className="empty-state">
           <div className="empty-state-icon">📝</div>
           <div className="empty-state-title">No Blind Ad Yet</div>
-          <p>Fill out the interview form, then click "Generate Blind Ad" to create your BizBuySell listing copy.</p>
+          <p>Fill out the interview form, then click <strong>Generate Blind Ad</strong>. Copy or Download .txt appears after generation — copy is not created automatically.</p>
         </div>
       )}
 
@@ -331,12 +331,7 @@ function FlyerTab({ deal, onUpdate }) {
     setError('');
     try {
       await exportFlyer(deal.id);
-      const link = document.createElement('a');
-      link.href = downloadUrl(deal.id, 'flyer');
-      link.setAttribute('download', '');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      await downloadDealPdf(deal.id, 'flyer');
     } catch (err) {
       setError(friendlyError(err));
     } finally {
@@ -367,7 +362,7 @@ function FlyerTab({ deal, onUpdate }) {
         <div className="empty-state">
           <div className="empty-state-icon">🗂️</div>
           <div className="empty-state-title">No Flyer Yet</div>
-          <p>Fill out the interview form, then click "Generate Flyer" to create a branded one-page PDF flyer.</p>
+          <p>Fill out the interview form, then click <strong>Generate Flyer</strong>. The Download PDF button appears after generation — materials are not created automatically.</p>
         </div>
       )}
 
@@ -422,12 +417,7 @@ function CbrTab({ deal, onUpdate }) {
     setError('');
     try {
       await exportCbr(deal.id);
-      const link = document.createElement('a');
-      link.href = downloadUrl(deal.id, 'cbr');
-      link.setAttribute('download', '');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      await downloadDealPdf(deal.id, 'cbr');
     } catch (err) {
       setError(friendlyError(err));
     } finally {
@@ -458,7 +448,7 @@ function CbrTab({ deal, onUpdate }) {
         <div className="empty-state">
           <div className="empty-state-icon">📊</div>
           <div className="empty-state-title">No CBR Yet</div>
-          <p>Complete the interview form, then click "Generate CBR" to create the full Confidential Business Review.</p>
+          <p>Complete the interview form, then click <strong>Generate CBR</strong> (CIM). The Download PDF button appears after generation — materials are not created automatically.</p>
           <div className="alert alert-info" style={{ maxWidth: 400, margin: '16px auto 0', textAlign: 'left' }}>
             <strong>Note:</strong> CBR generation uses more AI tokens and may take 30–60 seconds. Ensure the interview form is thoroughly filled out for best results.
           </div>
@@ -505,12 +495,23 @@ function CbrTab({ deal, onUpdate }) {
 }
 
 // ─── MAIN DEAL DETAIL PAGE ────────────────────────────────────────────────────
+const OUTPUT_TABS = ['blind-ad', 'flyer', 'cbr', 'activity'];
+
 export default function DealDetail() {
   const { id } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab');
   const [deal, setDeal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('blind-ad');
+  const [activeTab, setActiveTab] = useState(
+    OUTPUT_TABS.includes(tabFromUrl) ? tabFromUrl : 'blind-ad'
+  );
+
+  const selectTab = (tabId) => {
+    setActiveTab(tabId);
+    setSearchParams(tabId === 'blind-ad' ? {} : { tab: tabId }, { replace: true });
+  };
 
   const loadDeal = async () => {
     try {
@@ -524,6 +525,15 @@ export default function DealDetail() {
   };
 
   useEffect(() => { loadDeal(); }, [id]);
+
+  useEffect(() => {
+    if (OUTPUT_TABS.includes(tabFromUrl) && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+    if (!tabFromUrl && activeTab !== 'blind-ad') {
+      setActiveTab('blind-ad');
+    }
+  }, [tabFromUrl]);
 
   if (loading) {
     return (
@@ -551,6 +561,9 @@ export default function DealDetail() {
             {interviewData.business_city_state && (
               <span style={{ fontSize: 13, color: '#64748b' }}>📍 {interviewData.business_city_state}</span>
             )}
+          </div>
+          <div className="page-subtitle" style={{ marginTop: 8 }}>
+            Generate each tab below, then Download. Files are not built automatically from the interview.
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
@@ -594,13 +607,13 @@ export default function DealDetail() {
         {[
           { id: 'blind-ad', label: '📋 Blind Ad', hasContent: !!deal.blind_ad_text },
           { id: 'flyer', label: '🗂️ One-Page Flyer', hasContent: !!deal.flyer_html },
-          { id: 'cbr', label: '📊 CBR', hasContent: !!deal.cbr_html },
+          { id: 'cbr', label: '📊 CBR (CIM)', hasContent: !!deal.cbr_html },
           { id: 'activity', label: '🕐 Activity', hasContent: false },
         ].map(tab => (
           <button
             key={tab.id}
             className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => selectTab(tab.id)}
           >
             {tab.label}
             {tab.hasContent && (

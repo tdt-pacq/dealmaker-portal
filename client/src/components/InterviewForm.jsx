@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useContext, createContext } from 'react';
+import { Link } from 'react-router-dom';
 import { updateDeal } from '../api';
 
 const TEAM_MEMBERS = [
@@ -230,7 +231,7 @@ export default function InterviewForm({ deal, onUpdate }) {
       <span style={{ fontWeight: 700 }}>Step 2 — Review &amp; fill the form.</span>
       <span style={{ color: '#15803d' }}>
         If you uploaded your interview notes above, click "Apply to Form" and most fields will be pre-filled.
-        Fill in any blanks, then use the <strong>View Outputs</strong> button to generate your blind ad and CIM.
+        Fill in any blanks, then click <strong>Generate &amp; Download Marketing</strong> (top right, and at the bottom of this form) for the Portal blind ad, flyer, and CBR/CIM. Downloads appear after you generate each one.
       </span>
     </div>
     <div className="interview-layout">
@@ -735,6 +736,21 @@ export default function InterviewForm({ deal, onUpdate }) {
             </button>
           </div>
         )}
+
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+          marginTop: 24, padding: '16px 20px', background: '#0f1117',
+          border: '1px solid #2eb860', borderRadius: 8, flexWrap: 'wrap',
+        }}>
+          <div style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.5, maxWidth: 560 }}>
+            <strong style={{ color: '#e2e8f0' }}>Next: generate the Portal marketing pack.</strong>
+            {' '}Blind Ad, Flyer, and CBR (CIM) are created on the next screen — they are not auto-built from this form.
+            Download buttons appear after you click Generate on each tab.
+          </div>
+          <Link to={`/marketing/deals/${deal.id}`}>
+            <button className="btn-primary" type="button">Generate &amp; Download Marketing →</button>
+          </Link>
+        </div>
 
         {/* Autosave indicator */}
         <div className={`autosave-indicator ${saveStatus ? 'visible' : ''}`}>
