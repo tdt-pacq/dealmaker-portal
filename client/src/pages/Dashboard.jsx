@@ -123,7 +123,7 @@ export default function Dashboard() {
               {deals.map(deal => (
                 <tr key={deal.id}>
                   <td>
-                    <Link to={`/marketing/deals/${deal.id}`} style={{ fontWeight: 600, color: '#e2e8f0' }}>
+                    <Link to={`/marketing/deals/${deal.id}`} title="Open generate & download" style={{ fontWeight: 600, color: '#e2e8f0' }}>
                       {deal.deal_name}
                     </Link>
                   </td>
@@ -137,7 +137,7 @@ export default function Dashboard() {
                   <td>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button className="btn-ghost btn-sm" onClick={() => navigate(`/marketing/deals/${deal.id}`)}>
-                        View
+                        Generate / Download
                       </button>
                       <button className="btn-ghost btn-sm" onClick={() => navigate(`/marketing/deals/${deal.id}/edit`)}>
                         Edit
@@ -180,8 +180,8 @@ function OutputDots({ dealId }) {
   return (
     <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
       <DotLink to={`/marketing/deals/${dealId}`} label="Ad" />
-      <DotLink to={`/marketing/deals/${dealId}`} label="Flyer" />
-      <DotLink to={`/marketing/deals/${dealId}`} label="CBR" />
+      <DotLink to={`/marketing/deals/${dealId}?tab=flyer`} label="Flyer" />
+      <DotLink to={`/marketing/deals/${dealId}?tab=cbr`} label="CBR" />
     </div>
   );
 }

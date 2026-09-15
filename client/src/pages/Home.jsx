@@ -6,7 +6,7 @@ const TOOLS = [
     id: 'marketing',
     icon: '📄',
     label: 'Deal Marketing',
-    description: 'Generate blind ads, flyers, and CIMs from deal documents in one pass.',
+    description: 'Fill the deal interview, then generate branded blind ads, flyers, and CBRs (CIMs) from Deal Marketing.',
     href: '/marketing',
     live: true,
   },

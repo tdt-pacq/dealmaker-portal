@@ -145,7 +145,7 @@ export default function NewDeal() {
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <Link to={`/marketing/deals/${id}`}>
-            <button className="btn-ghost">View Outputs →</button>
+            <button className="btn-primary">Generate &amp; Download Marketing →</button>
           </Link>
           <Link to="/marketing">
             <button className="btn-ghost">← Dashboard</button>
