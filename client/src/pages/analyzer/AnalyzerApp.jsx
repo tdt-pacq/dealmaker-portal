@@ -43,7 +43,8 @@ const calcSDE = yd => {
   const sde=adjE+ab+rentAB;
   return {rev,cogs,gp,opx,otherInc,noi,int,taxes,dep,amor,ebitda,oc,adjE,ab,rentAB,sde};
 };
-const isYtdYear = y => String(y?.year) === 'YTD';
+const isYtdYear = y => String(y?.year).toUpperCase() === 'YTD';
+const isCompletedTaxYear = y => !isYtdYear(y) && Number.isFinite(Number(y?.year));
 const yearNum = y => {
   if (isYtdYear(y)) return Infinity;
   const n = Number(y?.year);
@@ -51,7 +52,7 @@ const yearNum = y => {
 };
 // Newest calendar year first. Equal years keep the later column (rightmost slot)
 // so a duplicate "2024" header on the third column still loses to that column's data.
-const sortedByYear = yrs => [...yrs].map((y,i)=>({y,i})).sort((a,b)=>{
+const sortedByYear = yrs => [...(yrs||[])].filter(y=>!isYtdYear(y)).map((y,i)=>({y,i})).sort((a,b)=>{
   const d = yearNum(b.y) - yearNum(a.y);
   return d !== 0 ? d : b.i - a.i;
 }).map(x=>x.y);
@@ -59,7 +60,7 @@ const sortedByYear = yrs => [...yrs].map((y,i)=>({y,i})).sort((a,b)=>{
 const uniquifyYears = yrs => {
   const used = new Set();
   return (yrs||[]).map(y => {
-    if (isYtdYear(y)) return y;
+    if (isYtdYear(y)) return {...y, year:'YTD'};
     let n = Number(y.year);
     if (!Number.isFinite(n)) return y;
     while (used.has(n)) n += 1;
@@ -67,13 +68,21 @@ const uniquifyYears = yrs => {
     return {...y, year:n};
   });
 };
+const dedupeYearLabels = (years, preferIdx=null) => uniquifyYears(years); // preferIdx unused; uniquify always bumps later dups
 const mostRecentYearData = yrs => {
   for (const y of sortedByYear(yrs||[])) {
     if (pn(y.revenue) || calcSDE(y).sde) return y;
   }
   return null;
 };
-const wtdSDE = yrs => { const s=sortedByYear(yrs).map(y=>calcSDE(y).sde); return (s[0]*3+s[1]*2+s[2]*1)/6; };
+const mostRecentYear = mostRecentYearData;
+const wtdSDE = yrs => {
+  const s=sortedByYear(yrs).map(y=>calcSDE(y).sde);
+  if(!s.length) return 0;
+  if(s.length===1) return s[0];
+  if(s.length===2) return (s[0]*2+s[1]*1)/3;
+  return (s[0]*3+s[1]*2+s[2]*1)/6;
+};
 const recentSDE = yrs => { const y=mostRecentYearData(yrs); return y ? calcSDE(y).sde : 0; };
 
 /* ── YTD annualization helpers ─────────────────────────────────────────────── */
@@ -113,14 +122,15 @@ const resolveSDE = (state) => {
   const rawWt  = wtdSDE(state.years);
   const rawRec = recentSDE(state.years);
   const rawAnn = (state.ytdEnabled && state.ytdThrough) ? annYTDSDE(state.ytdData, state.ytdThrough) : 0;
-  const rawBasis = state.sdeBasis === 'weighted' ? rawWt
-                 : state.sdeBasis === 'ytd'      ? rawAnn
-                 :                                 rawRec;
+  // Valuations / market price use Weighted Avg or Most Recent completed tax year only.
+  // YTD is trend-only — never a valuation basis (legacy 'ytd' basis falls back to recent).
+  const basisKey = state.sdeBasis === 'weighted' ? 'weighted' : 'recent';
+  const rawBasis = basisKey === 'weighted' ? rawWt : rawRec;
   const wt  = rawWt - buyerSalary;
   const rec = rawRec - buyerSalary;
   const ann = rawAnn ? rawAnn - buyerSalary : 0;
   const basis = rawBasis - buyerSalary;
-  return { wt, rec, ann, basis, rawWt, rawRec, rawAnn, rawBasis, buyerSalary };
+  return { wt, rec, ann, basis, rawWt, rawRec, rawAnn, rawBasis, buyerSalary, basisKey };
 };
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -150,11 +160,11 @@ const FinancialSpreadTable = ({years, ytdThrough=''}) => {
       <tr style={{borderBottom:'2px solid #1e2d45'}}>
         <th style={{textAlign:'left',padding:'5px 0',color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,width:'36%'}}>Metric</th>
         {years.map((y,i)=>{
-          const isYTD = String(y.year)==='YTD';
+          const isYTD = isYtdYear(y);
           const hasAnn = isYTD && months > 0;
           return [
             <th key={'y'+i} style={{textAlign:'right',padding:'5px 8px',color:'#475569',fontSize:10,textTransform:'uppercase',fontWeight:600}}>
-              {isYTD && months > 0 ? `YTD (${months}mo)` : y.year}
+              {isYTD && months > 0 ? `YTD (${months}mo)` : (isYTD ? 'YTD' : y.year)}
             </th>,
             hasAnn
               ? <th key={'y'+i+'ann'} style={{textAlign:'right',padding:'5px 8px',color:'#a78bfa',fontSize:9,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.04em'}}>Ann.</th>
@@ -171,7 +181,7 @@ const FinancialSpreadTable = ({years, ytdThrough=''}) => {
           <tr key={lbl} style={{borderBottom:`1px solid ${bold?'#1e2d45':'#0d1117'}`,background:isSDE?'#061208':bold?'#0a1205':'transparent'}}>
             <td style={{padding:'5px 0',color:isSDE?'#2eb860':bold?'#cbd5e1':'#64748b',fontWeight:bold?600:400,fontSize:11}}>{lbl}</td>
             {years.map((y,i)=>{
-              const isYTD = String(y.year)==='YTD';
+              const isYTD = isYtdYear(y);
               const hasAnn = isYTD && months > 0;
               const annYd = hasAnn ? annualizeYTD(y, months) : null;
               const v=fn(y), rev=calcSDE(y).rev;
@@ -374,28 +384,35 @@ const StackedBar = ({data}) => {
 const pctRev=(v,rev)=>rev>0?`${(v/rev*100).toFixed(1)}%`:'';
 const PctBadge=({v,rev})=>{ const p=pctRev(v,rev); return p?<span style={{fontSize:9,color:'#64748b',marginLeft:4}}>({p})</span>:null; };
 
-const YearSec = ({yd,onChange,onImport,reVal=0}) => {
+const YearSec = ({yd,onChange,onImport,reVal=0,yearEditable=true}) => {
   const c=calcSDE(yd);
   const set=(f,v)=>onChange({...yd,[f]:v});
   const addAB=()=>{const sid=Date.now();onChange({...yd,addBacks:[...(yd.addBacks||[]),{id:sid,sharedId:sid,label:'',amount:''}]});};
   const rmAB=id=>onChange({...yd,addBacks:(yd.addBacks||[]).filter(a=>a.id!==id)});
   const upAB=(id,k,v)=>onChange({...yd,addBacks:(yd.addBacks||[]).map(a=>a.id===id?{...a,[k]:v}:a)});
+  const isYTD = String(yd.year).toUpperCase()==='YTD';
   return (
     <div className="card" style={{marginBottom:40}}>
       <div className="flex items-center justify-between px-5 py-4 cursor-pointer select-none hover:bg-gray-900 rounded-lg"
         onClick={()=>set('expanded',!yd.expanded)}>
         <div className="flex items-center gap-4">
           <span className="text-gray-500 text-sm" style={{transition:'transform .15s',display:'inline-block',transform:yd.expanded?'rotate(90deg)':'rotate(0deg)'}}>▶</span>
-          {String(yd.year)==='YTD'?(
-            <span className="font-bold text-blue-300 text-base">{yd.year}</span>
-          ):(
-            <input className="input-field py-1.5 font-bold text-blue-300" style={{fontSize:15,width:76,textAlign:'center',fontWeight:700}}
-              value={yd.year} onClick={e=>e.stopPropagation()}
+          {yearEditable && !isYTD ? (
+            <input
+              className="input-field py-1.5"
+              style={{fontSize:15,fontWeight:700,color:'#93c5fd',width:78,textAlign:'center'}}
+              value={yd.year}
+              onClick={e=>e.stopPropagation()}
               onChange={e=>{
+                e.stopPropagation();
                 const v=e.target.value.replace(/\D/g,'').slice(0,4);
                 if(v==='') return;
                 set('year', Number(v));
-              }}/>
+              }}
+              title="Tax year (completed return)"
+            />
+          ) : (
+            <span className="font-bold text-blue-300 text-base">{isYTD?'YTD':yd.year}</span>
           )}
           <select className="input-field py-1.5" style={{fontSize:13,width:120}} value={yd.entityType}
             onClick={e=>e.stopPropagation()} onChange={e=>{e.stopPropagation();set('entityType',e.target.value);}}>
@@ -516,15 +533,15 @@ const YearSec = ({yd,onChange,onImport,reVal=0}) => {
 
 /* ── Analysis Panel ────────────────────────────────── */
 const Analysis = ({state,set,primeRate}) => {
-  const {years,sdeBasis,customMults,loanRate,loanAmort,dpPct,ytdEnabled,ytdThrough,ytdData}=state;
+  const {years,sdeBasis,customMults,loanRate,loanAmort,dpPct}=state;
   const hasData=years.some(y=>pn(y.revenue)||calcSDE(y).sde);
-  const {wt,rec,ann,rawBasis,buyerSalary}=resolveSDE(state);
-  const base=sdeBasis==='weighted'?wt:sdeBasis==='ytd'?ann:rec;
-  const showYTD=ytdEnabled&&ytdMonthsFromStr(ytdThrough)>0;
+  const {basis,rawBasis,buyerSalary,basisKey,rec}=resolveSDE(state);
+  const base=basis;
   const mults=[2.5,3.0,3.5,...(customMults||[]).map(m=>parseFloat(m)).filter(m=>m>0)];
   const r=(loanRate||10.75)/100/12, n=(loanAmort||10)*12;
   const pmt=loan=>r===0?loan/n:loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
   const dpFrac=(100-(dpPct||10))/100;
+  const recentYr=mostRecentYear(years);
   return (
     <div className="card p-5">
       <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 pb-2 border-b border-gray-700">Analysis</h3>
@@ -538,10 +555,10 @@ const Analysis = ({state,set,primeRate}) => {
           <div className="mb-4">
             <span className="lbl">SDE Basis</span>
             <div className="flex rounded overflow-hidden border border-gray-700 text-sm">
-              {['weighted','recent',...(showYTD?['ytd']:[])].map(b=>(
+              {['weighted','recent'].map(b=>(
                 <button key={b} onClick={()=>set({...state,sdeBasis:b})}
-                  className={`flex-1 py-2 transition-colors ${sdeBasis===b?'bg-blue-700 text-white':'bg-gray-900 text-gray-400 hover:bg-gray-800'}`}>
-                  {b==='weighted'?'Weighted Avg':b==='ytd'?'Ann. YTD':'Most Recent'}
+                  className={`flex-1 py-2 transition-colors ${(basisKey===b)?'bg-blue-700 text-white':'bg-gray-900 text-gray-400 hover:bg-gray-800'}`}>
+                  {b==='weighted'?'Weighted Avg':'Most Recent'}
                 </button>
               ))}
             </div>
@@ -550,11 +567,12 @@ const Analysis = ({state,set,primeRate}) => {
             <span className="lbl">Selected SDE</span>
             <div className="text-2xl font-bold text-green-400 mono">{fmtD(base)}</div>
             <div className="text-sm text-gray-500 mt-1">
-              {sdeBasis==='weighted'?`Wtd Avg (3×/2×/1×) ÷ 6`:sdeBasis==='ytd'?`Annualized YTD (${ytdMonthsFromStr(ytdThrough)}mo × ${(12/ytdMonthsFromStr(ytdThrough)).toFixed(2)})`:`Most Recent Year`}
+              {basisKey==='weighted'?`Wtd Avg (3×/2×/1×) ÷ 6`:`Most Recent Completed Year${recentYr?` (${recentYr.year})`:''}`}
             </div>
             {buyerSalary>0&&(
               <div className="text-xs text-gray-600 mt-1">{fmtD(rawBasis)} raw SDE − {fmtD(buyerSalary)} buyer's salary</div>
             )}
+            <div className="text-xs text-gray-600 mt-1">Market price uses completed tax years only — not YTD.</div>
           </div>
           <div className="mb-4">
             <span className="lbl text-blue-400 mb-2 block">Fair Market Value Range</span>
@@ -601,9 +619,9 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
   // Sync add-backs (add/remove/relabel) across all sections — the 3 tax-return
   // years plus YTD when enabled — so a change to any one carries over to the rest.
   const syncSection=(idx, newYd)=>{
-    const sections=state.ytdEnabled?[...state.years,state.ytdData]:[...state.years];
+    const sections=state.ytdEnabled?[...state.years,{...state.ytdData,year:'YTD'}]:[...state.years];
     const oldYd=sections[idx];
-    sections[idx]=newYd;
+    sections[idx]=idx<state.years.length?newYd:{...newYd,year:'YTD'};
     const oldABs=oldYd.addBacks||[], newABs=newYd.addBacks||[];
     const added=newABs.filter(na=>na.sharedId&&!oldABs.find(oa=>oa.sharedId===na.sharedId));
     const removed=oldABs.filter(oa=>oa.sharedId&&!newABs.find(na=>na.sharedId===oa.sharedId)).map(a=>a.sharedId);
@@ -623,13 +641,17 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
     const yearChanged=!isYtdYear(newYd) && Number.isFinite(newYearNum) && String(newYd.year).length===4 && newYearNum!==Number(oldYd.year);
     if(state.ytdEnabled){
       const years=yearChanged?uniquifyYears(next.slice(0,-1)):next.slice(0,-1);
-      set({...state,years,ytdData:next[next.length-1]});
+      set({...state,years,ytdData:{...next[next.length-1],year:'YTD'}});
     } else {
       set({...state,years:yearChanged?uniquifyYears(next):next});
     }
   };
   const upY=(yearIdx, newYd)=>syncSection(yearIdx, newYd);
-  const upYTD=newYd=>syncSection(state.years.length, newYd);
+  const upYTD=newYd=>syncSection(state.years.length, {...newYd, year:'YTD'});
+  const hasDupYears=(()=>{
+    const labels=state.years.map(y=>String(y.year));
+    return new Set(labels).size!==labels.length;
+  })();
   return (
     <div style={{display:'flex',gap:24,minHeight:0}}>
       <div style={{flex:'0 0 64%',overflowY:'auto',paddingRight:8,minWidth:0}}>
@@ -638,16 +660,20 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
             <h2 className="text-lg font-bold text-white">Data Input &amp; Setup</h2>
             <p className="text-xs text-gray-500">SDE + DSCR Analysis — 3-Year Tax Return Spread</p>
           </div>
-          <Tog on={state.ytdEnabled} set={v=>set({...state,ytdEnabled:v,ytdThrough:v?state.ytdThrough:''})} label="YTD"/>
+          <Tog on={state.ytdEnabled} set={v=>set({...state,ytdEnabled:v,ytdThrough:v?state.ytdThrough:'',sdeBasis:state.sdeBasis==='ytd'?'recent':state.sdeBasis})} label="YTD"/>
         </div>
+        {hasDupYears&&(
+          <div style={{marginBottom:12,padding:'10px 12px',background:'#3b1d0a',border:'1px solid #b45309',borderRadius:6,fontSize:12,color:'#fdba74'}}>
+            Duplicate tax years detected. Edit the year labels so each completed return has a unique year — valuations use the most recent completed tax year, not YTD.
+          </div>
+        )}
         {state.years.map((yd,i)=><YearSec key={'yr-'+i} yd={yd} onChange={yd=>upY(i,yd)} onImport={()=>importTaxReturn(i)} reVal={pn(state.su?.reVal)}/>)}
         {state.ytdEnabled&&(()=>{
           const months=ytdMonthsFromStr(state.ytdThrough);
           const annSDE=months>0?annYTDSDE(state.ytdData,state.ytdThrough):0;
-          const [ytdY,ytdM]=state.ytdThrough?state.ytdThrough.split('-').map(Number):[null,null];
           return (
             <div>
-              {/* YTD through-date row */}
+              {/* YTD through-date row — trend analysis only, never valuation basis */}
               <div style={{display:'flex',alignItems:'center',gap:12,padding:'10px 16px',background:'#0f172a',borderRadius:'8px 8px 0 0',border:'1px solid #1e293b',borderBottom:'none',marginTop:8}}>
                 <span style={{fontSize:11,color:'#64748b',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.06em'}}>YTD Through</span>
                 <input type="month" value={state.ytdThrough||''}
@@ -664,8 +690,11 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
                 )}
                 {state.ytdThrough&&months===0&&<span style={{marginLeft:'auto',fontSize:11,color:'#f87171'}}>Full-year — no annualization applied</span>}
               </div>
+              <div style={{padding:'8px 16px',background:'#111827',borderLeft:'1px solid #1e293b',borderRight:'1px solid #1e293b',fontSize:11,color:'#94a3b8'}}>
+                YTD is for trend checking only. Market price and valuations use Weighted Avg or Most Recent completed tax year.
+              </div>
               <div style={{borderRadius:'0 0 8px 8px',overflow:'hidden'}}>
-                <YearSec yd={state.ytdData} onChange={upYTD} onImport={null} reVal={pn(state.su?.reVal)}/>
+                <YearSec yd={{...state.ytdData, year:'YTD'}} onChange={upYTD} onImport={null} reVal={pn(state.su?.reVal)} yearEditable={false}/>
               </div>
             </div>
           );
@@ -686,7 +715,7 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
         {/* Financial Performance Spread */}
         <div className="card p-5" style={{marginBottom:20}}>
           <div style={{fontSize:14,fontWeight:800,color:'#f1f5f9',marginBottom:14}}>Financial Performance &amp; Seller's Discretionary Earnings</div>
-          <FinancialSpreadTable years={state.ytdEnabled?[...state.years,state.ytdData]:state.years} ytdThrough={state.ytdEnabled?state.ytdThrough:''}/>
+          <FinancialSpreadTable years={state.ytdEnabled?[...state.years,{...state.ytdData,year:'YTD'}]:state.years} ytdThrough={state.ytdEnabled?state.ytdThrough:''}/>
         </div>
         {/* Advisor Notes */}
         <div style={{marginTop:20,padding:16,background:'#0f172a',borderRadius:8,border:'1px solid #1e293b'}}>
@@ -988,10 +1017,10 @@ const T4 = ({state,set}) => {
       <div className="flex items-center gap-3 mb-4">
         <span className="text-xs text-gray-400">SDE Basis:</span>
         <div className="flex rounded overflow-hidden border border-gray-700 text-xs">
-          {['weighted','recent',...(state.ytdEnabled&&ytdMonthsFromStr(state.ytdThrough)>0?['ytd']:[])].map(b=>(
+          {['weighted','recent'].map(b=>(
             <button key={b} onClick={()=>set({...state,sdeBasis:b})}
               className={`py-1 px-3 transition-colors ${sdeBasis===b?'bg-blue-700 text-white':'bg-gray-900 text-gray-400 hover:bg-gray-800'}`}>
-              {b==='weighted'?'Weighted Avg':b==='ytd'?'Ann. YTD':'Most Recent'}
+              {b==='weighted'?'Weighted Avg':'Most Recent'}
             </button>
           ))}
         </div>
@@ -1122,25 +1151,30 @@ const T4 = ({state,set}) => {
 
 /* ── Tab 5: DSCR ───────────────────────────────────── */
 const T5 = ({state,set,primeRate}) => {
-  const {years,ytdData,ytdEnabled,loanRate,loanAmort,dpPct,reAmort,sdeBasis,su,loanStructure,re504Rate,ppLoan,ppRate,ppAmort}=state;
+  const {years,loanRate,loanAmort,dpPct,reAmort,sdeBasis,su,loanStructure,re504Rate,ppLoan,ppRate,ppAmort}=state;
   const dscrMin=state.dscrMin||1.25;
-  const all=ytdEnabled?[...years,ytdData]:years;
+  // Per-year DSCR cards use completed tax years only — YTD is trend-only.
+  const all=years;
   const r=(loanRate||10.75)/100/12, n=(loanAmort||10)*12;
   const pmt=loan=>r===0?loan/n:loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
   const dp=(dpPct||10)/100;
   const basisSDE=resolveSDE(state).basis;
   // Max supportable price at required DSCR — matches loanbud.io's lending analysis.
   const maxAtMin=sde=>{ if(!r)return(sde/dscrMin)/(12/n)/(1-dp); const pf=r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1); return((sde/dscrMin)/(pf*12))/(1-dp); };
-  // Per-year thresholds: index 0=oldest(2023), 1=middle(2024), 2=most recent(2025).
-  // Once a buyer's salary is entered, the deal's cash-flow math already carries that extra
-  // conservatism, so every year drops to the flat required minimum instead of the escalating scale.
+  // Thresholds track Required DSCR so Strong / Marginal / Below Min update when the field changes.
+  // Green is a cushion above the required minimum; yellow is exactly the required floor.
   const hasBuyerSalary=pn(state.buyerSalary)>0;
+  const yellow=dscrMin;
   const thresholds=hasBuyerSalary
-    ? [{green:1.5,yellow:dscrMin},{green:1.5,yellow:dscrMin},{green:1.5,yellow:dscrMin}]
+    ? [
+        {green:dscrMin+0.25,yellow},
+        {green:dscrMin+0.25,yellow},
+        {green:dscrMin+0.25,yellow},
+      ]
     : [
-        {green:1.5,yellow:dscrMin},               // oldest year
-        {green:1.7,yellow:dscrMin},               // middle year
-        {green:2.0,yellow:Math.max(1.8,dscrMin)}, // most recent year
+        {green:Math.max(1.5, dscrMin+0.25),yellow}, // oldest year
+        {green:Math.max(1.7, dscrMin+0.45),yellow}, // middle year
+        {green:Math.max(2.0, dscrMin+0.55),yellow}, // most recent year
       ];
   const dcFor=(d,idx)=>{ const t=thresholds[idx]||thresholds[2]; return d>=t.green?'text-green-400':d>=t.yellow?'text-yellow-400':'text-red-400'; };
   const dbgFor=(d,idx)=>{ const t=thresholds[idx]||thresholds[2]; return d>=t.green?'bg-green-900/30':d>=t.yellow?'bg-yellow-900/30':'bg-red-900/30'; };
@@ -1181,17 +1215,16 @@ const T5 = ({state,set,primeRate}) => {
   const ppMo5=(ppLoan||0)>0?(rPP5===0?(ppLoan||0)/nPP5:(ppLoan||0)*rPP5*Math.pow(1+rPP5,nPP5)/(Math.pow(1+rPP5,nPP5)-1)):0;
   const dealMonthly=dealBizMo+dealREMo+ppMo5;
   const dealAnn=dealMonthly*12+sfAnn;
-  const showYTD5=ytdEnabled&&ytdMonthsFromStr(state.ytdThrough)>0;
   return (
     <div>
       <h2 className="text-lg font-bold text-white mb-1">DSCR Analysis</h2>
       <div className="flex items-center gap-3 mb-3">
         <span className="text-xs text-gray-400">SDE Basis:</span>
         <div className="flex rounded overflow-hidden border border-gray-700 text-xs">
-          {['weighted','recent',...(showYTD5?['ytd']:[])].map(b=>(
+          {['weighted','recent'].map(b=>(
             <button key={b} onClick={()=>set({...state,sdeBasis:b})}
-              className={`py-1 px-3 transition-colors ${sdeBasis===b?'bg-blue-700 text-white':'bg-gray-900 text-gray-400 hover:bg-gray-800'}`}>
-              {b==='weighted'?'Weighted Avg':b==='ytd'?'Ann. YTD':'Most Recent'}
+              className={`py-1 px-3 transition-colors ${(sdeBasis==='weighted'?b==='weighted':b==='recent')?'bg-blue-700 text-white':'bg-gray-900 text-gray-400 hover:bg-gray-800'}`}>
+              {b==='weighted'?'Weighted Avg':'Most Recent'}
             </button>
           ))}
         </div>
@@ -1247,7 +1280,7 @@ const T5 = ({state,set,primeRate}) => {
               const dc=dcFor(dscr,i), dbg=dbgFor(dscr,i), lbl=labelFor(dscr,i);
               const t=thresholds[i]||thresholds[2];
               return (
-                <div key={yd.year} className={`card p-4 ${dbg}`}>
+                <div key={`dscr-${i}`} className={`card p-4 ${dbg}`}>
                   <div className="flex items-center justify-between mb-3">
                     <span className="font-bold text-white text-base">{yd.year}</span>
                     <div className="text-right"><div className="text-xs text-gray-400">{yd.year} SDE</div><div className={`mono font-bold ${sde>=0?'text-green-400':'text-red-400'}`}>{fmtD(sde)}</div></div>
@@ -1278,7 +1311,7 @@ const T5 = ({state,set,primeRate}) => {
             const dc=dcFor(dscr,i), dbg=dbgFor(dscr,i), lbl=labelFor(dscr,i);
             const t=thresholds[i]||thresholds[2];
             return (
-              <div key={yd.year} className={`card p-4 ${dbg}`}>
+              <div key={`dscr2-${i}`} className={`card p-4 ${dbg}`}>
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-bold text-white text-base">{yd.year}</span>
                   <div className="text-right"><div className="text-xs text-gray-400">{yd.year} SDE</div><div className={`mono font-bold ${sde>=0?'text-green-400':'text-red-400'}`}>{fmtD(sde)}</div></div>
@@ -1303,8 +1336,9 @@ const T5 = ({state,set,primeRate}) => {
       <div className="card p-3 mb-4" style={{borderColor:'#1a5e35'}}>
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <div className="text-xs font-semibold" style={{color:'#2eb860'}}>SDE × 3 Lender Sizing Reference — {sdeBasis==='weighted'?'Weighted Avg':sdeBasis==='ytd'?'Ann. YTD':'Most Recent'} SDE: {fmtD(basisSDE)}</div>
+            <div className="text-xs font-semibold" style={{color:'#2eb860'}}>SDE × 3 Lender Sizing Reference — {(sdeBasis==='weighted'?'Weighted Avg':'Most Recent')} SDE: {fmtD(basisSDE)}</div>
             <div className="text-xs text-gray-500 mt-0.5">Loan: {fmtD(basisLoan)} · {fmtD(basisMo)}/mo · {fmtD(basisAnn)}/yr{sfAnn>0?` + ${fmtD(sfAnn)}/yr seller note = ${fmtD(totalAnn)}/yr total`:''}</div>
+            <div className="text-xs text-gray-500 mt-0.5">Year ratios = year SDE ÷ that debt service. Strong / Marginal / Below Min update with Required DSCR ({dscrMin}×).</div>
           </div>
           <div className="flex gap-5">
             {all.map((yd,i)=>{
@@ -1312,7 +1346,7 @@ const T5 = ({state,set,primeRate}) => {
               const dscr=totalAnn>0?sde/totalAnn:0;
               const dc=dcFor(dscr,i), lbl=labelFor(dscr,i);
               return (
-                <div key={yd.year} className="text-center" style={{minWidth:56}}>
+                <div key={`dscr-sum-${i}`} className="text-center" style={{minWidth:56}}>
                   <div className="text-xs text-gray-500">{yd.year}</div>
                   <div className={`mono font-bold text-base ${dc}`}>{dscr>0?dscr.toFixed(2):'—'}</div>
                   <div className={`text-xs ${dc}`}>{lbl}</div>
@@ -1324,7 +1358,7 @@ const T5 = ({state,set,primeRate}) => {
       </div>
       {years.some(y=>calcSDE(y).sde>0)&&(
         <div className="card p-4 mt-2">
-          <h3 className="text-sm font-bold text-gray-300 mb-3">DSCR Sensitivity — {sdeBasis==='weighted'?'Weighted Avg':sdeBasis==='ytd'?'Ann. YTD':'Most Recent'} SDE</h3>
+          <h3 className="text-sm font-bold text-gray-300 mb-3">DSCR Sensitivity — {(sdeBasis==='weighted'?'Weighted Avg':'Most Recent')} SDE</h3>
           <table className="w-full text-xs">
             <thead><tr className="text-gray-500 border-b border-gray-700">
               <th className="text-left py-1 pr-3">Mult</th><th className="text-right py-1 pr-3">Price</th><th className="text-right py-1 pr-3">Loan</th><th className="text-right py-1 pr-3">Monthly</th><th className="text-right py-1 pr-3">Ann. DS</th><th className="text-right py-1">DSCR</th>
@@ -1437,7 +1471,7 @@ const TIndustry = ({state,set,importIndustryReport}) => {
     };
   });
 
-  // Pick correct revenue-tier multiples based on most recent year revenue
+  // Pick correct revenue-tier multiples based on most recent completed tax year
   const recY=mostRecentYearData(years)||years[years.length-1];
   const recRev=recY?calcSDE(recY).rev:0;
   const tierSDE=recRev>5000000?pn(ind.sdeMultOver5M):recRev>1000000?pn(ind.sdeMult1to5M):pn(ind.sdeMultUnder1M);
@@ -1623,7 +1657,7 @@ const TBuyerROI = ({state,set}) => {
 
   // SDE
   const sde=resolveSDE(state).basis;
-  const basisLabel=sdeBasis==='weighted'?'Weighted Avg':sdeBasis==='ytd'?'Ann. YTD':'Most Recent';
+  const basisLabel=sdeBasis==='weighted'?'Weighted Avg':'Most Recent';
   const netCF=sde-totalDS;
   const cashOnCash=totalCash>0?netCF/totalCash*100:0;
 
@@ -1710,10 +1744,10 @@ const TBuyerROI = ({state,set}) => {
       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16,flexWrap:'wrap'}}>
         <span style={{fontSize:11,color:'#64748b'}}>SDE Basis:</span>
         <div style={{display:'flex',borderRadius:4,overflow:'hidden',border:'1px solid #334155'}}>
-          {['weighted','recent',...(state.ytdEnabled&&ytdMonthsFromStr(state.ytdThrough)>0?['ytd']:[])].map(b=>(
+          {['weighted','recent'].map(b=>(
             <button key={b} onClick={()=>set({...state,sdeBasis:b})}
               style={{padding:'2px 10px',fontSize:11,cursor:'pointer',background:sdeBasis===b?'#1d4ed8':'#0f172a',color:sdeBasis===b?'#fff':'#94a3b8',border:'none'}}>
-              {b==='weighted'?'Weighted Avg':b==='ytd'?'Ann. YTD':'Most Recent'}
+              {b==='weighted'?'Weighted Avg':'Most Recent'}
             </button>
           ))}
         </div>
@@ -1899,7 +1933,7 @@ const TSeller = ({state, set}) => {
   // Raw (pre-buyer-salary) SDE — this tab does its own salary breakdown below,
   // so it needs the unadjusted figure to avoid subtracting buyer's salary twice.
   const sde = resolveSDE(state).rawBasis;
-  const basisLabel = sdeBasis==='weighted' ? 'Weighted Avg' : sdeBasis==='ytd' ? 'Ann. YTD' : 'Most Recent';
+  const basisLabel = sdeBasis==='weighted' ? 'Weighted Avg' : 'Most Recent';
   const dp = (dpPct||10)/100;
   const r = (loanRate||10.75)/100/12, n = (loanAmort||10)*12;
   const pmtFn = loan => r===0 ? loan/n : loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
@@ -2017,10 +2051,10 @@ const TSeller = ({state, set}) => {
       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16,flexWrap:'wrap'}}>
         <span style={{fontSize:11,color:'#64748b'}}>SDE Basis:</span>
         <div style={{display:'flex',borderRadius:4,overflow:'hidden',border:'1px solid #334155'}}>
-          {['weighted','recent',...(state.ytdEnabled&&ytdMonthsFromStr(state.ytdThrough)>0?['ytd']:[])].map(b=>(
+          {['weighted','recent'].map(b=>(
             <button key={b} onClick={()=>set({...state,sdeBasis:b})}
               style={{padding:'2px 10px',fontSize:11,cursor:'pointer',background:sdeBasis===b?'#1d4ed8':'#0f172a',color:sdeBasis===b?'#fff':'#94a3b8',border:'none'}}>
-              {b==='weighted'?'Weighted Avg':b==='ytd'?'Ann. YTD':'Most Recent'}
+              {b==='weighted'?'Weighted Avg':'Most Recent'}
             </button>
           ))}
         </div>
@@ -2180,7 +2214,7 @@ const T7 = ({state,set}) => {
   const autoGross=suPrice>0?suPrice:(basisSDE>0?basisSDE*3:0);
   const gross=autoGross>0?autoGross:pn(np.gross);
   const grossIsAuto=autoGross>0;
-  const basisLbl7=state.sdeBasis==='weighted'?'Weighted Avg':state.sdeBasis==='ytd'?'Ann. YTD':'Most Recent';
+  const basisLbl7=state.sdeBasis==='weighted'?'Weighted Avg':'Most Recent';
   const grossLabel=suPrice>0?'Auto from Sources & Uses market price'
     :(basisSDE>0?`Auto: ${basisLbl7} SDE × 3.0×`:'');
 
@@ -2698,12 +2732,12 @@ const T9 = ({state,narrative,narrativeStatus}) => {
   const setBuyer=()=>setVis(v=>Object.fromEntries(REPORT_SECTIONS.map(s=>[s.id,!s.seller])));
   const setSeller=()=>setVis(v=>Object.fromEntries(REPORT_SECTIONS.map(s=>[s.id,true])));
 
-  const {wt,rec,ann,rawWt,rawRec,rawAnn,buyerSalary}=resolveSDE(state);
-  const base=sdeBasis==='weighted'?wt:sdeBasis==='ytd'?ann:rec;
+  const {wt,rec,ann,rawWt,rawRec,rawAnn,buyerSalary,basis,rawBasis,basisKey}=resolveSDE(state);
+  const base=basis;
   // Raw (pre-buyer-salary) SDE — the Seller Reality section below does its own
   // salary breakdown, so it needs the unadjusted figure to avoid subtracting twice.
-  const baseRaw=sdeBasis==='weighted'?rawWt:sdeBasis==='ytd'?rawAnn:rawRec;
-  const basisLabel=sdeBasis==='weighted'?'Weighted Average':sdeBasis==='ytd'?'Annualized YTD':'Most Recent';
+  const baseRaw=rawBasis;
+  const basisLabel=basisKey==='weighted'?'Weighted Average':'Most Recent';
   const mults=[2.5,3.0,3.5,...(customMults||[]).map(m=>parseFloat(m)).filter(m=>m>0)];
   const dp=(dpPct||10)/100, r=(loanRate||10.75)/100/12, n=(loanAmort||10)*12;
   const pmtFn=loan=>r===0?loan/n:loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
@@ -2773,7 +2807,7 @@ const T9 = ({state,narrative,narrativeStatus}) => {
   const nlbDp=net*(nlbPct/100), nlbTarget=nlbDp/0.10;
   const nextSDE=pn(nlb.nextSDE)||(nlbTarget/3), curSDE=recentSDE(years);
 
-  const allYears=ytdEnabled?[...years,ytdData]:years;
+  const allYears=ytdEnabled?[...years,{...ytdData,year:'YTD'}]:years;
 
   const SH=({n,title,color='#059669'})=>(
     <div style={{borderLeft:`4px solid ${color}`,paddingLeft:12,marginBottom:14}}>
@@ -3021,7 +3055,7 @@ const T9 = ({state,narrative,narrativeStatus}) => {
                 const clr=d>=t.g?'#059669':d>=t.y?'#d97706':'#dc2626';
                 const lbl=d>=t.g?'✓ Strong':d>=t.y?'⚠ Marginal':'✗ Below Min';
                 return (
-                  <tr key={y.year} style={{borderBottom:'1px solid #1e2d45'}}>
+                  <tr key={`nlb-${i}`} style={{borderBottom:'1px solid #1e2d45'}}>
                     <td style={{padding:'7px 0',color:'#e2e8f0',fontWeight:700}}>{y.year}</td>
                     <td className="rpt-green mono" style={{textAlign:'right',padding:'7px 8px',color:'#2eb860'}}>{fmtD(sde)}</td>
                     <td className="rpt-red mono" style={{textAlign:'right',padding:'7px 8px',color:'#f87171'}}>{fmtD(dscrAnn)}</td>
@@ -3870,8 +3904,14 @@ function App() {
   const [tab,setTab]=useState('dashboard');
   const [state,setState]=useState(()=>{
     const draft=loadDraft();
-    const merged=draft?{...initState(),...draft,_net:0}:initState();
-    return merged.years?.length?{...merged,years:uniquifyYears(merged.years)}:merged;
+    if(!draft) return initState();
+    const merged={...initState(),...draft,_net:0};
+    return {
+      ...merged,
+      years:uniquifyYears(Array.isArray(merged.years)?merged.years:initState().years),
+      ytdData:{...(merged.ytdData||blankYear('YTD')), year:'YTD'},
+      sdeBasis:merged.sdeBasis==='ytd'?'recent':(merged.sdeBasis||'recent'),
+    };
   });
   const [showLoad,setShowLoad]=useState(false);
   const [saveStatus,setSaveStatus]=useState('idle');
@@ -3962,9 +4002,19 @@ function App() {
   // Older saved deals stored buyer's salary under seller.buyerSalary (Seller Reality Check tab only).
   // Carry that value into the new global state.buyerSalary field instead of overwriting it with the $75,000 default.
   const migrateBuyerSalary=d=>{if((d.buyerSalary===undefined||d.buyerSalary==='')&&d.seller?.buyerSalary){d={...d,buyerSalary:d.seller.buyerSalary};}return d;};
-  const migrateYears=d=>{if(d?.years?.length){d={...d,years:uniquifyYears(d.years)};}return d;};
-  const migrateDeal=d=>migrateBuyerSalary(migrateYears(migrateBs(d)));
-  const load=data=>{data=migrateDeal(data);setState({...initState(),...data,_net:0});setShowLoad(false);setTab('dashboard');};
+  // Repair saved deals: unique tax-year labels, YTD forced to 'YTD', valuation basis never 'ytd'.
+  const migrateYears=d=>{
+    const years=uniquifyYears(Array.isArray(d.years)?d.years:initState().years);
+    const ytdData={...(d.ytdData||blankYear('YTD')), year:'YTD'};
+    const sdeBasis=d.sdeBasis==='ytd'?'recent':(d.sdeBasis||'recent');
+    return {...d, years, ytdData, sdeBasis};
+  };
+  const migrateDeal=d=>migrateYears(migrateBuyerSalary(migrateBs(d)));
+  const hydrateDeal=data=>{
+    data=migrateDeal(data);
+    return {...initState(),...data,_net:0};
+  };
+  const load=data=>{setState(hydrateDeal(data));setShowLoad(false);setTab('dashboard');};
   const newDeal=()=>{
     if(window.confirm('Start a new deal? Unsaved data will be lost.')){
       clearDraft();
@@ -3987,7 +4037,7 @@ function App() {
       const file=e.target.files[0]; if(!file) return;
       const reader=new FileReader();
       reader.onload=ev=>{
-        try{let data=JSON.parse(ev.target.result);data=migrateDeal(data);setState({...initState(),...data,_net:0});setTab('dashboard');}
+        try{let data=JSON.parse(ev.target.result);setState(hydrateDeal(data));setTab('dashboard');}
         catch{alert('Invalid deal file — could not import.');}
       };
       reader.readAsText(file);
@@ -4045,7 +4095,15 @@ function App() {
     input.click();
   };
   const applyReview=confirmed=>{
-    const applyIncome=(prev,inc,yi)=>{
+    const applyIncome=(prev,inc,clickedIdx)=>{
+      // Route extracted tax-year data into the matching year slot when possible,
+      // so importing a 2023 return into the wrong row doesn't create duplicate labels.
+      const extractedYear=inc.year!=null&&inc.year!==''?String(inc.year).replace(/[^\d]/g,'').slice(0,4):'';
+      let yi=clickedIdx;
+      if(extractedYear){
+        const matchIdx=prev.years.findIndex(y=>String(y.year)===extractedYear);
+        if(matchIdx>=0) yi=matchIdx;
+      }
       const years=[...prev.years];
       const y=years[yi];
       const newRent=inc.rent!=null?inc.rent:y.rent;
@@ -4064,7 +4122,7 @@ function App() {
       }
       years[yi]={...y,
         entityType:inc.entityType||y.entityType,
-        year:inc.year!=null&&inc.year!==''?(Number(inc.year)||y.year):y.year,
+        year:extractedYear?(Number(extractedYear)||y.year):y.year,
         revenue:inc.revenue??y.revenue,
         cogs:inc.cogs??y.cogs,
         otherIncome:inc.otherIncome??y.otherIncome,
@@ -4078,17 +4136,20 @@ function App() {
         rentAdj:newRentAdj,
         addBacks:newABs,
       };
-      return uniquifyYears(years);
+      return {years:uniquifyYears(years), targetIdx:yi};
     };
     if(reviewData.type==='combined'){
       setState(prev=>{
-        const years=applyIncome(prev,confirmed.income,reviewData.yearIndex);
+        const {years,targetIdx}=applyIncome(prev,confirmed.income,reviewData.yearIndex);
         const newBS=[...prev.bs];
-        newBS[reviewData.yearIndex]={...newBS[reviewData.yearIndex],...Object.fromEntries(Object.entries(confirmed.balance).filter(([,v])=>v!==null&&v!==''))};
+        newBS[targetIdx]={...newBS[targetIdx],...Object.fromEntries(Object.entries(confirmed.balance).filter(([,v])=>v!==null&&v!==''))};
         return {...prev,years,bs:newBS};
       });
     } else if(reviewData.type==='income'){
-      setState(prev=>({...prev,years:applyIncome(prev,confirmed,reviewData.yearIndex)}));
+      setState(prev=>{
+        const {years}=applyIncome(prev,confirmed,reviewData.yearIndex);
+        return {...prev,years};
+      });
     } else if(reviewData.type==='industry'){
       setState(prev=>({...prev,ind:{...prev.ind,...Object.fromEntries(Object.entries(confirmed).filter(([,v])=>v!==null&&v!==''))}}));
     } else {
