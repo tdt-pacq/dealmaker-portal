@@ -43,9 +43,38 @@ const calcSDE = yd => {
   const sde=adjE+ab+rentAB;
   return {rev,cogs,gp,opx,otherInc,noi,int,taxes,dep,amor,ebitda,oc,adjE,ab,rentAB,sde};
 };
-const sortedByYear = yrs => [...yrs].sort((a,b)=>String(b.year).localeCompare(String(a.year)));
+const isYtdYear = y => String(y?.year) === 'YTD';
+const yearNum = y => {
+  if (isYtdYear(y)) return Infinity;
+  const n = Number(y?.year);
+  return Number.isFinite(n) ? n : -Infinity;
+};
+// Newest calendar year first. Equal years keep the later column (rightmost slot)
+// so a duplicate "2024" header on the third column still loses to that column's data.
+const sortedByYear = yrs => [...yrs].map((y,i)=>({y,i})).sort((a,b)=>{
+  const d = yearNum(b.y) - yearNum(a.y);
+  return d !== 0 ? d : b.i - a.i;
+}).map(x=>x.y);
+// Keep column years unique by bumping later duplicates forward (2023, 2024, 2024 → 2023, 2024, 2025).
+const uniquifyYears = yrs => {
+  const used = new Set();
+  return (yrs||[]).map(y => {
+    if (isYtdYear(y)) return y;
+    let n = Number(y.year);
+    if (!Number.isFinite(n)) return y;
+    while (used.has(n)) n += 1;
+    used.add(n);
+    return {...y, year:n};
+  });
+};
+const mostRecentYearData = yrs => {
+  for (const y of sortedByYear(yrs||[])) {
+    if (pn(y.revenue) || calcSDE(y).sde) return y;
+  }
+  return null;
+};
 const wtdSDE = yrs => { const s=sortedByYear(yrs).map(y=>calcSDE(y).sde); return (s[0]*3+s[1]*2+s[2]*1)/6; };
-const recentSDE = yrs => { for(const y of sortedByYear(yrs)){ const s=calcSDE(y).sde; if(pn(y.revenue)||s) return s; } return 0; };
+const recentSDE = yrs => { const y=mostRecentYearData(yrs); return y ? calcSDE(y).sde : 0; };
 
 /* ── YTD annualization helpers ─────────────────────────────────────────────── */
 // Returns months elapsed from a "YYYY-MM" string (1–11; 12 = full year, treated as-is)
@@ -120,17 +149,17 @@ const FinancialSpreadTable = ({years, ytdThrough=''}) => {
     <thead>
       <tr style={{borderBottom:'2px solid #1e2d45'}}>
         <th style={{textAlign:'left',padding:'5px 0',color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,width:'36%'}}>Metric</th>
-        {years.map(y=>{
+        {years.map((y,i)=>{
           const isYTD = String(y.year)==='YTD';
           const hasAnn = isYTD && months > 0;
           return [
-            <th key={y.year} style={{textAlign:'right',padding:'5px 8px',color:'#475569',fontSize:10,textTransform:'uppercase',fontWeight:600}}>
+            <th key={'y'+i} style={{textAlign:'right',padding:'5px 8px',color:'#475569',fontSize:10,textTransform:'uppercase',fontWeight:600}}>
               {isYTD && months > 0 ? `YTD (${months}mo)` : y.year}
             </th>,
             hasAnn
-              ? <th key={y.year+'ann'} style={{textAlign:'right',padding:'5px 8px',color:'#a78bfa',fontSize:9,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.04em'}}>Ann.</th>
+              ? <th key={'y'+i+'ann'} style={{textAlign:'right',padding:'5px 8px',color:'#a78bfa',fontSize:9,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.04em'}}>Ann.</th>
               : null,
-            <th key={y.year+'p'} style={{textAlign:'right',padding:'5px 12px 5px 0',color:'#334155',fontSize:9,fontWeight:400}}>% Rev</th>
+            <th key={'y'+i+'p'} style={{textAlign:'right',padding:'5px 12px 5px 0',color:'#334155',fontSize:9,fontWeight:400}}>% Rev</th>
           ];
         })}
       </tr>
@@ -141,7 +170,7 @@ const FinancialSpreadTable = ({years, ytdThrough=''}) => {
         return (
           <tr key={lbl} style={{borderBottom:`1px solid ${bold?'#1e2d45':'#0d1117'}`,background:isSDE?'#061208':bold?'#0a1205':'transparent'}}>
             <td style={{padding:'5px 0',color:isSDE?'#2eb860':bold?'#cbd5e1':'#64748b',fontWeight:bold?600:400,fontSize:11}}>{lbl}</td>
-            {years.map(y=>{
+            {years.map((y,i)=>{
               const isYTD = String(y.year)==='YTD';
               const hasAnn = isYTD && months > 0;
               const annYd = hasAnn ? annualizeYTD(y, months) : null;
@@ -151,11 +180,11 @@ const FinancialSpreadTable = ({years, ytdThrough=''}) => {
               const p=lbl==='Revenue'?'100%':(rev>0?`${(v/rev*100).toFixed(1)}%`:'—');
               const pa=hasAnn?(lbl==='Revenue'?'100%':(annRev>0?`${(va/annRev*100).toFixed(1)}%`:'—')):null;
               return [
-                <td key={y.year} className={isSDE?'rpt-green':bold?'':'rpt-muted'} style={{textAlign:'right',padding:'5px 8px',fontFamily:'monospace',color:isSDE?'#2eb860':bold?'#e2e8f0':'#94a3b8',fontWeight:bold?600:400}}>{fmtD(v)}</td>,
+                <td key={'y'+i} className={isSDE?'rpt-green':bold?'':'rpt-muted'} style={{textAlign:'right',padding:'5px 8px',fontFamily:'monospace',color:isSDE?'#2eb860':bold?'#e2e8f0':'#94a3b8',fontWeight:bold?600:400}}>{fmtD(v)}</td>,
                 hasAnn
-                  ? <td key={y.year+'ann'} style={{textAlign:'right',padding:'5px 8px',fontFamily:'monospace',color:isSDE?'#a78bfa':bold?'#c4b5fd':'#7c6fcd',fontWeight:bold?600:400,fontSize:10,fontStyle:'italic'}}>{fmtD(va)}</td>
+                  ? <td key={'y'+i+'ann'} style={{textAlign:'right',padding:'5px 8px',fontFamily:'monospace',color:isSDE?'#a78bfa':bold?'#c4b5fd':'#7c6fcd',fontWeight:bold?600:400,fontSize:10,fontStyle:'italic'}}>{fmtD(va)}</td>
                   : null,
-                <td key={y.year+'p'} className="rpt-muted" style={{textAlign:'right',padding:'5px 12px 5px 0',fontFamily:'monospace',color:'#334155',fontSize:10}}>{hasAnn ? pa : p}</td>
+                <td key={'y'+i+'p'} className="rpt-muted" style={{textAlign:'right',padding:'5px 12px 5px 0',fontFamily:'monospace',color:'#334155',fontSize:10}}>{hasAnn ? pa : p}</td>
               ];
             })}
           </tr>
@@ -357,7 +386,17 @@ const YearSec = ({yd,onChange,onImport,reVal=0}) => {
         onClick={()=>set('expanded',!yd.expanded)}>
         <div className="flex items-center gap-4">
           <span className="text-gray-500 text-sm" style={{transition:'transform .15s',display:'inline-block',transform:yd.expanded?'rotate(90deg)':'rotate(0deg)'}}>▶</span>
-          <span className="font-bold text-blue-300 text-base">{yd.year}</span>
+          {String(yd.year)==='YTD'?(
+            <span className="font-bold text-blue-300 text-base">{yd.year}</span>
+          ):(
+            <input className="input-field py-1.5 font-bold text-blue-300" style={{fontSize:15,width:76,textAlign:'center',fontWeight:700}}
+              value={yd.year} onClick={e=>e.stopPropagation()}
+              onChange={e=>{
+                const v=e.target.value.replace(/\D/g,'').slice(0,4);
+                if(v==='') return;
+                set('year', Number(v));
+              }}/>
+          )}
           <select className="input-field py-1.5" style={{fontSize:13,width:120}} value={yd.entityType}
             onClick={e=>e.stopPropagation()} onChange={e=>{e.stopPropagation();set('entityType',e.target.value);}}>
             {['1120-S','1065','1120','Schedule C'].map(t=><option key={t}>{t}</option>)}
@@ -580,10 +619,13 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
         return {...y,addBacks:abs};
       });
     }
+    const newYearNum=Number(newYd.year);
+    const yearChanged=!isYtdYear(newYd) && Number.isFinite(newYearNum) && String(newYd.year).length===4 && newYearNum!==Number(oldYd.year);
     if(state.ytdEnabled){
-      set({...state,years:next.slice(0,-1),ytdData:next[next.length-1]});
+      const years=yearChanged?uniquifyYears(next.slice(0,-1)):next.slice(0,-1);
+      set({...state,years,ytdData:next[next.length-1]});
     } else {
-      set({...state,years:next});
+      set({...state,years:yearChanged?uniquifyYears(next):next});
     }
   };
   const upY=(yearIdx, newYd)=>syncSection(yearIdx, newYd);
@@ -598,7 +640,7 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
           </div>
           <Tog on={state.ytdEnabled} set={v=>set({...state,ytdEnabled:v,ytdThrough:v?state.ytdThrough:''})} label="YTD"/>
         </div>
-        {state.years.map((yd,i)=><YearSec key={yd.year} yd={yd} onChange={yd=>upY(i,yd)} onImport={()=>importTaxReturn(i)} reVal={pn(state.su?.reVal)}/>)}
+        {state.years.map((yd,i)=><YearSec key={'yr-'+i} yd={yd} onChange={yd=>upY(i,yd)} onImport={()=>importTaxReturn(i)} reVal={pn(state.su?.reVal)}/>)}
         {state.ytdEnabled&&(()=>{
           const months=ytdMonthsFromStr(state.ytdThrough);
           const annSDE=months>0?annYTDSDE(state.ytdData,state.ytdThrough):0;
@@ -697,13 +739,13 @@ const T3 = ({state}) => {
   const marginData=base.map(y=>{const c=calcSDE(y);const r=c.rev;return{year:String(y.year),gm:r>0?+(c.gp/r*100).toFixed(1):0,em:r>0?+(c.ebitda/r*100).toFixed(1):0,sm:r>0?+(c.sde/r*100).toFixed(1):0,rev:c.rev};});
   const pctFmt=v=>v.toFixed(1)+'%';
   // YoY revenue growth
-  const sortedRevYears=[...years].sort((a,b)=>String(a.year).localeCompare(String(b.year)));
+  const sortedRevYears=[...years].sort((a,b)=>yearNum(a)-yearNum(b));
   return (
     <div>
       <h2 className="text-lg font-bold text-white mb-4">SDE Charts</h2>
       <div className="grid grid-cols-4 gap-4 mb-4">
-        {yearCards.map(d=>(
-          <div key={d.year} className="card p-5">
+        {yearCards.map((d,i)=>(
+          <div key={'yc-'+i} className="card p-5">
             <div className="text-base font-bold text-white mb-4">{d.year}</div>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
@@ -782,10 +824,9 @@ const T3 = ({state}) => {
 /* ── Tab: Ratio Analysis ───────────────────────────── */
 const TRatios = ({state}) => {
   const {years,bs,ind}=state;
-  const sorted=sortedByYear(years);
-  const yearData=sorted.map(y=>{
-    const origIdx=years.findIndex(oy=>String(oy.year)===String(y.year));
-    const b=(bs&&bs[origIdx])||{};
+  const yearData=sortedByYear(years).map(y=>{
+    const origIdx=years.indexOf(y);
+    const b=(bs&&bs[origIdx>=0?origIdx:0])||{};
     const bv={cash:pn(b.cash),ar:pn(b.ar),inv:pn(b.inv),ca:pn(b.ca),ta:pn(b.ta),cl:pn(b.cl),tl:pn(b.tl),nw:pn(b.nw)};
     return{year:y.year,c:calcSDE(y),b:bv};
   });
@@ -1397,7 +1438,8 @@ const TIndustry = ({state,set,importIndustryReport}) => {
   });
 
   // Pick correct revenue-tier multiples based on most recent year revenue
-  const recRev=actuals[actuals.length-1]?.rev||0;
+  const recY=mostRecentYearData(years)||years[years.length-1];
+  const recRev=recY?calcSDE(recY).rev:0;
   const tierSDE=recRev>5000000?pn(ind.sdeMultOver5M):recRev>1000000?pn(ind.sdeMult1to5M):pn(ind.sdeMultUnder1M);
   const tierEBITDA=recRev>5000000?pn(ind.ebitdaMultOver5M):recRev>1000000?pn(ind.ebitdaMult1to5M):pn(ind.ebitdaMultUnder1M);
   const tierLabel=recRev>5000000?'Over $5M':recRev>1000000?'$1M–$5M':'Under $1M';
@@ -1424,8 +1466,8 @@ const TIndustry = ({state,set,importIndustryReport}) => {
 
   const hasData=ind.name||ind.grossMarginPct||ind.sdeMult;
   const askPrice=pn(state.su?.marketPrice);
-  const recSDE=calcSDE(years[years.length-1]).sde;
-  const recEBITDA=calcSDE(years[years.length-1]).ebitda;
+  const recSDE=recY?calcSDE(recY).sde:0;
+  const recEBITDA=recY?calcSDE(recY).ebitda:0;
 
   return (
     <div>
@@ -2864,9 +2906,10 @@ const T9 = ({state,narrative,narrativeStatus}) => {
             const s=calcSDE(yd);
             return {year:yd.year,rev:s.rev,grossMarginPct:s.rev>0?(s.gp/s.rev)*100:null,ebitdaPct:s.rev>0?(s.ebitda/s.rev)*100:null,netMarginPct:s.rev>0?(s.noi/s.rev)*100:null};
           });
-          const recSDE2=calcSDE(indYears[indYears.length-1]).sde;
-          const recEBITDA2=calcSDE(indYears[indYears.length-1]).ebitda;
-          const recRev2=indActuals[indActuals.length-1]?.rev||0;
+          const recY2=mostRecentYearData(indYears)||indYears[indYears.length-1];
+          const recSDE2=recY2?calcSDE(recY2).sde:0;
+          const recEBITDA2=recY2?calcSDE(recY2).ebitda:0;
+          const recRev2=recY2?calcSDE(recY2).rev:0;
           const tierSDE2=recRev2>5000000?pn(ind.sdeMultOver5M):recRev2>1000000?pn(ind.sdeMult1to5M):pn(ind.sdeMultUnder1M);
           const tierLbl2=recRev2>5000000?'Over $5M':recRev2>1000000?'$1M–$5M':'Under $1M';
           const askP=pn(state.su?.marketPrice);
@@ -3827,7 +3870,8 @@ function App() {
   const [tab,setTab]=useState('dashboard');
   const [state,setState]=useState(()=>{
     const draft=loadDraft();
-    return draft?{...initState(),...draft,_net:0}:initState();
+    const merged=draft?{...initState(),...draft,_net:0}:initState();
+    return merged.years?.length?{...merged,years:uniquifyYears(merged.years)}:merged;
   });
   const [showLoad,setShowLoad]=useState(false);
   const [saveStatus,setSaveStatus]=useState('idle');
@@ -3918,7 +3962,9 @@ function App() {
   // Older saved deals stored buyer's salary under seller.buyerSalary (Seller Reality Check tab only).
   // Carry that value into the new global state.buyerSalary field instead of overwriting it with the $75,000 default.
   const migrateBuyerSalary=d=>{if((d.buyerSalary===undefined||d.buyerSalary==='')&&d.seller?.buyerSalary){d={...d,buyerSalary:d.seller.buyerSalary};}return d;};
-  const load=data=>{data=migrateBuyerSalary(migrateBs(data));setState({...initState(),...data,_net:0});setShowLoad(false);setTab('dashboard');};
+  const migrateYears=d=>{if(d?.years?.length){d={...d,years:uniquifyYears(d.years)};}return d;};
+  const migrateDeal=d=>migrateBuyerSalary(migrateYears(migrateBs(d)));
+  const load=data=>{data=migrateDeal(data);setState({...initState(),...data,_net:0});setShowLoad(false);setTab('dashboard');};
   const newDeal=()=>{
     if(window.confirm('Start a new deal? Unsaved data will be lost.')){
       clearDraft();
@@ -3941,7 +3987,7 @@ function App() {
       const file=e.target.files[0]; if(!file) return;
       const reader=new FileReader();
       reader.onload=ev=>{
-        try{let data=JSON.parse(ev.target.result);data=migrateBuyerSalary(migrateBs(data));setState({...initState(),...data,_net:0});setTab('dashboard');}
+        try{let data=JSON.parse(ev.target.result);data=migrateDeal(data);setState({...initState(),...data,_net:0});setTab('dashboard');}
         catch{alert('Invalid deal file — could not import.');}
       };
       reader.readAsText(file);
@@ -4018,7 +4064,7 @@ function App() {
       }
       years[yi]={...y,
         entityType:inc.entityType||y.entityType,
-        year:inc.year||y.year,
+        year:inc.year!=null&&inc.year!==''?(Number(inc.year)||y.year):y.year,
         revenue:inc.revenue??y.revenue,
         cogs:inc.cogs??y.cogs,
         otherIncome:inc.otherIncome??y.otherIncome,
@@ -4032,7 +4078,7 @@ function App() {
         rentAdj:newRentAdj,
         addBacks:newABs,
       };
-      return years;
+      return uniquifyYears(years);
     };
     if(reviewData.type==='combined'){
       setState(prev=>{
