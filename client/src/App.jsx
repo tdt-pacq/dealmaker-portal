@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { getAuth, setAuth, clearAuth } from './api';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
+import OnboardingModal, { hasSeenOnboarding } from './components/OnboardingModal';
 
 const Home = lazy(() => import('./pages/Home'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -174,6 +175,7 @@ export default function App() {
   const [authed, setAuthed] = useState(!!getAuth());
   const [loginError, setLoginError] = useState('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(() => !!getAuth() && !hasSeenOnboarding());
 
   const handleLogin = async (user, pass) => {
     setAuth(user, pass);
@@ -187,6 +189,7 @@ export default function App() {
       } else {
         setAuthed(true);
         setLoginError('');
+        if (!hasSeenOnboarding()) setShowOnboarding(true);
       }
     } catch {
       setLoginError('Server unavailable. Please try again.');
@@ -197,6 +200,7 @@ export default function App() {
   const handleLogout = () => {
     clearAuth();
     setAuthed(false);
+    setShowOnboarding(false);
   };
 
   return (
@@ -234,6 +238,9 @@ export default function App() {
               </Suspense>
             </main>
           </div>
+          {showOnboarding && (
+            <OnboardingModal onClose={() => setShowOnboarding(false)} />
+          )}
         </div>
       ) : (
         <Routes>
