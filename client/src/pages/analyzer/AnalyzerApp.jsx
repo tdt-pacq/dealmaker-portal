@@ -1156,16 +1156,20 @@ const T5 = ({state,set,primeRate}) => {
   const basisSDE=resolveSDE(state).basis;
   // Max supportable price at required DSCR — matches loanbud.io's lending analysis.
   const maxAtMin=sde=>{ if(!r)return(sde/dscrMin)/(12/n)/(1-dp); const pf=r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1); return((sde/dscrMin)/(pf*12))/(1-dp); };
-  // Per-year thresholds: index 0=oldest(2023), 1=middle(2024), 2=most recent(2025).
-  // Once a buyer's salary is entered, the deal's cash-flow math already carries that extra
-  // conservatism, so every year drops to the flat required minimum instead of the escalating scale.
+  // Thresholds track Required DSCR so Strong / Marginal / Below Min update when the field changes.
+  // Green is a cushion above the required minimum; yellow is exactly the required floor.
   const hasBuyerSalary=pn(state.buyerSalary)>0;
+  const yellow=dscrMin;
   const thresholds=hasBuyerSalary
-    ? [{green:1.5,yellow:dscrMin},{green:1.5,yellow:dscrMin},{green:1.5,yellow:dscrMin}]
+    ? [
+        {green:dscrMin+0.25,yellow},
+        {green:dscrMin+0.25,yellow},
+        {green:dscrMin+0.25,yellow},
+      ]
     : [
-        {green:1.5,yellow:dscrMin},               // oldest year
-        {green:1.7,yellow:dscrMin},               // middle year
-        {green:2.0,yellow:Math.max(1.8,dscrMin)}, // most recent year
+        {green:Math.max(1.5, dscrMin+0.25),yellow}, // oldest year
+        {green:Math.max(1.7, dscrMin+0.45),yellow}, // middle year
+        {green:Math.max(2.0, dscrMin+0.55),yellow}, // most recent year
       ];
   const dcFor=(d,idx)=>{ const t=thresholds[idx]||thresholds[2]; return d>=t.green?'text-green-400':d>=t.yellow?'text-yellow-400':'text-red-400'; };
   const dbgFor=(d,idx)=>{ const t=thresholds[idx]||thresholds[2]; return d>=t.green?'bg-green-900/30':d>=t.yellow?'bg-yellow-900/30':'bg-red-900/30'; };
@@ -1329,6 +1333,7 @@ const T5 = ({state,set,primeRate}) => {
           <div>
             <div className="text-xs font-semibold" style={{color:'#2eb860'}}>SDE × 3 Lender Sizing Reference — {(sdeBasis==='weighted'?'Weighted Avg':'Most Recent')} SDE: {fmtD(basisSDE)}</div>
             <div className="text-xs text-gray-500 mt-0.5">Loan: {fmtD(basisLoan)} · {fmtD(basisMo)}/mo · {fmtD(basisAnn)}/yr{sfAnn>0?` + ${fmtD(sfAnn)}/yr seller note = ${fmtD(totalAnn)}/yr total`:''}</div>
+            <div className="text-xs text-gray-500 mt-0.5">Year ratios = year SDE ÷ that debt service. Strong / Marginal / Below Min update with Required DSCR ({dscrMin}×).</div>
           </div>
           <div className="flex gap-5">
             {all.map((yd,i)=>{
