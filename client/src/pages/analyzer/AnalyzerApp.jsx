@@ -1206,7 +1206,6 @@ const T5 = ({state,set,primeRate}) => {
   const ppMo5=(ppLoan||0)>0?(rPP5===0?(ppLoan||0)/nPP5:(ppLoan||0)*rPP5*Math.pow(1+rPP5,nPP5)/(Math.pow(1+rPP5,nPP5)-1)):0;
   const dealMonthly=dealBizMo+dealREMo+ppMo5;
   const dealAnn=dealMonthly*12+sfAnn;
-  const basisLabel5=resolveSDE(state).basisKey==='weighted'?'Weighted Avg':'Most Recent';
   return (
     <div>
       <h2 className="text-lg font-bold text-white mb-1">DSCR Analysis</h2>
