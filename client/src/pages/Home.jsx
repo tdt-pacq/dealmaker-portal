@@ -46,7 +46,8 @@ const TOOLS = [
     icon: '📝',
     label: 'OTP',
     description: 'Offer to purchase templates and buyer qualification tools.',
-    live: false,
+    href: '/otp',
+    live: true,
   },
 ];
 
