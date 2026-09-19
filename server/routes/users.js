@@ -42,6 +42,12 @@ router.post('/', requireAdmin, (req, res) => {
   if (!username || !display_name || !password) {
     return res.status(400).json({ error: 'username, display_name, and password are required' });
   }
+  if (password.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  }
+  if (password.toLowerCase() === username.toLowerCase()) {
+    return res.status(400).json({ error: 'Password cannot be the same as the username' });
+  }
   if (!['admin', 'advisor'].includes(role)) {
     return res.status(400).json({ error: 'role must be admin or advisor' });
   }
@@ -99,8 +105,12 @@ router.patch('/:id/password', (req, res) => {
     return res.status(400).json({ error: 'Password must be at least 8 characters' });
   }
 
-  const user = getDb().prepare('SELECT id FROM users WHERE id = ?').get(req.params.id);
+  const user = getDb().prepare('SELECT id, username FROM users WHERE id = ?').get(req.params.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
+
+  if (password.toLowerCase() === user.username.toLowerCase()) {
+    return res.status(400).json({ error: 'Password cannot be the same as your username' });
+  }
 
   const hash = bcrypt.hashSync(password, 10);
   getDb().prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, req.params.id);

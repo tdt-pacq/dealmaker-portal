@@ -83,6 +83,9 @@ app.use('/api', basicAuth, apiLimiter);
 app.post('/api/discovery',            aiLimiter);
 app.use('/api/buyer-intel/research', aiLimiter);
 app.use('/api/deal-finder/:id/run',  aiLimiter);
+app.use('/api/generate',             aiLimiter);
+app.use('/api/extract',              aiLimiter);
+app.use('/api/redact',               aiLimiter);
 
 app.use('/api/users',        usersRouter);
 app.use('/api/deals',        dealsRouter);

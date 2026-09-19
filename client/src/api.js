@@ -96,6 +96,8 @@ export const extractInterview = (formData) =>
 
 // Users
 export const fetchCurrentUser = () => api.get('/users/me');
+export const changePassword = (userId, password) =>
+  api.patch(`/users/${userId}/password`, { password });
 
 // Discovery (BIR / Business Intel hooks)
 export const fetchDiscoveryRecent = () => api.get('/discovery/recent');
