@@ -2,9 +2,16 @@ import React, { useState } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import ChangePasswordModal from './ChangePasswordModal';
 
-// Optional Google Doc / Drive links — set at build time on Render (or leave blank → Coming Soon)
-function resourceLink(id, label, icon, envUrl) {
-  const href = String(envUrl || '').trim();
+// Real TDT Google Docs — override at build time with VITE_RESOURCE_* if needed
+const RESOURCE_DEFAULTS = {
+  dealSop: 'https://docs.google.com/document/d/12ikT3g8uceMoteDv1EE-d34n63UEBAYSJPoCBFDgFFE/edit',
+  marketingSop: 'https://docs.google.com/document/d/1Q8VQOi838hJGKplk_f1vGwqcAhonUqqIHeF-g4VBd1w/edit',
+  training: 'https://docs.google.com/document/d/1GiOLmNXo57apm-Ie1yiTgMUaFfmI_F2tYtn8lqNoQq4/edit',
+};
+
+// Optional Google Doc / Drive links — set at build time on Render (or leave blank → defaults above)
+function resourceLink(id, label, icon, envUrl, fallbackUrl) {
+  const href = String(envUrl || fallbackUrl || '').trim();
   const live = /^https:\/\//i.test(href) && !/REPLACE_WITH_/i.test(href);
   return { id, label, icon, href: live ? href : undefined, live };
 }
@@ -46,9 +53,9 @@ const PORTAL_SECTIONS = [
     id: 'resources',
     label: 'Resources',
     items: [
-      resourceLink('deal-sop', 'Deal Workflow SOP', '📋', import.meta.env.VITE_RESOURCE_DEAL_SOP_URL),
-      resourceLink('marketing-sop', 'Marketing SOP', '📄', import.meta.env.VITE_RESOURCE_MARKETING_SOP_URL),
-      resourceLink('training-doc', 'Advisor Training', '🎓', import.meta.env.VITE_RESOURCE_TRAINING_URL),
+      resourceLink('deal-sop', 'Success Plan SOP', '📋', import.meta.env.VITE_RESOURCE_DEAL_SOP_URL, RESOURCE_DEFAULTS.dealSop),
+      resourceLink('marketing-sop', 'Marketing Blitz SOP', '📄', import.meta.env.VITE_RESOURCE_MARKETING_SOP_URL, RESOURCE_DEFAULTS.marketingSop),
+      resourceLink('training-doc', 'Advisor Onboarding', '🎓', import.meta.env.VITE_RESOURCE_TRAINING_URL, RESOURCE_DEFAULTS.training),
     ],
   },
 ];
