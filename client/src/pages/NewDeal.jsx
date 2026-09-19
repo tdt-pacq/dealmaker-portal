@@ -78,13 +78,15 @@ export default function NewDeal() {
   // Step 1: Create new deal (meta info)
   if (!isEdit && step === 'meta') {
     return (
-      <>
+      <div className="page-content">
         <div className="page-header">
           <div>
             <div className="page-title">New Deal</div>
             <div className="page-subtitle">Start by naming this deal and assigning an advisor</div>
           </div>
-          <Link to="/marketing"><button className="btn-ghost">← Back to Dashboard</button></Link>
+          <div className="page-header-actions">
+            <Link to="/marketing"><button className="btn-ghost">← Back to Dashboard</button></Link>
+          </div>
         </div>
         <div style={{ maxWidth: 520 }}>
           <div className="card">
@@ -126,24 +128,24 @@ export default function NewDeal() {
             </div>
           </div>
         </div>
-      </>
+      </div>
     );
   }
 
   // Step 2: Edit mode — show interview form
   return (
-    <>
+    <div className="page-content">
       <div className="page-header">
         <div>
           <div className="page-title" style={{ fontSize: 22 }}>
             {deal?.deal_name || dealName}
           </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 4 }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 4, flexWrap: 'wrap' }}>
             <span className={`badge badge-${deal?.status || status}`}>{deal?.status || status}</span>
             {deal?.advisor_name && <span style={{ fontSize: 13, color: '#64748b' }}>Advisor: {deal.advisor_name}</span>}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div className="page-header-actions">
           <Link to={`/marketing/deals/${id}`}>
             <button className="btn-primary">Generate &amp; Download Marketing →</button>
           </Link>
@@ -205,6 +207,6 @@ export default function NewDeal() {
           </>
         );
       })()}
-    </>
+    </div>
   );
 }

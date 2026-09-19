@@ -1,5 +1,5 @@
-import React, { useState, lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { getAuth, setAuth, clearAuth } from './api';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
@@ -42,7 +42,6 @@ function LoginScreen({ onLogin, error }) {
       background: '#0f1117',
     }}>
       <div style={{ width: 380 }}>
-        {/* Brand header */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <div style={{
             fontFamily: 'Oswald, sans-serif',
@@ -73,7 +72,6 @@ function LoginScreen({ onLogin, error }) {
           }} />
         </div>
 
-        {/* Login card */}
         <div style={{
           background: '#1e293b',
           borderRadius: 10,
@@ -171,10 +169,86 @@ function PublicShareLayout() {
   );
 }
 
+function AuthenticatedShell({ onSignOut, showOnboarding, onCloseOnboarding }) {
+  const location = useLocation();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const onKey = (e) => { if (e.key === 'Escape') setMobileNavOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mobileNavOpen]);
+
+  return (
+    <div className={`portal-shell${mobileNavOpen ? ' nav-open' : ''}`}>
+      {mobileNavOpen && (
+        <button
+          type="button"
+          className="sidebar-backdrop"
+          aria-label="Close navigation"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      )}
+      <Sidebar
+        collapsed={mobileNavOpen ? false : sidebarCollapsed}
+        mobileOpen={mobileNavOpen}
+        onToggle={() => {
+          if (window.matchMedia('(max-width: 1024px)').matches) {
+            setMobileNavOpen(o => !o);
+          } else {
+            setSidebarCollapsed(c => !c);
+          }
+        }}
+        onCloseMobile={() => setMobileNavOpen(false)}
+        onSignOut={onSignOut}
+      />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+        <div data-portal-topbar>
+          <Topbar
+            onMenuClick={() => setMobileNavOpen(true)}
+            menuOpen={mobileNavOpen}
+          />
+        </div>
+        <main className="portal-content">
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/marketing" element={<Dashboard />} />
+              <Route path="/marketing/deals/new" element={<NewDeal />} />
+              <Route path="/marketing/deals/:id/edit" element={<NewDeal />} />
+              <Route path="/marketing/deals/:id" element={<DealDetail />} />
+              <Route path="/discovery" element={<DiscoveryPrepApp />} />
+              <Route path="/analyzer" element={<AnalyzerApp />} />
+              <Route path="/analyzer/*" element={<AnalyzerApp />} />
+              <Route path="/acqcalc" element={<AcqCalcApp />} />
+              <Route path="/buyer-strategy" element={<BuyerStrategyApp />} />
+              <Route path="/deal-finder" element={<DealFinderApp />} />
+              <Route path="/otp" element={<OtpApp />} />
+              <Route path="/redact" element={<RedactApp />} />
+              <Route path="/commission" element={<CommissionCalcApp />} />
+              <Route path="/engagements" element={<EngagementsList />} />
+              <Route path="/engagements/:token" element={<ProposalPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </main>
+      </div>
+      {showOnboarding && (
+        <OnboardingModal onClose={onCloseOnboarding} />
+      )}
+    </div>
+  );
+}
+
 export default function App() {
   const [authed, setAuthed] = useState(!!getAuth());
   const [loginError, setLoginError] = useState('');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(() => !!getAuth() && !hasSeenOnboarding());
 
   const handleLogin = async (user, pass) => {
@@ -206,42 +280,11 @@ export default function App() {
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       {authed ? (
-        <div className="portal-shell">
-          <Sidebar
-            collapsed={sidebarCollapsed}
-            onToggle={() => setSidebarCollapsed(c => !c)}
-            onSignOut={handleLogout}
-          />
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-            <div data-portal-topbar><Topbar /></div>
-            <main className="portal-content">
-              <Suspense fallback={<LoadingFallback />}>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/marketing" element={<Dashboard />} />
-                  <Route path="/marketing/deals/new" element={<NewDeal />} />
-                  <Route path="/marketing/deals/:id/edit" element={<NewDeal />} />
-                  <Route path="/marketing/deals/:id" element={<DealDetail />} />
-                  <Route path="/discovery" element={<DiscoveryPrepApp />} />
-                  <Route path="/analyzer" element={<AnalyzerApp />} />
-                  <Route path="/analyzer/*" element={<AnalyzerApp />} />
-                  <Route path="/acqcalc" element={<AcqCalcApp />} />
-                  <Route path="/buyer-strategy" element={<BuyerStrategyApp />} />
-                  <Route path="/deal-finder" element={<DealFinderApp />} />
-                  <Route path="/otp" element={<OtpApp />} />
-                  <Route path="/redact" element={<RedactApp />} />
-                  <Route path="/commission" element={<CommissionCalcApp />} />
-                  <Route path="/engagements" element={<EngagementsList />} />
-                  <Route path="/engagements/:token" element={<ProposalPage />} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </Suspense>
-            </main>
-          </div>
-          {showOnboarding && (
-            <OnboardingModal onClose={() => setShowOnboarding(false)} />
-          )}
-        </div>
+        <AuthenticatedShell
+          onSignOut={handleLogout}
+          showOnboarding={showOnboarding}
+          onCloseOnboarding={() => setShowOnboarding(false)}
+        />
       ) : (
         <Routes>
           <Route path="/engagements/:token" element={<PublicShareLayout />} />
