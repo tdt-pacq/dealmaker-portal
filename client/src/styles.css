@@ -560,12 +560,140 @@ label .required { color: var(--accent); margin-left: 2px; }
   margin-bottom: 12px;
 }
 
-/* Responsive */
+/* Topbar hamburger — hidden on desktop */
+.topbar-menu-btn {
+  display: none;
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid #1a2235;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+.topbar-menu-btn:hover { background: rgba(255,255,255,0.04); border-color: #2d3748; }
+.topbar-menu-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 18px;
+}
+.topbar-menu-icon span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background: #94a3b8;
+  border-radius: 1px;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.page-header-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.pipeline-bar-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabs-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  flex-wrap: nowrap;
+}
+.tabs-scroll .tab-btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Tablet / iPad — overlay sidebar, stack headers, scroll wide content */
+@media (max-width: 1024px) {
+  .topbar-menu-btn { display: flex; }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    border: none;
+    padding: 0;
+    z-index: 90;
+    cursor: pointer;
+  }
+
+  .portal-sidebar {
+    position: fixed !important;
+    left: 0;
+    top: 0;
+    height: 100vh !important;
+    width: 220px !important;
+    transform: translateX(-100%);
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 100 !important;
+    box-shadow: none;
+  }
+
+  .portal-sidebar.is-mobile-open {
+    transform: translateX(0);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.45);
+  }
+
+  .page-content { padding: 20px 20px 28px; }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .page-header-actions {
+    width: 100%;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .preview-iframe {
+    height: min(70vh, 560px);
+  }
+
+  .blind-ad-textarea {
+    min-height: 420px;
+  }
+}
+
 @media (max-width: 900px) {
   .interview-layout { grid-template-columns: 1fr; }
   .section-nav { position: static; }
   .field-row, .field-row-3 { grid-template-columns: 1fr; }
   .page-content { padding: 16px; }
+}
+
+@media (max-width: 768px) {
+  .home-tool-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
 }
 
 /* ── Print — hide portal chrome, release overflow clipping so full report paginates ── */

@@ -28,7 +28,7 @@ function PipelineBar({ status, dealId, onUpdate }) {
   const activeIdx = PIPELINE_STAGES.indexOf(status);
 
   return (
-    <div style={{ background: '#1e293b', border: '1px solid #2d3748', borderRadius: 8, padding: '14px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 0 }}>
+    <div className="pipeline-bar-wrap" style={{ background: '#1e293b', border: '1px solid #2d3748', borderRadius: 8, padding: '14px 20px', marginBottom: 20 }}>
       {isWithdrawn ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
           <span style={{ fontSize: 13, color: '#ef4444', fontWeight: 600 }}>⊗ Withdrawn</span>
@@ -37,11 +37,10 @@ function PipelineBar({ status, dealId, onUpdate }) {
           </button>
         </div>
       ) : (
-        <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: 0, minWidth: 480 }}>
           {PIPELINE_STAGES.map((stage, i) => {
             const isPast = i < activeIdx;
             const isCurrent = i === activeIdx;
-            const isFuture = i > activeIdx;
             return (
               <React.Fragment key={stage}>
                 <button
@@ -551,11 +550,11 @@ export default function DealDetail() {
   try { interviewData = JSON.parse(deal.interview_data || '{}'); } catch {}
 
   return (
-    <>
+    <div className="page-content">
       <div className="page-header">
         <div>
           <div className="page-title" style={{ fontSize: 22 }}>{deal.deal_name}</div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 4 }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 4, flexWrap: 'wrap' }}>
             <span className={`badge badge-${deal.status}`}>{deal.status}</span>
             {deal.advisor_name && <span style={{ fontSize: 13, color: '#64748b' }}>Advisor: {deal.advisor_name}</span>}
             {interviewData.business_city_state && (
@@ -566,7 +565,7 @@ export default function DealDetail() {
             Generate each tab below, then Download. Files are not built automatically from the interview.
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div className="page-header-actions">
           <Link to={`/marketing/deals/${id}/edit`}>
             <button className="btn-ghost">✎ Edit Interview</button>
           </Link>
@@ -603,7 +602,7 @@ export default function DealDetail() {
       <PipelineBar status={deal.status} dealId={deal.id} onUpdate={loadDeal} />
 
       {/* Output tabs */}
-      <div className="tabs">
+      <div className="tabs tabs-scroll">
         {[
           { id: 'blind-ad', label: '📋 Blind Ad', hasContent: !!deal.blind_ad_text },
           { id: 'flyer', label: '🗂️ One-Page Flyer', hasContent: !!deal.flyer_html },
@@ -630,6 +629,6 @@ export default function DealDetail() {
       {activeTab === 'flyer' && <FlyerTab deal={deal} onUpdate={loadDeal} />}
       {activeTab === 'cbr' && <CbrTab deal={deal} onUpdate={loadDeal} />}
       {activeTab === 'activity' && <ActivityTab dealId={deal.id} />}
-    </>
+    </div>
   );
 }
