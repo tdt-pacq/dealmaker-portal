@@ -37,7 +37,7 @@ const PORTAL_SECTIONS = [
 ];
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
-export default function Sidebar({ collapsed, onToggle, onSignOut }) {
+export default function Sidebar({ collapsed, mobileOpen = false, onToggle, onCloseMobile, onSignOut }) {
   const [openSections, setOpenSections] = useState({ advisors: true, sellers: true, buyers: true });
   const location = useLocation();
 
@@ -47,8 +47,15 @@ export default function Sidebar({ collapsed, onToggle, onSignOut }) {
   const isActive = (basePath) =>
     location.pathname === basePath || location.pathname.startsWith(basePath + '/');
 
+  const handleNav = () => {
+    if (onCloseMobile) onCloseMobile();
+  };
+
   return (
-    <aside data-portal-sidebar style={{
+    <aside
+      data-portal-sidebar
+      className={`portal-sidebar${collapsed ? ' is-collapsed' : ''}${mobileOpen ? ' is-mobile-open' : ''}`}
+      style={{
       width: collapsed ? 56 : 220,
       minHeight: '100vh',
       background: '#0a0e18',
@@ -76,7 +83,7 @@ export default function Sidebar({ collapsed, onToggle, onSignOut }) {
         flexShrink: 0,
       }}>
         {!collapsed && (
-          <Link to="/" style={{ textDecoration: 'none' }}>
+          <Link to="/" onClick={handleNav} style={{ textDecoration: 'none' }}>
             <div>
               <div style={{
                 fontFamily: 'Oswald, sans-serif',
@@ -275,6 +282,7 @@ export default function Sidebar({ collapsed, onToggle, onSignOut }) {
                           <a
                             href={item.href}
                             title={collapsed ? item.label : undefined}
+                            onClick={handleNav}
                             style={{ textDecoration: 'none', display: 'block', marginBottom: 1 }}
                           >
                             {itemContent(false)}
@@ -288,6 +296,7 @@ export default function Sidebar({ collapsed, onToggle, onSignOut }) {
                         <NavLink
                           to={item.basePath}
                           title={collapsed ? item.label : undefined}
+                          onClick={handleNav}
                           style={{ textDecoration: 'none', display: 'block', marginBottom: 1 }}
                         >
                           {({ isActive }) => itemContent(isActive)}

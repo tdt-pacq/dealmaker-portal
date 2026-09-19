@@ -50,15 +50,17 @@ export default function Dashboard() {
   };
 
   return (
-    <>
+    <div className="page-content">
       <div className="page-header">
         <div>
           <div className="page-title">Deal Dashboard</div>
           <div className="page-subtitle">{deals.length} deal{deals.length !== 1 ? 's' : ''} total</div>
         </div>
-        <Link to="/marketing/deals/new">
-          <button className="btn-primary btn-lg">+ New Deal</button>
-        </Link>
+        <div className="page-header-actions">
+          <Link to="/marketing/deals/new">
+            <button className="btn-primary btn-lg">+ New Deal</button>
+          </Link>
+        </div>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -66,7 +68,7 @@ export default function Dashboard() {
       <div className="card">
         <div className="card-header">
           <span className="card-title">All Deals</span>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <select
               value={filterStatus}
               onChange={e => setFilterStatus(e.target.value)}
@@ -107,50 +109,52 @@ export default function Dashboard() {
             </div>
           </div>
         ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Deal Name</th>
-                <th>Advisor</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th>Last Updated</th>
-                <th>Outputs</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {deals.map(deal => (
-                <tr key={deal.id}>
-                  <td>
-                    <Link to={`/marketing/deals/${deal.id}`} title="Open generate & download" style={{ fontWeight: 600, color: '#e2e8f0' }}>
-                      {deal.deal_name}
-                    </Link>
-                  </td>
-                  <td>{deal.advisor_name || '—'}</td>
-                  <td><StatusBadge status={deal.status} /></td>
-                  <td style={{ color: '#888', fontSize: 13 }}>{fmt(deal.created_at)}</td>
-                  <td style={{ color: '#888', fontSize: 13 }}>{fmt(deal.updated_at)}</td>
-                  <td>
-                    <OutputDots dealId={deal.id} />
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button className="btn-ghost btn-sm" onClick={() => navigate(`/marketing/deals/${deal.id}`)}>
-                        Generate / Download
-                      </button>
-                      <button className="btn-ghost btn-sm" onClick={() => navigate(`/marketing/deals/${deal.id}/edit`)}>
-                        Edit
-                      </button>
-                      <button className="btn-danger btn-sm" onClick={() => setDeleteConfirm(deal)}>
-                        Delete
-                      </button>
-                    </div>
-                  </td>
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Deal Name</th>
+                  <th>Advisor</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Last Updated</th>
+                  <th>Outputs</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {deals.map(deal => (
+                  <tr key={deal.id}>
+                    <td>
+                      <Link to={`/marketing/deals/${deal.id}`} title="Open generate & download" style={{ fontWeight: 600, color: '#e2e8f0' }}>
+                        {deal.deal_name}
+                      </Link>
+                    </td>
+                    <td>{deal.advisor_name || '—'}</td>
+                    <td><StatusBadge status={deal.status} /></td>
+                    <td style={{ color: '#888', fontSize: 13 }}>{fmt(deal.created_at)}</td>
+                    <td style={{ color: '#888', fontSize: 13 }}>{fmt(deal.updated_at)}</td>
+                    <td>
+                      <OutputDots dealId={deal.id} />
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        <button className="btn-ghost btn-sm" onClick={() => navigate(`/marketing/deals/${deal.id}`)}>
+                          Generate / Download
+                        </button>
+                        <button className="btn-ghost btn-sm" onClick={() => navigate(`/marketing/deals/${deal.id}/edit`)}>
+                          Edit
+                        </button>
+                        <button className="btn-danger btn-sm" onClick={() => setDeleteConfirm(deal)}>
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -172,7 +176,7 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 
