@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
+import ChangePasswordModal from './ChangePasswordModal';
+
+// Optional Google Doc / Drive links — set at build time on Render (or leave blank → Coming Soon)
+function resourceLink(id, label, icon, envUrl) {
+  const href = String(envUrl || '').trim();
+  const live = /^https:\/\//i.test(href) && !/REPLACE_WITH_/i.test(href);
+  return { id, label, icon, href: live ? href : undefined, live };
+}
 
 // ─── Navigation Registry ──────────────────────────────────────────────────────
 const PORTAL_SECTIONS = [
@@ -34,11 +42,21 @@ const PORTAL_SECTIONS = [
       { id: 'otp',          label: 'OTP',             icon: '📝', basePath: '/otp',            live: true },
     ],
   },
+  {
+    id: 'resources',
+    label: 'Resources',
+    items: [
+      resourceLink('deal-sop', 'Deal Workflow SOP', '📋', import.meta.env.VITE_RESOURCE_DEAL_SOP_URL),
+      resourceLink('marketing-sop', 'Marketing SOP', '📄', import.meta.env.VITE_RESOURCE_MARKETING_SOP_URL),
+      resourceLink('training-doc', 'Advisor Training', '🎓', import.meta.env.VITE_RESOURCE_TRAINING_URL),
+    ],
+  },
 ];
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 export default function Sidebar({ collapsed, mobileOpen = false, onToggle, onCloseMobile, onSignOut }) {
-  const [openSections, setOpenSections] = useState({ advisors: true, sellers: true, buyers: true });
+  const [openSections, setOpenSections] = useState({ advisors: true, sellers: true, buyers: true, resources: true });
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const location = useLocation();
 
   const toggleSection = (id) =>
@@ -281,6 +299,8 @@ export default function Sidebar({ collapsed, mobileOpen = false, onToggle, onClo
                         <li key={item.id}>
                           <a
                             href={item.href}
+                            target="_blank"
+                            rel="noreferrer"
                             title={collapsed ? item.label : undefined}
                             onClick={handleNav}
                             style={{ textDecoration: 'none', display: 'block', marginBottom: 1 }}
@@ -311,12 +331,43 @@ export default function Sidebar({ collapsed, mobileOpen = false, onToggle, onClo
         })}
       </nav>
 
-      {/* ── Sign Out ── */}
+      {/* ── Account ── */}
       <div style={{
         padding: collapsed ? '12px 6px' : '12px 8px',
         borderTop: '1px solid #1a2235',
         flexShrink: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
       }}>
+        <button
+          type="button"
+          onClick={() => setShowPasswordModal(true)}
+          title={collapsed ? 'Change Password' : undefined}
+          style={{
+            width: '100%',
+            background: 'transparent',
+            border: '1px solid #1a2235',
+            borderRadius: 5,
+            color: '#64748b',
+            fontSize: collapsed ? 14 : 11,
+            fontWeight: 600,
+            letterSpacing: collapsed ? 0 : 0.8,
+            padding: collapsed ? '7px 0' : '7px 0',
+            cursor: 'pointer',
+            textTransform: collapsed ? 'none' : 'uppercase',
+            transition: 'border-color 0.15s, color 0.15s',
+            fontFamily: 'system-ui, sans-serif',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#2eb860'; e.currentTarget.style.color = '#2eb860'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a2235'; e.currentTarget.style.color = '#64748b'; }}
+        >
+          {collapsed ? '🔑' : 'Change Password'}
+        </button>
         <button
           onClick={onSignOut}
           title={collapsed ? 'Sign Out' : undefined}
@@ -345,6 +396,9 @@ export default function Sidebar({ collapsed, mobileOpen = false, onToggle, onClo
           {collapsed ? '⎋' : 'Sign Out'}
         </button>
       </div>
+      {showPasswordModal && (
+        <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />
+      )}
     </aside>
   );
 }
