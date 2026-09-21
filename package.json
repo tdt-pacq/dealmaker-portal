@@ -8,7 +8,8 @@
     "start": "node server/index.js",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "npm run dev --prefix server",
-    "dev:client": "npm run dev --prefix client"
+    "dev:client": "npm run dev --prefix client",
+    "test": "npm test --prefix client"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

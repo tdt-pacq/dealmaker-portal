@@ -3,6 +3,10 @@ import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 import './analyzer.css';
+import {
+  pn, isPT, calcSDE, isYtdYear, yearNum, sortedByYear, uniquifyYears,
+  mostRecentYearData, mostRecentYear, wtdSDE, recentSDE, fairMarketSde,
+} from './sdeBasis.js';
 
 if (!firebase.apps.length) {
   firebase.initializeApp({
@@ -24,66 +28,7 @@ const fmtD = (n, d=0) => {
   const s = Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
   return v < 0 ? `-$${s}` : `$${s}`;
 };
-const pn = s => { const n = parseFloat(String(s||'').replace(/[$,]/g,'')); return isNaN(n)?0:n; };
-const isPT = et => ['1120-S','1065','Schedule C'].includes(et);
 const curYear = new Date().getFullYear();
-
-/* ── SDE Calc ──────────────────────────────────────── */
-const calcSDE = yd => {
-  const rev=pn(yd.revenue), cogs=pn(yd.cogs), opx=pn(yd.opx);
-  const otherInc=pn(yd.otherIncome||0);
-  const int=pn(yd.interest), dep=pn(yd.depreciation), amor=pn(yd.amortization);
-  const taxes=isPT(yd.entityType)?0:pn(yd.taxes);
-  const oc=pn(yd.ownerComp);
-  const ab=(yd.addBacks||[]).reduce((s,a)=>s+pn(a.amount),0);
-  const rentAB=pn(yd.rent||0)+pn(yd.rentAdj||0);
-  const gp=rev-cogs, noi=gp+otherInc-opx;
-  const ebitda=noi+int+taxes+dep+amor;
-  const adjE=ebitda+oc;
-  const sde=adjE+ab+rentAB;
-  return {rev,cogs,gp,opx,otherInc,noi,int,taxes,dep,amor,ebitda,oc,adjE,ab,rentAB,sde};
-};
-const isYtdYear = y => String(y?.year).toUpperCase() === 'YTD';
-const isCompletedTaxYear = y => !isYtdYear(y) && Number.isFinite(Number(y?.year));
-const yearNum = y => {
-  if (isYtdYear(y)) return Infinity;
-  const n = Number(y?.year);
-  return Number.isFinite(n) ? n : -Infinity;
-};
-// Newest calendar year first. Equal years keep the later column (rightmost slot)
-// so a duplicate "2024" header on the third column still loses to that column's data.
-const sortedByYear = yrs => [...(yrs||[])].filter(y=>!isYtdYear(y)).map((y,i)=>({y,i})).sort((a,b)=>{
-  const d = yearNum(b.y) - yearNum(a.y);
-  return d !== 0 ? d : b.i - a.i;
-}).map(x=>x.y);
-// Keep column years unique by bumping later duplicates forward (2023, 2024, 2024 → 2023, 2024, 2025).
-const uniquifyYears = yrs => {
-  const used = new Set();
-  return (yrs||[]).map(y => {
-    if (isYtdYear(y)) return {...y, year:'YTD'};
-    let n = Number(y.year);
-    if (!Number.isFinite(n)) return y;
-    while (used.has(n)) n += 1;
-    used.add(n);
-    return {...y, year:n};
-  });
-};
-const dedupeYearLabels = (years, preferIdx=null) => uniquifyYears(years); // preferIdx unused; uniquify always bumps later dups
-const mostRecentYearData = yrs => {
-  for (const y of sortedByYear(yrs||[])) {
-    if (pn(y.revenue) || calcSDE(y).sde) return y;
-  }
-  return null;
-};
-const mostRecentYear = mostRecentYearData;
-const wtdSDE = yrs => {
-  const s=sortedByYear(yrs).map(y=>calcSDE(y).sde);
-  if(!s.length) return 0;
-  if(s.length===1) return s[0];
-  if(s.length===2) return (s[0]*2+s[1]*1)/3;
-  return (s[0]*3+s[1]*2+s[2]*1)/6;
-};
-const recentSDE = yrs => { const y=mostRecentYearData(yrs); return y ? calcSDE(y).sde : 0; };
 
 /* ── YTD annualization helpers ─────────────────────────────────────────────── */
 // Returns months elapsed from a "YYYY-MM" string (1–11; 12 = full year, treated as-is)
@@ -114,18 +59,18 @@ const annYTDSDE = (ytdData, ytdThrough) => {
 };
 // Central SDE resolver — used by all tabs
 // Buyer's Salary (normalization set on the Income Statement tab, defaults to $75,000) is a
-// forward-looking replacement-owner cost, not a historical add-back — it is subtracted here,
-// after weighting/annualization, so every tab's SDE-derived figure (valuation, DSCR, ROI, deal
-// report) reflects it consistently from a single global field (state.buyerSalary).
+// forward-looking replacement-owner cost. It is subtracted from DSCR and cash-flow figures
+// only. Fair market multiples use rawBasis (the latest year column's SDE, or the weighted
+// average) — the same number that column shows — and do not subtract this salary.
 const resolveSDE = (state) => {
   const buyerSalary = pn(state.buyerSalary);
   const rawWt  = wtdSDE(state.years);
   const rawRec = recentSDE(state.years);
   const rawAnn = (state.ytdEnabled && state.ytdThrough) ? annYTDSDE(state.ytdData, state.ytdThrough) : 0;
-  // Valuations / market price use Weighted Avg or Most Recent completed tax year only.
+  // Market price uses Weighted Avg or Most Recent completed tax year only.
   // YTD is trend-only — never a valuation basis (legacy 'ytd' basis falls back to recent).
   const basisKey = state.sdeBasis === 'weighted' ? 'weighted' : 'recent';
-  const rawBasis = basisKey === 'weighted' ? rawWt : rawRec;
+  const rawBasis = fairMarketSde(state.years, basisKey);
   const wt  = rawWt - buyerSalary;
   const rec = rawRec - buyerSalary;
   const ann = rawAnn ? rawAnn - buyerSalary : 0;
@@ -535,8 +480,9 @@ const YearSec = ({yd,onChange,onImport,reVal=0,yearEditable=true}) => {
 const Analysis = ({state,set,primeRate}) => {
   const {years,sdeBasis,customMults,loanRate,loanAmort,dpPct}=state;
   const hasData=years.some(y=>pn(y.revenue)||calcSDE(y).sde);
-  const {basis,rawBasis,buyerSalary,basisKey,rec}=resolveSDE(state);
-  const base=basis;
+  const {basis,rawBasis,buyerSalary,basisKey}=resolveSDE(state);
+  // Fair market range is a multiple of the latest-year (or weighted) SDE itself.
+  const base=rawBasis;
   const mults=[2.5,3.0,3.5,...(customMults||[]).map(m=>parseFloat(m)).filter(m=>m>0)];
   const r=(loanRate||10.75)/100/12, n=(loanAmort||10)*12;
   const pmt=loan=>r===0?loan/n:loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
@@ -567,10 +513,10 @@ const Analysis = ({state,set,primeRate}) => {
             <span className="lbl">Selected SDE</span>
             <div className="text-2xl font-bold text-green-400 mono">{fmtD(base)}</div>
             <div className="text-sm text-gray-500 mt-1">
-              {basisKey==='weighted'?`Wtd Avg (3×/2×/1×) ÷ 6`:`Most Recent Completed Year${recentYr?` (${recentYr.year})`:''}`}
+              {basisKey==='weighted'?`Weighted Avg SDE (3×/2×/1×) ÷ 6`:`Most Recent SDE${recentYr?` (${recentYr.year})`:''}`}
             </div>
             {buyerSalary>0&&(
-              <div className="text-xs text-gray-600 mt-1">{fmtD(rawBasis)} raw SDE − {fmtD(buyerSalary)} buyer's salary</div>
+              <div className="text-xs text-gray-600 mt-1">Buyer's salary {fmtD(buyerSalary)} is subtracted for DSCR and cash flow ({fmtD(basis)}), not from this SDE multiple.</div>
             )}
             <div className="text-xs text-gray-600 mt-1">Market price uses completed tax years only — not YTD.</div>
           </div>
@@ -703,7 +649,7 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
         <div className="card p-5" style={{marginBottom:20}}>
           <div style={{fontSize:14,fontWeight:800,color:'#f1f5f9',marginBottom:4}}>Buyer's Salary Normalization</div>
           <p style={{fontSize:12,color:'#64748b',marginBottom:12}}>
-            A replacement-owner salary the new buyer will need to pay themselves. Defaults to $75,000 and can be edited — it's subtracted from SDE globally across every tab (valuation, DSCR, ROI, Deal Report).
+            A replacement-owner salary the new buyer will need to pay themselves. Defaults to $75,000 and can be edited. It is subtracted from DSCR and cash-flow figures. Fair market multiples use the most recent (or weighted) SDE before this salary.
           </p>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -965,7 +911,7 @@ const TRatios = ({state}) => {
 /* ── Tab 4: Sources & Uses ─────────────────────────── */
 const T4 = ({state,set}) => {
   const {years,sdeBasis,customMults,loanRate,loanAmort,dpPct,reAmort,su,loanStructure,re504Rate,ppLoan,ppRate,ppAmort}=state;
-  const base=resolveSDE(state).basis;
+  const base=fairMarketSde(years, sdeBasis);
   const mults=[2.5,3.0,3.5,...(customMults||[]).map(m=>parseFloat(m)).filter(m=>m>0)];
   const setSU=(f,v)=>set({...state,su:{...su,[f]:v}});
   useEffect(()=>{ if(base>0&&!pn(su.marketPrice)) set(prev=>({...prev,su:{...prev.su,marketPrice:base*3}})); },[base]);
@@ -1336,7 +1282,7 @@ const T5 = ({state,set,primeRate}) => {
       <div className="card p-3 mb-4" style={{borderColor:'#1a5e35'}}>
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <div className="text-xs font-semibold" style={{color:'#2eb860'}}>SDE × 3 Lender Sizing Reference — {(sdeBasis==='weighted'?'Weighted Avg':'Most Recent')} SDE: {fmtD(basisSDE)}</div>
+            <div className="text-xs font-semibold" style={{color:'#2eb860'}}>SDE × 3 Lender Sizing Reference — {(sdeBasis==='weighted'?'Weighted Avg':'Most Recent')} SDE{hasBuyerSalary?' after buyer\'s salary':''}: {fmtD(basisSDE)}</div>
             <div className="text-xs text-gray-500 mt-0.5">Loan: {fmtD(basisLoan)} · {fmtD(basisMo)}/mo · {fmtD(basisAnn)}/yr{sfAnn>0?` + ${fmtD(sfAnn)}/yr seller note = ${fmtD(totalAnn)}/yr total`:''}</div>
             <div className="text-xs text-gray-500 mt-0.5">Year ratios = year SDE ÷ that debt service. Strong / Marginal / Below Min update with Required DSCR ({dscrMin}×).</div>
           </div>
@@ -2732,8 +2678,10 @@ const T9 = ({state,narrative,narrativeStatus}) => {
   const setBuyer=()=>setVis(v=>Object.fromEntries(REPORT_SECTIONS.map(s=>[s.id,!s.seller])));
   const setSeller=()=>setVis(v=>Object.fromEntries(REPORT_SECTIONS.map(s=>[s.id,true])));
 
-  const {wt,rec,ann,rawWt,rawRec,rawAnn,buyerSalary,basis,rawBasis,basisKey}=resolveSDE(state);
+  const {rec,ann,rawWt,rawRec,buyerSalary,basis,rawBasis,basisKey}=resolveSDE(state);
   const base=basis;
+  // Fair market copy and multiples use the latest-year (or weighted) column SDE.
+  const marketSde=rawBasis;
   // Raw (pre-buyer-salary) SDE — the Seller Reality section below does its own
   // salary breakdown, so it needs the unadjusted figure to avoid subtracting twice.
   const baseRaw=rawBasis;
@@ -2893,13 +2841,13 @@ const T9 = ({state,narrative,narrativeStatus}) => {
           </p>
           <FinancialSpreadTable years={allYears} ytdThrough={ytdEnabled?state.ytdThrough:''}/>
           <div style={{marginTop:14,paddingTop:10,borderTop:'1px solid #1e2d45',display:'flex',gap:28,fontSize:11,flexWrap:'wrap'}}>
-            <div><span style={{color:'#64748b'}}>Weighted Avg SDE: </span><span style={{fontFamily:'monospace',color:'#2eb860',fontWeight:700}}>{fmtD(wt)}</span></div>
-            <div><span style={{color:'#64748b'}}>Most Recent SDE: </span><span style={{fontFamily:'monospace',color:'#2eb860',fontWeight:700}}>{fmtD(rec)}</span></div>
+            <div><span style={{color:'#64748b'}}>Weighted Avg SDE: </span><span style={{fontFamily:'monospace',color:'#2eb860',fontWeight:700}}>{fmtD(rawWt)}</span></div>
+            <div><span style={{color:'#64748b'}}>Most Recent SDE: </span><span style={{fontFamily:'monospace',color:'#2eb860',fontWeight:700}}>{fmtD(rawRec)}</span></div>
             {ann>0&&<div><span style={{color:'#64748b'}}>Ann. YTD SDE: </span><span style={{fontFamily:'monospace',color:'#a78bfa',fontWeight:700}}>{fmtD(ann)}</span></div>}
-            <div style={{marginLeft:'auto'}}><span style={{color:'#64748b'}}>Valuation Basis: </span><span style={{fontFamily:'monospace',color:'#2eb860',fontWeight:700}}>{basisLabel} — {fmtD(base)}</span></div>
+            <div style={{marginLeft:'auto'}}><span style={{color:'#64748b'}}>Valuation Basis: </span><span style={{fontFamily:'monospace',color:'#2eb860',fontWeight:700}}>{basisLabel} — {fmtD(marketSde)}</span></div>
           </div>
           {buyerSalary>0&&<div style={{marginTop:8,fontSize:10,color:'#334155'}}>
-            SDE figures above are net of the {fmtD(buyerSalary)} Buyer's Salary normalization (set on the Income Statement tab); the table's per-year rows show SDE before that adjustment.
+            Most Recent SDE is the latest year column above, before the {fmtD(buyerSalary)} buyer's salary. That salary is subtracted in the DSCR and cash-flow sections ({fmtD(rec)} after salary).
           </div>}
         </div>}
 
@@ -2912,11 +2860,11 @@ const T9 = ({state,narrative,narrativeStatus}) => {
             which is the most common benchmark for stable, owner-operated businesses.
             Higher multiples (3.5×–4.0×) reflect favorable factors such as strong growth, recurring revenue, or proprietary systems.
             Lower multiples (2.0×–2.5×) may reflect elevated risk, owner dependency, or declining revenue.
-            The range below is based on the <strong style={{color:'#2eb860'}}>{basisLabel} SDE of {fmtD(base)}</strong>.
+            The range below is based on the <strong style={{color:'#2eb860'}}>{basisLabel} SDE of {fmtD(marketSde)}</strong>.
           </p>
           <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
             {mults.map(m=>{
-              const price=base*m, sel=mp>0&&Math.abs(mp-price)<1;
+              const price=marketSde*m, sel=mp>0&&Math.abs(mp-price)<1;
               return (
                 <div key={m} style={{background:sel?'#071a0b':'#0d1117',border:`1px solid ${sel?'#2eb860':'#1e2d45'}`,borderRadius:8,padding:'12px 16px',textAlign:'center',minWidth:110,flex:'1'}}>
                   <div style={{fontSize:10,color:sel?'#2eb860':'#475569',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em'}}>{m.toFixed(1)}× SDE</div>
@@ -2928,7 +2876,7 @@ const T9 = ({state,narrative,narrativeStatus}) => {
           </div>
           {mp>0&&<div style={{marginTop:10,fontSize:11,color:'#64748b'}}>
             Market price selected: <strong style={{fontFamily:'monospace',color:'#2eb860'}}>{fmtD(mp)}</strong>
-            {base>0&&<span> ({(mp/base).toFixed(2)}× {basisLabel} SDE)</span>}
+            {marketSde>0&&<span> ({(mp/marketSde).toFixed(2)}× {basisLabel} SDE)</span>}
           </div>}
         </div>}
 
@@ -3032,7 +2980,7 @@ const T9 = ({state,narrative,narrativeStatus}) => {
             A DSCR of <strong style={{color:'#e2e8f0'}}>1.00</strong> means the business exactly covers its debt — nothing left over.
             <strong style={{color:'#e2e8f0'}}> {dscrMin}</strong> is the required minimum — {((dscrMin-1)*100).toFixed(0)} cents of cushion for every dollar of payment.
             <strong style={{color:'#2eb860'}}> 2.00 or above</strong> is considered strong and signals that the buyer will have healthy cash flow after servicing the debt.
-            The loan modeled here assumes a <strong style={{color:'#e2e8f0'}}>3× SDE price at {loanRate}% over {loanAmort} years with {dpPct}% down</strong>{reVal>0?<span> (real estate included — actual deal uses <strong style={{color:'#e2e8f0'}}>{(loanStructure||'7a')==='504'?`7(a)+504 structure`:`${blendedAmortR9}yr blended term`}</strong>)</span>:''}.
+            The loan modeled here assumes a <strong style={{color:'#e2e8f0'}}>3× SDE price{buyerSalary>0?' after buyer\'s salary':''} at {loanRate}% over {loanAmort} years with {dpPct}% down</strong>{reVal>0?<span> (real estate included — actual deal uses <strong style={{color:'#e2e8f0'}}>{(loanStructure||'7a')==='504'?`7(a)+504 structure`:`${blendedAmortR9}yr blended term`}</strong>)</span>:''}.
           </p>
           <table style={{width:'100%',fontSize:11,borderCollapse:'collapse'}}>
             <thead>
