@@ -135,6 +135,74 @@ function initSchema() {
   try {
     db.exec('CREATE INDEX IF NOT EXISTS idx_sep_updated ON seller_engagement_proposals (updated_at DESC)');
   } catch (_) { /* already exists */ }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS success_plan_company (
+      year        INTEGER PRIMARY KEY,
+      vision      TEXT NOT NULL DEFAULT '',
+      mission     TEXT NOT NULL DEFAULT '',
+      deal_values TEXT NOT NULL DEFAULT '',
+      wtf_number  TEXT NOT NULL DEFAULT '',
+      updated_at  TEXT,
+      updated_by  TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS success_plan_five_year (
+      id            TEXT PRIMARY KEY,
+      plan_year     INTEGER NOT NULL,
+      goal_year     INTEGER NOT NULL,
+      gci_target    REAL,
+      ebitda_target REAL,
+      sort_order    INTEGER NOT NULL DEFAULT 0,
+      UNIQUE(plan_year, goal_year)
+    );
+
+    CREATE TABLE IF NOT EXISTS success_plan_people (
+      id         TEXT PRIMARY KEY,
+      name       TEXT NOT NULL,
+      role       TEXT NOT NULL DEFAULT '',
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      active     INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS success_plans (
+      id                      TEXT PRIMARY KEY,
+      person_id               TEXT NOT NULL,
+      year                    INTEGER NOT NULL,
+      commission_split        REAL,
+      personal_income_target  REAL,
+      avg_deal_size           REAL,
+      commission_rate         REAL,
+      close_ratio             REAL,
+      dealmaker_edge          TEXT NOT NULL DEFAULT '',
+      stop_delegate           TEXT NOT NULL DEFAULT '',
+      notes                   TEXT NOT NULL DEFAULT '',
+      actual_gci              REAL,
+      deals_closed            REAL,
+      active_pipeline         REAL,
+      updated_at              TEXT,
+      updated_by              TEXT,
+      UNIQUE(person_id, year)
+    );
+
+    CREATE TABLE IF NOT EXISTS success_plan_priorities (
+      id                   TEXT PRIMARY KEY,
+      year                 INTEGER NOT NULL,
+      person_id            TEXT,
+      sort_order           INTEGER NOT NULL,
+      body                 TEXT NOT NULL DEFAULT '',
+      owner_name           TEXT NOT NULL DEFAULT '',
+      ladders_to           TEXT NOT NULL DEFAULT '',
+      company_priority_id  TEXT,
+      due_date             TEXT,
+      status               TEXT NOT NULL DEFAULT ''
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_success_plans_year ON success_plans (year);
+    CREATE INDEX IF NOT EXISTS idx_success_priorities_year ON success_plan_priorities (year, person_id);
+  `);
 }
 
 function seedTestDeal() {

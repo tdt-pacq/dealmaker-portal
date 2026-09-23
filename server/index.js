@@ -27,6 +27,7 @@ const aiLimiter = rateLimit({
   message: { error: 'AI request limit reached. Please wait a few minutes before trying again.' },
 });
 const { getDb, seedTestDeal, seedUsers } = require('./database');
+const { seedSuccessPlans } = require('./successPlanSeed');
 const { runBackup } = require('./backup');
 const dealsRouter = require('./routes/deals');
 const usersRouter = require('./routes/users');
@@ -39,6 +40,7 @@ const buyerIntelRouter  = require('./routes/buyer-intel');
 const otpRouter         = require('./routes/otp');
 const redactRouter      = require('./routes/redact');
 const proposalsRouter   = require('./routes/proposals');
+const successPlansRouter = require('./routes/success-plans');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -98,6 +100,7 @@ app.use('/api/buyer-intel',  buyerIntelRouter);
 app.use('/api/otp',          otpRouter);
 app.use('/api/redact',       redactRouter);
 app.use('/api/proposals',    proposalsRouter);
+app.use('/api/success-plans', successPlansRouter);
 
 // Serve generated output files (auth required)
 app.use('/output', basicAuth, express.static(OUTPUT_ROOT));
@@ -198,6 +201,9 @@ if (fs.existsSync(clientBuild)) {
 
 // Seed initial users (idempotent — only runs if users table is empty)
 seedUsers();
+
+// Seed 2027 Annual Success Plans from the workbook (idempotent — skips once people exist).
+seedSuccessPlans();
 
 // Seed test deal data in development only
 if (process.env.NODE_ENV !== 'production') {
