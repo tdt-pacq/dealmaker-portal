@@ -23,7 +23,7 @@ const PORTAL_SECTIONS = [
     label: 'Advisors',
     items: [
       { id: 'commission',   label: 'Commission Calc',      icon: '💰', basePath: '/commission',    live: true  },
-      { id: 'success-plan', label: 'Success Plan',         icon: '🎯', basePath: '/success-plan', live: false },
+      { id: 'success-plan', label: 'Annual Success Plans', icon: '🎯', basePath: '/success-plan', live: true },
       { id: 'sops',         label: "SOP's",                icon: '📋', basePath: '/sops',         live: false },
       { id: 'training',     label: 'Training',             icon: '🎓', basePath: '/training',     live: false },
     ],

@@ -37,9 +37,10 @@ const TOOLS = [
   {
     id: 'success-plan',
     icon: '🎯',
-    label: 'Success Plan',
-    description: 'Advisor goal tracking and pipeline management.',
-    live: false,
+    label: 'Annual Success Plans',
+    description: 'Company rollup and each person\'s WTF goals and strategic priorities.',
+    href: '/success-plan',
+    live: true,
   },
   {
     id: 'otp',

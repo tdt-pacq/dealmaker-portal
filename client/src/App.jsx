@@ -17,6 +17,7 @@ const DealFinderApp = lazy(() => import('./pages/buyers/DealFinderApp'));
 const OtpApp = lazy(() => import('./pages/otp/OtpApp'));
 const RedactApp = lazy(() => import('./pages/redact/RedactApp'));
 const CommissionCalcApp = lazy(() => import('./pages/advisors/CommissionCalcApp'));
+const SuccessPlansApp = lazy(() => import('./pages/advisors/SuccessPlansApp'));
 const EngagementsList = lazy(() => import('./pages/engagements/EngagementsList'));
 const ProposalPage = lazy(() => import('./pages/engagements/ProposalPage'));
 
@@ -232,6 +233,7 @@ function AuthenticatedShell({ onSignOut, showOnboarding, onCloseOnboarding }) {
               <Route path="/otp" element={<OtpApp />} />
               <Route path="/redact" element={<RedactApp />} />
               <Route path="/commission" element={<CommissionCalcApp />} />
+              <Route path="/success-plan" element={<SuccessPlansApp />} />
               <Route path="/engagements" element={<EngagementsList />} />
               <Route path="/engagements/:token" element={<ProposalPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />

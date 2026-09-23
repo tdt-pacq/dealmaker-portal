@@ -113,3 +113,12 @@ export const deleteProposal = (id) => api.delete(`/proposals/${id}`);
 
 // Deal events / audit trail
 export const fetchDealEvents = (id) => api.get(`/deals/${id}/events`);
+
+// Annual Success Plans
+export const fetchSuccessPlans = (year) => api.get('/success-plans', { params: year ? { year } : {} });
+export const saveSuccessPlanCompany = (data) => api.put('/success-plans/company', data);
+export const saveSuccessPlanPerson = (id, data) => api.put(`/success-plans/people/${id}`, data);
+export const createSuccessPlanPerson = (data) => api.post('/success-plans/people', data);
+export const archiveSuccessPlanPerson = (id, year) => api.post(`/success-plans/people/${id}/archive`, { year });
+export const restoreSuccessPlanPerson = (id, year) => api.post(`/success-plans/people/${id}/restore`, { year });
+export const createSuccessPlanYear = (year) => api.post('/success-plans/years', { year });
