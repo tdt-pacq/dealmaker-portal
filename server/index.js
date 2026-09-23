@@ -202,7 +202,8 @@ if (fs.existsSync(clientBuild)) {
 // Seed initial users (idempotent — only runs if users table is empty)
 seedUsers();
 
-// Seed 2027 Annual Success Plans from the workbook (idempotent — skips once people exist).
+// Seed 2027 Annual Success Plans from the workbook. Existing databases keep
+// saved WTF numbers and only receive workbook Edge/priorities/notes where blank.
 seedSuccessPlans();
 
 // Seed test deal data in development only
