@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { calcWtf } from '@shared/wtfMath.mjs';
+import CompanyCockpit from './CompanyCockpit';
 import {
   archiveSuccessPlanPerson,
   createSuccessPlanPerson,
@@ -490,6 +491,12 @@ export default function SuccessPlansApp() {
 
       {data && mode === 'company' && companyDraft && (
         <>
+          <CompanyCockpit
+            year={data.year}
+            people={people}
+            kpis={data.kpis}
+            onSelect={setMode}
+          />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 10 }}>
             <Kpi label="Team committed GCI income" value={money(data.kpis.team_committed_gci_income)} detail="Sum of personal income targets" />
             <Kpi label="Gross production required" value={money(data.kpis.gross_production_required)} detail="Personal income ÷ commission split" />
