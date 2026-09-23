@@ -4,7 +4,15 @@
  * The dashboard KPI cell C6 ($3.5M) is a stale typed figure; the live
  * SUM of personal income targets is $5.6M and is what the app rolls up.
  *
- * Idempotent: skips when any person row already exists, so later edits stick.
+ * Dealmaker Edge (B24), stop/delegate (B25), D.E.A.L. priorities (B34:B38),
+ * and resources (B41:B43) are copied only where the workbook has them.
+ * Chad, Michael, Lance, Lee, Robin, Ken, Macon, and Chris are blank there
+ * and stay blank here.
+ *
+ * Fresh databases get the full roster. Databases that already have people
+ * keep WTF numbers, splits, roles, and company strategy. Empty Edge,
+ * stop/delegate, priorities, and resource notes are filled in; saved text
+ * is left alone.
  */
 
 const { getDb } = require('./database');
@@ -144,10 +152,77 @@ const PEOPLE = [
   },
 ];
 
+function isBlank(value) {
+  return value == null || String(value).trim() === '';
+}
+
+function backfillEmptyNarratives(db) {
+  const planStmt = db.prepare('SELECT * FROM success_plans WHERE person_id = ? AND year = ?');
+  const priorityCount = db.prepare(`
+    SELECT COUNT(*) AS n FROM success_plan_priorities
+    WHERE year = ? AND person_id = ?
+  `);
+  const updatePlan = db.prepare(`
+    UPDATE success_plans
+    SET dealmaker_edge = ?, stop_delegate = ?, notes = ?
+    WHERE id = ?
+  `);
+  const insertPriority = db.prepare(`
+    INSERT INTO success_plan_priorities (
+      id, year, person_id, sort_order, body, owner_name, ladders_to, company_priority_id, due_date, status
+    ) VALUES (?, ?, ?, ?, ?, '', '', NULL, NULL, '')
+  `);
+  const priorityIdTaken = db.prepare('SELECT id FROM success_plan_priorities WHERE id = ?');
+
+  const apply = db.transaction(() => {
+    const touched = [];
+    for (const person of PEOPLE) {
+      const edge = person.dealmaker_edge || '';
+      const stop = person.stop_delegate || '';
+      const notes = person.notes || '';
+      const priorities = person.priorities || [];
+      if (!edge && !stop && !notes && priorities.length === 0) continue;
+
+      const row = planStmt.get(person.id, PLAN_YEAR);
+      if (!row) continue;
+
+      const nextEdge = isBlank(row.dealmaker_edge) && edge ? edge : row.dealmaker_edge;
+      const nextStop = isBlank(row.stop_delegate) && stop ? stop : row.stop_delegate;
+      const nextNotes = isBlank(row.notes) && notes ? notes : row.notes;
+      const textChanged = nextEdge !== row.dealmaker_edge
+        || nextStop !== row.stop_delegate
+        || nextNotes !== row.notes;
+      if (textChanged) updatePlan.run(nextEdge, nextStop, nextNotes, row.id);
+
+      let prioritiesAdded = 0;
+      if (priorities.length > 0 && priorityCount.get(PLAN_YEAR, person.id).n === 0) {
+        priorities.forEach((body, i) => {
+          const id = `${person.id}-${PLAN_YEAR}-p${i + 1}`;
+          if (priorityIdTaken.get(id)) return;
+          insertPriority.run(id, PLAN_YEAR, person.id, i, body);
+          prioritiesAdded += 1;
+        });
+      }
+
+      if (textChanged || prioritiesAdded > 0) touched.push(person.name);
+    }
+    return touched;
+  });
+
+  const touched = apply();
+  if (touched.length) {
+    console.log(`[Success Plans] Backfilled empty Edge/priorities/notes for ${touched.join(', ')}`);
+  }
+  return { people: touched.length, names: touched };
+}
+
 function seedSuccessPlans() {
   const db = getDb();
   const existing = db.prepare('SELECT COUNT(*) AS n FROM success_plan_people').get();
-  if (existing.n > 0) return { seeded: false };
+  if (existing.n > 0) {
+    const backfill = backfillEmptyNarratives(db);
+    return { seeded: false, year: PLAN_YEAR, backfilled: backfill.people };
+  }
 
   const now = new Date().toISOString();
   const insertPerson = db.prepare(`
@@ -220,7 +295,8 @@ function seedSuccessPlans() {
 
   tx();
   console.log(`[Success Plans] Seeded ${PEOPLE.length} people for ${PLAN_YEAR}`);
-  return { seeded: true, people: PEOPLE.length, year: PLAN_YEAR };
+  const backfill = backfillEmptyNarratives(db);
+  return { seeded: true, people: PEOPLE.length, year: PLAN_YEAR, backfilled: backfill.people };
 }
 
 module.exports = { PLAN_YEAR, COMPANY_2027, FIVE_YEAR_GOALS, PEOPLE, seedSuccessPlans };
