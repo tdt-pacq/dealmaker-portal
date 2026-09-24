@@ -3366,7 +3366,7 @@ const LoadModal = ({onClose, onLoad, user}) => {
   };
 
   return (
-    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}}
+    <div style={{position:'fixed',inset:0,background:'rgba(48, 32, 22, 0.4)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}}
          onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div style={{background:'rgba(255,255,255,0.92)',border:'1px solid #e6dfd6',borderRadius:10,padding:24,width:560,maxHeight:'75vh',display:'flex',flexDirection:'column'}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
@@ -3479,7 +3479,7 @@ const ReviewModal=({reviewData,onApply,onCancel})=>{
   const [incVals,setIncVals]=useState(reviewData.income||{});
   const [bsVals,setBsVals]=useState(reviewData.balance||{});
   const [vals,setVals]=useState(isCombined?{}:{...(reviewData.data||{})});
-  const overlay={position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:2000};
+  const overlay={position:'fixed',inset:0,background:'rgba(48, 32, 22, 0.4)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:2000};
   const modal={background:'rgba(255,255,255,0.92)',border:'1px solid #e6dfd6',borderRadius:10,padding:24,width:480,maxHeight:'85vh',overflowY:'auto'};
   const btnBase={border:'none',borderRadius:5,padding:'7px 16px',fontSize:12,fontWeight:600,cursor:'pointer'};
   const renderField=(k,label,valObj,setValObj)=>(
@@ -4187,7 +4187,7 @@ function App() {
       </div>
       {showLoad&&<LoadModal onClose={()=>setShowLoad(false)} onLoad={load} user={user}/>}
       {extracting&&(
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:2000}}>
+        <div style={{position:'fixed',inset:0,background:'rgba(48, 32, 22, 0.4)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:2000}}>
           <div style={{background:'rgba(255,255,255,0.92)',border:'1px solid #e6dfd6',borderRadius:10,padding:32,textAlign:'center'}}>
             <div style={{color:'#C4592F',fontSize:14,marginBottom:8}}>Extracting data from PDF…</div>
             <div style={{color:'#44403c',fontSize:11}}>Claude is reading your tax return. This takes 10–20 seconds.</div>

@@ -60,7 +60,7 @@ export default function OnboardingModal({ onClose }) {
         alignItems: 'center',
         justifyContent: 'center',
         padding: 20,
-        background: visible ? 'rgba(0,0,0,0.72)' : 'rgba(0,0,0,0)',
+        background: visible ? 'rgba(48, 32, 22, 0.4)' : 'rgba(48, 32, 22, 0)',
         transition: 'background 0.2s ease',
       }}
       onClick={() => dismiss(false)}

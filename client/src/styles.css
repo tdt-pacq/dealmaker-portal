@@ -49,7 +49,7 @@ body::before {
   height: 82vh;
   transform: translateY(-52%);
   background: url('/phoenix-icon.svg') center / contain no-repeat;
-  opacity: 0.055;
+  opacity: 0.065;
   pointer-events: none;
   z-index: 0;
 }
@@ -582,7 +582,7 @@ label .required { color: var(--accent); margin-left: 2px; }
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.65);
+  background: rgba(48, 32, 22, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -679,7 +679,7 @@ label .required { color: var(--accent); margin-left: 2px; }
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.55);
+    background: rgba(48, 32, 22, 0.4);
     border: none;
     padding: 0;
     z-index: 90;
