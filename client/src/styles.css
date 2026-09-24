@@ -162,10 +162,12 @@ label .required { color: var(--accent); margin-left: 2px; }
 }
 
 .page-content {
-  flex: 1;
-  padding: 28px 32px;
-  max-width: 1400px;
-  width: 100%;
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  width: min(100%, 1680px);
+  margin-inline: auto;
+  align-self: center;
+  padding: 28px 28px 36px;
 }
 
 .page-header {
@@ -671,6 +673,12 @@ label .required { color: var(--accent); margin-left: 2px; }
   flex-shrink: 0;
 }
 
+.home-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
 /* Tablet / iPad — overlay sidebar, stack headers, scroll wide content */
 @media (max-width: 1024px) {
   .topbar-menu-btn { display: flex; }
@@ -703,7 +711,7 @@ label .required { color: var(--accent); margin-left: 2px; }
     box-shadow: 8px 0 32px rgba(0, 0, 0, 0.45);
   }
 
-  .page-content { padding: 20px 20px 28px; }
+  .page-content { padding: 24px 24px 32px; }
 
   .page-header {
     flex-direction: column;

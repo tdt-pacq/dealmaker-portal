@@ -66,7 +66,7 @@ export default function Home() {
   };
 
   return (
-    <div style={{ padding: '40px 40px', maxWidth: 1200, margin: '0 auto' }}>
+    <div className="page-content">
 
       {/* Section label */}
       <div style={{
@@ -81,12 +81,8 @@ export default function Home() {
         Tools
       </div>
 
-      {/* Tool grid — 3 columns on wide, 2 on medium */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: 16,
-      }}>
+      {/* Tool grid — wraps into more columns as the page widens */}
+      <div className="home-tool-grid">
         {TOOLS.map(tool => (
           <div
             key={tool.id}

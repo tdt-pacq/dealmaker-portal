@@ -555,7 +555,7 @@ export default function DealFinderApp() {
         input::placeholder { color: #44403c; }
       `}</style>
 
-      <div style={{ padding: 28, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <div className="page-content" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
         {/* Header */}
         <div style={{ marginBottom: 24 }}>

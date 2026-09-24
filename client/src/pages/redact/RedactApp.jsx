@@ -159,7 +159,7 @@ export default function RedactApp() {
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 24px' }}>
+    <div className="page-content">
 
       {/* ── Header ── */}
       <div style={{ marginBottom: 28 }}>

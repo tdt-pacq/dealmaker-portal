@@ -251,7 +251,7 @@ ${salePrice > 0 ? `<div class="section">
     letterSpacing: '0.08em', marginBottom: 14, fontFamily: 'system-ui, sans-serif' };
 
   return (
-    <div style={{ maxWidth: 840, margin: '0 auto', padding: '28px 24px', fontFamily: 'system-ui, sans-serif' }}>
+    <div className="page-content" style={{ fontFamily: 'system-ui, sans-serif' }}>
 
       {/* Header */}
       <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>

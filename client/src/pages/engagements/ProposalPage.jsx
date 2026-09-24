@@ -206,7 +206,7 @@ export default function ProposalPage() {
 
   if (error) {
     return (
-      <div className="page-content" style={{ maxWidth: 640, margin: '0 auto', padding: '48px 24px' }}>
+      <div className="page-content" style={{ paddingTop: 48, paddingBottom: 48 }}>
         <div className="alert alert-error">{error}</div>
         {canEdit && (
           <Link to="/engagements"><button className="btn-ghost">← Back to proposals</button></Link>
@@ -242,7 +242,7 @@ export default function ProposalPage() {
   const F = (props) => <Field readOnly={!canEdit} {...props} />;
 
   return (
-    <div style={{ maxWidth: 920, margin: '0 auto', padding: '28px 24px 80px' }}>
+    <div className="page-content" style={{ paddingBottom: 80 }}>
       <div className="no-print" style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         marginBottom: 18, gap: 12, flexWrap: 'wrap',

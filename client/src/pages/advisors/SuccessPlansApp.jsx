@@ -427,7 +427,7 @@ export default function SuccessPlansApp() {
   }));
 
   return (
-    <div className="page-content" style={{ maxWidth: 1180 }}>
+    <div className="page-content">
       <div className="page-header" style={{ position: 'sticky', top: 0, zIndex: 4, background: 'rgba(244,241,236,0.92)', backdropFilter: 'blur(12px)', paddingTop: 4, paddingBottom: 12, alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
         <div>
           <div className="page-title">Annual Success Plans</div>
@@ -497,7 +497,7 @@ export default function SuccessPlansApp() {
             kpis={data.kpis}
             onSelect={setMode}
           />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 10 }}>
+          <div className="plan-kpis">
             <Kpi label="Team committed GCI income" value={money(data.kpis.team_committed_gci_income)} detail="Sum of personal income targets" />
             <Kpi label="Gross production required" value={money(data.kpis.gross_production_required)} detail="Personal income ÷ commission split" />
             <Kpi label="Deals to close" value={data.kpis.deals_to_close.toLocaleString('en-US')} detail="Rounded up from production math" />

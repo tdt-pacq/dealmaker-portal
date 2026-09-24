@@ -578,12 +578,7 @@ export default function OtpApp() {
   };
 
   return (
-    <div style={{
-      maxWidth: 820,
-      margin: '0 auto',
-      padding: '24px 20px 60px',
-      fontFamily: 'system-ui, sans-serif',
-    }}>
+    <div className="page-content" style={{ paddingBottom: 60, fontFamily: 'system-ui, sans-serif' }}>
 
       {/* ── Page Header ── */}
       <div style={{ marginBottom: 24 }}>

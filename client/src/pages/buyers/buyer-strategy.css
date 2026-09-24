@@ -11,9 +11,13 @@
 /* ── Layout ─────────────────────────────────────────────────────────────── */
 
 .bs-root {
+  box-sizing: border-box;
   color: #1c1917;
   font-family: system-ui, sans-serif;
-  max-width: 1080px;
+  width: min(100%, 1680px);
+  margin-inline: auto;
+  align-self: center;
+  padding: 28px 28px 36px;
 }
 
 .bs-buyer-bar {
@@ -347,6 +351,10 @@
 .bs-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .bs-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .bs-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 1024px) {
+  .bs-root { padding: 24px 24px 32px; }
+}
+
 @media (max-width: 720px) {
   .bs-grid-2, .bs-grid-3, .bs-grid-4 { grid-template-columns: 1fr; }
 }

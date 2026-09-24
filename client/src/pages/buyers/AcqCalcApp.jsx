@@ -110,7 +110,7 @@ export default function AcqCalcApp() {
   );
 
   return (
-    <div style={{ padding: 28, maxWidth: 1100, color: '#1c1917' }}>
+    <div className="page-content" style={{ color: '#1c1917' }}>
       {/* Header */}
       <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
