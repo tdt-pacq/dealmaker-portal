@@ -9,7 +9,7 @@
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
-    "test": "node --test shared/wtfMath.test.cjs server/successPlanStore.test.js && npm test --prefix client"
+    "test": "node --test shared/wtfMath.test.cjs server/successPlanStore.test.js server/marketingText.test.js && node --test server/generateRoute.test.js && npm test --prefix client"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

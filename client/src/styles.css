@@ -504,6 +504,7 @@ label .required { color: var(--accent); margin-left: 2px; }
   transition: opacity 0.2s, transform 0.2s;
 }
 .autosave-indicator.visible { opacity: 1; transform: translateY(0); }
+.autosave-indicator.error { color: var(--danger); border-color: #fecaca; background: #fff; }
 
 /* Output panels */
 .output-panel {

@@ -79,9 +79,10 @@ export async function downloadDealPdf(id, type) {
 }
 
 // Generate
-export const generateBlindAd = (deal_id) => api.post('/generate/blind-ad', { deal_id });
-export const generateFlyer = (deal_id) => api.post('/generate/flyer', { deal_id });
-export const generateCbr = (deal_id) => api.post('/generate/cbr', { deal_id });
+const GENERATE_TIMEOUT_MS = 180000;
+export const generateBlindAd = (deal_id) => api.post('/generate/blind-ad', { deal_id }, { timeout: GENERATE_TIMEOUT_MS });
+export const generateFlyer = (deal_id) => api.post('/generate/flyer', { deal_id }, { timeout: GENERATE_TIMEOUT_MS });
+export const generateCbr = (deal_id) => api.post('/generate/cbr', { deal_id }, { timeout: GENERATE_TIMEOUT_MS });
 
 // Export to PDF
 export const exportFlyer = (id) => api.post(`/export/flyer/${id}`);

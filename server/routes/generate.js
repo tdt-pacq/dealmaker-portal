@@ -1,6 +1,7 @@
 const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
 const { getDb, logEvent } = require('../database');
+const { documentFromMessage, generationBody } = require('../marketingText');
 
 const router = express.Router();
 
@@ -20,10 +21,9 @@ router.post('/blind-ad', async (req, res) => {
 
   const client = getClient();
   try {
-    const message = await client.messages.create({
-      model: 'claude-sonnet-5',
-      max_tokens: 2000,
-      system: `You are a professional business broker copywriter for Peterson Acquisitions / The Deal Team.
+    const message = await client.messages.create(generationBody(
+      4000,
+      `You are a professional business broker copywriter for Peterson Acquisitions / The Deal Team.
 You write compelling, factual blind ads for BizBuySell that follow a strict structure.
 CRITICAL RULES:
 - NEVER reveal the business name, owner name, specific street address, or any detail that would identify the business.
@@ -32,9 +32,7 @@ CRITICAL RULES:
 - Write in a confident, authoritative tone. Avoid filler language.
 - If a field is not provided, omit that line entirely rather than guessing.
 - Output must be plain text, copy-paste ready for BizBuySell. No markdown except bold headline (use ** for bold) and bullet points (use - for bullets).`,
-      messages: [{
-        role: 'user',
-        content: `Generate a BizBuySell blind ad using this business data: ${JSON.stringify(interviewData, null, 2)}
+      `Generate a BizBuySell blind ad using this business data: ${JSON.stringify(interviewData, null, 2)}
 
 Follow this EXACT structure and formatting. Do not add, remove, or reorder sections.
 
@@ -113,17 +111,16 @@ Real Estate: [Owned / Leased]
 ---
 
 Output the ad exactly as formatted above. Plain text only.`
-      }]
-    });
+    ));
 
-    const blindAdText = message.content[0].text;
+    const blindAdText = documentFromMessage(message, 'Blind ad');
     getDb().prepare('UPDATE deals SET blind_ad_text = ?, updated_at = ? WHERE id = ?')
       .run(blindAdText, new Date().toISOString(), deal_id);
     logEvent(deal_id, req.user, 'blind_ad_generated', 'Blind ad generated');
     res.json({ blind_ad_text: blindAdText });
   } catch (err) {
     console.error('Blind ad generation error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 
@@ -139,10 +136,9 @@ router.post('/flyer', async (req, res) => {
 
   const client = getClient();
   try {
-    const message = await client.messages.create({
-      model: 'claude-sonnet-5',
-      max_tokens: 8000,
-      system: `You are a professional graphic designer and copywriter for Peterson Acquisitions.
+    const message = await client.messages.create(generationBody(
+      12000,
+      `You are a professional graphic designer and copywriter for Peterson Acquisitions.
 You generate single-page, print-ready HTML/CSS business listing flyers.
 
 ABSOLUTE RULES — VIOLATION MEANS THE OUTPUT IS REJECTED:
@@ -157,9 +153,7 @@ ABSOLUTE RULES — VIOLATION MEANS THE OUTPUT IS REJECTED:
 6. NO paragraph-style "Business Analysis" or "Overview" sections. ALL body copy must be bullet points of 15 words or fewer. No exceptions.
 7. The advisor contact card goes INSIDE the right sidebar column — NOT as a separate footer or second page.
 8. TEXT CONTRAST: body text #111111, headers #1A1A1A, secondary #444444 minimum. This is a print document.`,
-      messages: [{
-        role: 'user',
-        content: `Generate a single-page print-ready business listing flyer. The page is exactly 8.5×11 inches. NOTHING may overflow.
+      `Generate a single-page print-ready business listing flyer. The page is exactly 8.5×11 inches. NOTHING may overflow.
 
 FONTS (include exactly this link tag in <head>):
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -256,17 +250,16 @@ ${JSON.stringify(interviewData, null, 2)}
 Advisor name: ${deal.advisor_name || 'Your Advisor'}
 
 Output ONLY the complete HTML document starting with <!DOCTYPE html>. Nothing before or after.`
-      }]
-    });
+    ));
 
-    const flyerHtml = message.content[0].text;
+    const flyerHtml = documentFromMessage(message, 'One-page flyer');
     getDb().prepare('UPDATE deals SET flyer_html = ?, updated_at = ? WHERE id = ?')
       .run(flyerHtml, new Date().toISOString(), deal_id);
     logEvent(deal_id, req.user, 'flyer_generated', 'One-page flyer generated');
     res.json({ flyer_html: flyerHtml });
   } catch (err) {
     console.error('Flyer generation error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 
@@ -284,10 +277,9 @@ router.post('/cbr', async (req, res) => {
   const client = getClient();
 
   try {
-    const message = await client.messages.create({
-      model: 'claude-sonnet-5',
-      max_tokens: 16000,
-      system: `You are generating a Confidential Business Review (CBR) for a business acquisition listing.
+    const message = await client.messages.create(generationBody(
+      32000,
+      `You are generating a Confidential Business Review (CBR) for a business acquisition listing.
 This is a CONFIDENTIAL document shared only with vetted, NDA-signed buyers.
 It must be professional, accurate, and compelling.
 
@@ -309,9 +301,7 @@ RIGHT SIDEBAR RULE:
 - Every content page has a right sidebar (28% width)
 - The sidebar MUST contain real, useful content — a callout box with 3-5 key stats, a highlighted bullet list, or a "Why This Deal" box
 - NEVER leave the sidebar empty or purely decorative — empty space looks unprofessional`,
-      messages: [{
-        role: 'user',
-        content: `Generate a complete multi-page Confidential Business Review (CBR) as a single HTML document.
+      `Generate a complete multi-page Confidential Business Review (CBR) as a single HTML document.
 
 FONTS (include in <head>):
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -575,10 +565,9 @@ Advisor: ${deal.advisor_name}
 
 IMPORTANT: Output ONLY the complete HTML document starting with <!DOCTYPE html>. No other text.
 IMPORTANT: Follow the PAGE BREAK RULES exactly — content pages use page-break-before: always and page-break-inside: avoid on blocks. NEVER use page-break-after on content blocks.`
-      }]
-    });
+    ));
 
-    const cbrHtml = message.content[0].text;
+    const cbrHtml = documentFromMessage(message, 'CBR');
     // Strip any accidental markdown fences
     const cleanHtml = cbrHtml.replace(/^```html\n?/, '').replace(/\n?```$/, '').trim();
     getDb().prepare('UPDATE deals SET cbr_html = ?, updated_at = ? WHERE id = ?')
@@ -587,7 +576,7 @@ IMPORTANT: Follow the PAGE BREAK RULES exactly — content pages use page-break-
     res.json({ cbr_html: cleanHtml });
   } catch (err) {
     console.error('CBR generation error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 
