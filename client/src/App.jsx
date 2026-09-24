@@ -35,66 +35,19 @@ function LoginScreen({ onLogin, error }) {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: '#0f1117',
-    }}>
-      <div style={{ width: 380 }}>
-        <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <div style={{
-            fontFamily: 'Oswald, sans-serif',
-            fontWeight: 700,
-            fontSize: 26,
-            color: '#e2e8f0',
-            letterSpacing: 3,
-            textTransform: 'uppercase',
-          }}>
-            Dealmaker Portal
+    <div className="login-screen">
+      <div style={{ width: 400, maxWidth: '100%' }}>
+        <div className="login-brand">
+          <img src="/phoenix-icon.svg" alt="" width="80" height="92" />
+          <div>
+            <div className="login-brand-name">Dealmaker Portal</div>
+            <div className="login-brand-sub">Peterson Acquisitions — The Deal Team</div>
           </div>
-          <div style={{
-            fontFamily: 'Oswald, sans-serif',
-            fontSize: 11,
-            color: '#2eb860',
-            letterSpacing: 3,
-            textTransform: 'uppercase',
-            marginTop: 4,
-          }}>
-            Peterson Acquisitions — The Deal Team
-          </div>
-          <div style={{
-            width: 40,
-            height: 2,
-            background: '#2eb860',
-            margin: '14px auto 0',
-            borderRadius: 1,
-          }} />
         </div>
 
-        <div style={{
-          background: '#1e293b',
-          borderRadius: 10,
-          border: '1px solid #2d3748',
-          overflow: 'hidden',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-        }}>
-          <div style={{
-            background: '#161f2e',
-            padding: '18px 28px',
-            borderBottom: '1px solid #2d3748',
-          }}>
-            <div style={{
-              fontFamily: 'Oswald, sans-serif',
-              fontWeight: 600,
-              fontSize: 13,
-              color: '#64748b',
-              letterSpacing: 2,
-              textTransform: 'uppercase',
-            }}>
-              Team Sign In
-            </div>
+        <div className="login-card">
+          <div className="login-card-hd">
+            Team Sign In
           </div>
 
           <form onSubmit={submit} style={{ padding: '24px 28px' }}>
@@ -141,7 +94,7 @@ function LoginScreen({ onLogin, error }) {
           textAlign: 'center',
           marginTop: 20,
           fontSize: 11,
-          color: '#334155',
+          color: '#44403c',
           letterSpacing: 0.5,
         }}>
           Authorized personnel only
@@ -153,7 +106,7 @@ function LoginScreen({ onLogin, error }) {
 
 function LoadingFallback() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 240, color: '#64748b' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 240, color: '#57534e' }}>
       <div className="spinner spinner-dark" style={{ width: 28, height: 28, borderWidth: 3, display: 'inline-block', marginRight: 10 }} />
       Loading…
     </div>
@@ -162,7 +115,7 @@ function LoadingFallback() {
 
 function PublicShareLayout() {
   return (
-    <div style={{ minHeight: '100vh', background: '#0f1117' }}>
+    <div style={{ minHeight: '100vh', background: 'transparent' }}>
       <Suspense fallback={<LoadingFallback />}>
         <ProposalPage />
       </Suspense>

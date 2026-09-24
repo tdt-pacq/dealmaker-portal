@@ -186,30 +186,30 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
 
   return (
     <div style={{
-      background: '#1e293b', borderRadius: 8,
-      marginBottom: 20, overflow: 'hidden', border: '1px solid #2d3748'
+      background: 'rgba(255,255,255,0.94)', borderRadius: 8,
+      marginBottom: 20, overflow: 'hidden', border: '1px solid #e4dcd2'
     }}>
       {/* Header */}
       <div
         onClick={() => setOpen(o => !o)}
         style={{
           display: 'flex', alignItems: 'center', gap: 10, padding: '13px 20px',
-          cursor: 'pointer', background: '#161f2e', borderBottom: open ? '1px solid #1a2235' : 'none'
+          cursor: 'pointer', background: '#faf8f5', borderBottom: open ? '1px solid #e6dfd6' : 'none'
         }}
       >
         <span style={{ fontSize: 18 }}>✨</span>
         <div style={{ flex: 1 }}>
           <div style={{
             fontFamily: 'Oswald, sans-serif', fontWeight: 700, fontSize: 14,
-            textTransform: 'uppercase', letterSpacing: '.8px', color: '#e2e8f0'
+            textTransform: 'uppercase', letterSpacing: '.8px', color: '#1c1917'
           }}>
             Step 1 — Upload Interview Notes
           </div>
-          <div style={{ fontSize: 12, color: '#64748b', marginTop: 1 }}>
+          <div style={{ fontSize: 12, color: '#57534e', marginTop: 1 }}>
             Upload your Google Doc (.docx) or paste notes → AI fills the form below → then Generate &amp; Download Marketing (blind ad, flyer, CBR/CIM)
           </div>
         </div>
-        <span style={{ color: '#2eb860', fontSize: 16, transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
+        <span style={{ color: '#C4592F', fontSize: 16, transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
       </div>
 
       {open && (
@@ -218,7 +218,7 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
           {!result && (
             <>
               {/* Mode tabs */}
-              <div style={{ display: 'flex', gap: 0, marginBottom: 16, borderRadius: 6, overflow: 'hidden', border: '1px solid #334155', width: 'fit-content' }}>
+              <div style={{ display: 'flex', gap: 0, marginBottom: 16, borderRadius: 6, overflow: 'hidden', border: '1px solid #e4dcd2', width: 'fit-content' }}>
                 {[['upload', '📎 Upload File'], ['paste', '📋 Paste Text']].map(([m, label]) => (
                   <button
                     key={m}
@@ -226,8 +226,8 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
                     style={{
                       padding: '7px 18px', fontSize: 13, fontWeight: 600, border: 'none',
                       borderRadius: 0, cursor: 'pointer',
-                      background: mode === m ? '#2eb860' : '#0d1117',
-                      color: mode === m ? '#fff' : '#94a3b8',
+                      background: mode === m ? '#C4592F' : '#ffffff',
+                      color: mode === m ? '#fff' : '#57534e',
                       transition: 'background .15s, color .15s'
                     }}
                   >{label}</button>
@@ -242,10 +242,10 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
                   style={{
-                    border: `2px dashed ${dragging ? '#2eb860' : file ? '#2eb860' : '#334155'}`,
+                    border: `2px dashed ${dragging ? '#C4592F' : file ? '#C4592F' : '#44403c'}`,
                     borderRadius: 8, padding: '28px 20px', textAlign: 'center',
                     cursor: 'pointer',
-                    background: dragging ? 'rgba(46,184,96,0.08)' : file ? 'rgba(46,184,96,0.06)' : '#0d1117',
+                    background: dragging ? 'rgba(196,89,47,0.08)' : file ? 'rgba(196,89,47,0.06)' : '#44403c',
                     transition: 'all .15s', marginBottom: 12
                   }}
                 >
@@ -259,18 +259,18 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
                   {file ? (
                     <>
                       <div style={{ fontSize: 28, marginBottom: 6 }}>✅</div>
-                      <div style={{ fontWeight: 600, color: '#2eb860', fontSize: 14 }}>{file.name}</div>
-                      <div style={{ fontSize: 12, color: '#64748b', marginTop: 3 }}>
+                      <div style={{ fontWeight: 600, color: '#C4592F', fontSize: 14 }}>{file.name}</div>
+                      <div style={{ fontSize: 12, color: '#57534e', marginTop: 3 }}>
                         {(file.size / 1024).toFixed(0)} KB — click to change
                       </div>
                     </>
                   ) : (
                     <>
                       <div style={{ fontSize: 32, marginBottom: 8 }}>📄</div>
-                      <div style={{ fontWeight: 600, color: '#94a3b8', fontSize: 14 }}>
+                      <div style={{ fontWeight: 600, color: '#57534e', fontSize: 14 }}>
                         Drop your interview doc here, or click to browse
                       </div>
-                      <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
+                      <div style={{ fontSize: 12, color: '#57534e', marginTop: 4 }}>
                         Supports .docx (Google Doc export) and .txt · Max 20MB
                       </div>
                     </>
@@ -286,9 +286,9 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
                   placeholder="Paste your interview notes or Google Doc text here…&#10;&#10;The more complete the document, the more fields Claude can extract."
                   style={{
                     width: '100%', minHeight: 180, fontFamily: 'system-ui, sans-serif',
-                    fontSize: 13, padding: 12, border: '1px solid #334155',
+                    fontSize: 13, padding: 12, border: '1px solid #e4dcd2',
                     borderRadius: 6, resize: 'vertical', lineHeight: 1.6,
-                    marginBottom: 12, background: '#0d1117', color: '#e2e8f0',
+                    marginBottom: 12, background: '#ffffff', color: '#1c1917',
                     outline: 'none', boxSizing: 'border-box'
                   }}
                 />
@@ -297,7 +297,7 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
               {error && (
                 <div style={{
                   padding: '10px 14px', borderRadius: 6, fontSize: 13,
-                  background: 'rgba(220,38,38,0.1)', color: '#f87171', borderLeft: '4px solid #ef4444',
+                  background: 'rgba(220,38,38,0.1)', color: '#dc2626', borderLeft: '4px solid #ef4444',
                   marginBottom: 12
                 }}>{error}</div>
               )}
@@ -314,7 +314,7 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
                     : '⚡ Extract Fields →'}
                 </button>
                 {extracting && (
-                  <span style={{ fontSize: 12, color: '#64748b' }}>
+                  <span style={{ fontSize: 12, color: '#57534e' }}>
                     Claude is reading the document — usually 10–30 seconds
                   </span>
                 )}
@@ -328,27 +328,27 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
               {/* Summary bar */}
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 16, marginBottom: 14,
-                padding: '10px 16px', background: 'rgba(46,184,96,0.1)', borderRadius: 6,
-                border: '1px solid rgba(46,184,96,0.3)'
+                padding: '10px 16px', background: 'rgba(196,89,47,0.1)', borderRadius: 6,
+                border: '1px solid rgba(196,89,47,0.3)'
               }}>
                 <span style={{ fontSize: 22 }}>🎯</span>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: '#2eb860' }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: '#C4592F' }}>
                     {result.field_count} field{result.field_count !== 1 ? 's' : ''} extracted
                   </div>
-                  <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 1 }}>
+                  <div style={{ fontSize: 12, color: '#57534e', marginTop: 1 }}>
                     Review below, deselect any you don't want, then click Apply.
                   </div>
                 </div>
                 <label style={{
                   display: 'flex', alignItems: 'center', gap: 7, marginLeft: 'auto',
-                  cursor: 'pointer', fontSize: 13, color: '#94a3b8', fontWeight: 500, whiteSpace: 'nowrap'
+                  cursor: 'pointer', fontSize: 13, color: '#57534e', fontWeight: 500, whiteSpace: 'nowrap'
                 }}>
                   <input
                     type="checkbox"
                     checked={overwrite}
                     onChange={e => setOverwrite(e.target.checked)}
-                    style={{ width: 14, height: 14, accentColor: '#2eb860', cursor: 'pointer' }}
+                    style={{ width: 14, height: 14, accentColor: '#C4592F', cursor: 'pointer' }}
                   />
                   Overwrite existing values
                 </label>
@@ -356,7 +356,7 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
 
               {/* Field checklist */}
               <div style={{
-                maxHeight: 320, overflowY: 'auto', border: '1px solid #2d3748',
+                maxHeight: 320, overflowY: 'auto', border: '1px solid #e4dcd2',
                 borderRadius: 6, marginBottom: 14
               }}>
                 {result.fields_found.map((key, i) => {
@@ -370,46 +370,46 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
                       style={{
                         display: 'flex', alignItems: 'flex-start', gap: 10,
                         padding: '8px 14px', cursor: 'pointer',
-                        background: checked ? '#1e293b' : '#161f2e',
-                        borderBottom: i < result.fields_found.length - 1 ? '1px solid #1a2235' : 'none',
+                        background: checked ? 'rgba(255,255,255,0.94)' : '#faf8f5',
+                        borderBottom: i < result.fields_found.length - 1 ? '1px solid #e6dfd6' : 'none',
                         opacity: checked ? 1 : 0.5,
                         transition: 'opacity .15s, background .15s'
                       }}
                     >
                       <div style={{
                         width: 18, height: 18, borderRadius: 3, flexShrink: 0, marginTop: 1,
-                        border: `2px solid ${checked ? '#2eb860' : '#334155'}`,
-                        background: checked ? '#2eb860' : '#0d1117',
+                        border: `2px solid ${checked ? '#C4592F' : '#e4dcd2'}`,
+                        background: checked ? '#C4592F' : '#ffffff',
                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                       }}>
                         {checked && <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, lineHeight: 1 }}>✓</span>}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0' }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: '#1c1917' }}>
                             {labelFor(key)}
                           </span>
                           {filled && !overwrite && (
                             <span style={{
                               fontSize: 10, padding: '1px 6px', borderRadius: 10,
-                              background: 'rgba(251,191,36,0.15)', color: '#fbbf24', fontWeight: 600
+                              background: 'rgba(251,191,36,0.15)', color: '#b45309', fontWeight: 600
                             }}>will skip</span>
                           )}
                           {filled && overwrite && (
                             <span style={{
                               fontSize: 10, padding: '1px 6px', borderRadius: 10,
-                              background: 'rgba(239,68,68,0.15)', color: '#f87171', fontWeight: 600
+                              background: 'rgba(239,68,68,0.15)', color: '#dc2626', fontWeight: 600
                             }}>will overwrite</span>
                           )}
                           {!filled && (
                             <span style={{
                               fontSize: 10, padding: '1px 6px', borderRadius: 10,
-                              background: 'rgba(46,184,96,0.15)', color: '#2eb860', fontWeight: 600
+                              background: 'rgba(196,89,47,0.15)', color: '#C4592F', fontWeight: 600
                             }}>new</span>
                           )}
                         </div>
                         <div style={{
-                          fontSize: 12, color: '#94a3b8', marginTop: 2,
+                          fontSize: 12, color: '#57534e', marginTop: 2,
                           fontFamily: typeof val === 'string' && val.includes('\n') ? 'monospace' : 'inherit',
                           whiteSpace: 'pre-wrap', wordBreak: 'break-word'
                         }}>
@@ -422,7 +422,7 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
               </div>
 
               {/* Selected count */}
-              <div style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>
+              <div style={{ fontSize: 12, color: '#57534e', marginBottom: 12 }}>
                 {result.field_count - deselected.size} of {result.field_count} fields selected
               </div>
 
@@ -430,9 +430,9 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
               {applyMsg && (
                 <div style={{
                   padding: '10px 14px', borderRadius: 6, fontSize: 13, marginBottom: 12,
-                  background: applyMsg.startsWith('✓') ? 'rgba(46,184,96,0.1)' : 'rgba(239,68,68,0.1)',
-                  color: applyMsg.startsWith('✓') ? '#2eb860' : '#f87171',
-                  borderLeft: `4px solid ${applyMsg.startsWith('✓') ? '#2eb860' : '#ef4444'}`
+                  background: applyMsg.startsWith('✓') ? 'rgba(196,89,47,0.1)' : 'rgba(239,68,68,0.1)',
+                  color: applyMsg.startsWith('✓') ? '#C4592F' : '#dc2626',
+                  borderLeft: `4px solid ${applyMsg.startsWith('✓') ? '#C4592F' : '#dc2626'}`
                 }}>{applyMsg}</div>
               )}
 

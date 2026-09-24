@@ -63,7 +63,7 @@ function Field({ label, name, value, onChange, onBlur, type = 'text', rows = 3, 
           placeholder={placeholder}
         />
       )}
-      {hint && <div style={{ fontSize: 11, color: '#888', marginTop: 3 }}>{hint}</div>}
+      {hint && <div style={{ fontSize: 11, color: '#57534e', marginTop: 3 }}>{hint}</div>}
     </div>
   );
 }
@@ -225,11 +225,11 @@ export default function InterviewForm({ deal, onUpdate }) {
     <FormCtx.Provider value={{ data, handleChange, handleBlur }}>
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12,
-      padding: '10px 16px', background: '#f0fdf4', border: '1px solid #bbf7d0',
-      borderRadius: 6, fontSize: 13, color: '#166534'
+      padding: '10px 16px', background: '#fff7f3', border: '1px solid #f6ddd2',
+      borderRadius: 6, fontSize: 13, color: '#9A4022'
     }}>
       <span style={{ fontWeight: 700 }}>Step 2 — Review &amp; fill the form.</span>
-      <span style={{ color: '#15803d' }}>
+      <span style={{ color: '#9A4022' }}>
         If you uploaded your interview notes above, click "Apply to Form" and most fields will be pre-filled.
         Fill in any blanks, then click <strong>Generate &amp; Download Marketing</strong> (top right, and at the bottom of this form) for the Portal blind ad, flyer, and CBR/CIM. Downloads appear after you generate each one.
       </span>
@@ -249,7 +249,7 @@ export default function InterviewForm({ deal, onUpdate }) {
           </div>
         ))}
         <div className="section-nav-progress">
-          <div style={{ fontWeight: 600, color: '#333' }}>{completedSections} / {sections.length} sections</div>
+          <div style={{ fontWeight: 600, color: '#44403c' }}>{completedSections} / {sections.length} sections</div>
           <div className="progress-bar">
             <div className="progress-fill" style={{ width: `${(completedSections / sections.length) * 100}%` }} />
           </div>
@@ -260,7 +260,7 @@ export default function InterviewForm({ deal, onUpdate }) {
       <div>
         {/* SECTION 1: EXECUTIVE SUMMARY */}
         <Section num={1} title="Executive Summary" id="section-1">
-          <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#C1622F', marginBottom: 14 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#C4592F', marginBottom: 14 }}>
             Business Identification
           </h4>
           <div className="field-row">
@@ -280,7 +280,7 @@ export default function InterviewForm({ deal, onUpdate }) {
             required hint="Describe the business without revealing its name — used in blind ad and CBR" />
 
           <div style={{ height: 1, background: '#eee', margin: '20px 0' }} />
-          <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#C1622F', marginBottom: 14 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#C4592F', marginBottom: 14 }}>
             Owner Background (CBR Only)
           </h4>
           <F label="Origin Story of the Business" name="origin_story" type="textarea" rows={3} />
@@ -310,7 +310,7 @@ export default function InterviewForm({ deal, onUpdate }) {
           </div>
 
           <div style={{ height: 1, background: '#eee', margin: '20px 0' }} />
-          <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#C1622F', marginBottom: 14 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#C4592F', marginBottom: 14 }}>
             Business Model Overview
           </h4>
           <div className="field-row">
@@ -324,7 +324,7 @@ export default function InterviewForm({ deal, onUpdate }) {
           </div>
 
           <div style={{ height: 1, background: '#eee', margin: '20px 0' }} />
-          <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#C1622F', marginBottom: 14 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#C4592F', marginBottom: 14 }}>
             Industry
           </h4>
           <div className="field-row">
@@ -341,7 +341,7 @@ export default function InterviewForm({ deal, onUpdate }) {
           </div>
 
           <div style={{ height: 1, background: '#eee', margin: '20px 0' }} />
-          <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#C1622F', marginBottom: 14 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#C4592F', marginBottom: 14 }}>
             Key Highlights (Blind Ad + Flyer + CBR)
           </h4>
           <div className="field-row">
@@ -500,7 +500,7 @@ export default function InterviewForm({ deal, onUpdate }) {
 
         {/* SECTION 7: FINANCIALS */}
         <Section num={7} title="Financials" id="section-7">
-          <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>
+          <p style={{ fontSize: 13, color: '#57534e', marginBottom: 16 }}>
             Enter financial data for up to 4 years (most recent first). Leave unused years blank.
           </p>
           <div style={{ overflowX: 'auto', marginBottom: 24 }}>
@@ -546,7 +546,7 @@ export default function InterviewForm({ deal, onUpdate }) {
                   </tr>
                 ))}
                 <tr style={{ background: '#fff8f0' }}>
-                  <td className="row-label" style={{ fontStyle: 'italic', color: '#888', fontSize: 12 }}>Other Addbacks Detail</td>
+                  <td className="row-label" style={{ fontStyle: 'italic', color: '#57534e', fontSize: 12 }}>Other Addbacks Detail</td>
                   {[1,2,3,4].map(y => (
                     <td key={y}>
                       <textarea
@@ -555,7 +555,7 @@ export default function InterviewForm({ deal, onUpdate }) {
                         onChange={handleChange}
                         onBlur={handleBlur}
                         rows={2}
-                        style={{ width: 100, fontSize: 11, padding: 4, border: '1px solid #eee' }}
+                        style={{ width: 100, fontSize: 11, padding: 4, border: '1px solid #efe8e0' }}
                         placeholder="itemize..."
                       />
                     </td>
@@ -565,7 +565,7 @@ export default function InterviewForm({ deal, onUpdate }) {
             </table>
           </div>
 
-          <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#C1622F', marginBottom: 14 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#C4592F', marginBottom: 14 }}>
             Financial Context
           </h4>
           <div className="field-row">
@@ -616,7 +616,7 @@ export default function InterviewForm({ deal, onUpdate }) {
             </select>
           </div>
 
-          <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#C1622F', marginBottom: 14, marginTop: 20 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#C4592F', marginBottom: 14, marginTop: 20 }}>
             Revenue by Segment / Division (up to 5)
           </h4>
           {[1,2,3,4,5].map(n => (
@@ -632,7 +632,7 @@ export default function InterviewForm({ deal, onUpdate }) {
             </div>
           ))}
 
-          <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#C1622F', marginBottom: 14, marginTop: 20 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#C4592F', marginBottom: 14, marginTop: 20 }}>
             Assets
           </h4>
           <F label="FF&E Description & Appraised Value" name="ffe_description" type="textarea" rows={3} />
@@ -645,7 +645,7 @@ export default function InterviewForm({ deal, onUpdate }) {
 
         {/* SECTION 8: GROWTH OPPORTUNITIES */}
         <Section num={8} title="Growth Opportunities" id="section-8">
-          <p style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>
+          <p style={{ fontSize: 13, color: '#57534e', marginBottom: 12 }}>
             Enter up to 8 growth opportunities. Aim for brief, compelling bullet-style descriptions.
           </p>
           <F label="Growth Opportunities (one per line, or numbered list)" name="growth_opportunities"
@@ -674,7 +674,7 @@ export default function InterviewForm({ deal, onUpdate }) {
 
         {/* SECTION 10: DEAL TEAM */}
         <Section num={10} title="Deal Team" id="section-10">
-          <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>
+          <p style={{ fontSize: 13, color: '#57534e', marginBottom: 16 }}>
             Select team members to include in this deal's CBR. All Peterson Acquisitions team members shown below.
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
@@ -686,15 +686,15 @@ export default function InterviewForm({ deal, onUpdate }) {
                   onClick={() => handleTeamToggle(member.name)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '12px 16px', border: `2px solid ${selected ? '#C1622F' : '#e0e0e0'}`,
+                    padding: '12px 16px', border: `2px solid ${selected ? '#C4592F' : '#e0e0e0'}`,
                     borderRadius: 6, cursor: 'pointer', background: selected ? '#fff0ea' : 'white',
                     transition: 'all 0.15s'
                   }}
                 >
                   <div style={{
                     width: 20, height: 20, borderRadius: 4,
-                    border: `2px solid ${selected ? '#C1622F' : '#ccc'}`,
-                    background: selected ? '#C1622F' : 'white',
+                    border: `2px solid ${selected ? '#C4592F' : '#ccc'}`,
+                    background: selected ? '#C4592F' : 'white',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0
                   }}>
@@ -702,7 +702,7 @@ export default function InterviewForm({ deal, onUpdate }) {
                   </div>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 14, color: '#1A1A1A' }}>{member.name}</div>
-                    <div style={{ fontSize: 12, color: '#666' }}>{member.role}</div>
+                    <div style={{ fontSize: 12, color: '#57534e' }}>{member.role}</div>
                   </div>
                 </div>
               );
@@ -739,11 +739,11 @@ export default function InterviewForm({ deal, onUpdate }) {
 
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
-          marginTop: 24, padding: '16px 20px', background: '#0f1117',
-          border: '1px solid #2eb860', borderRadius: 8, flexWrap: 'wrap',
+          marginTop: 24, padding: '16px 20px', background: 'transparent',
+          border: '1px solid #C4592F', borderRadius: 8, flexWrap: 'wrap',
         }}>
-          <div style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.5, maxWidth: 560 }}>
-            <strong style={{ color: '#e2e8f0' }}>Next: generate the Portal marketing pack.</strong>
+          <div style={{ fontSize: 13, color: '#44403c', lineHeight: 1.5, maxWidth: 560 }}>
+            <strong style={{ color: '#1c1917' }}>Next: generate the Portal marketing pack.</strong>
             {' '}Blind Ad, Flyer, and CBR (CIM) are created on the next screen — they are not auto-built from this form.
             Download buttons appear after you click Generate on each tab.
           </div>

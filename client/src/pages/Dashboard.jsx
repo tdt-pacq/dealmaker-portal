@@ -93,7 +93,7 @@ export default function Dashboard() {
         </div>
 
         {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#64748b' }}>
+          <div style={{ padding: 40, textAlign: 'center', color: '#57534e' }}>
             <div className="spinner spinner-dark" style={{ width: 24, height: 24, borderWidth: 3, display: 'inline-block' }} />
             <div style={{ marginTop: 10, fontSize: 14 }}>Loading deals…</div>
           </div>
@@ -126,14 +126,14 @@ export default function Dashboard() {
                 {deals.map(deal => (
                   <tr key={deal.id}>
                     <td>
-                      <Link to={`/marketing/deals/${deal.id}`} title="Open generate & download" style={{ fontWeight: 600, color: '#e2e8f0' }}>
+                      <Link to={`/marketing/deals/${deal.id}`} title="Open generate & download" style={{ fontWeight: 600, color: '#1c1917' }}>
                         {deal.deal_name}
                       </Link>
                     </td>
                     <td>{deal.advisor_name || '—'}</td>
                     <td><StatusBadge status={deal.status} /></td>
-                    <td style={{ color: '#888', fontSize: 13 }}>{fmt(deal.created_at)}</td>
-                    <td style={{ color: '#888', fontSize: 13 }}>{fmt(deal.updated_at)}</td>
+                    <td style={{ color: '#57534e', fontSize: 13 }}>{fmt(deal.created_at)}</td>
+                    <td style={{ color: '#57534e', fontSize: 13 }}>{fmt(deal.updated_at)}</td>
                     <td>
                       <OutputDots dealId={deal.id} />
                     </td>
@@ -163,8 +163,8 @@ export default function Dashboard() {
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-title">Delete Deal?</div>
-            <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 20, lineHeight: 1.6 }}>
-              Are you sure you want to delete <strong style={{ color: '#e2e8f0' }}>{deleteConfirm.deal_name}</strong>?
+            <p style={{ fontSize: 13, color: '#57534e', marginBottom: 20, lineHeight: 1.6 }}>
+              Are you sure you want to delete <strong style={{ color: '#1c1917' }}>{deleteConfirm.deal_name}</strong>?
               This will permanently remove the deal and all generated files.
             </p>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
@@ -192,7 +192,7 @@ function OutputDots({ dealId }) {
 
 function DotLink({ to, label }) {
   return (
-    <Link to={to} style={{ fontSize: 11, padding: '2px 7px', background: '#1e293b', borderRadius: 10, color: '#64748b', fontWeight: 500, border: '1px solid #2d3748' }}>
+    <Link to={to} style={{ fontSize: 11, padding: '2px 7px', background: 'rgba(255,255,255,0.94)', borderRadius: 10, color: '#57534e', fontWeight: 500, border: '1px solid #e4dcd2' }}>
       {label}
     </Link>
   );

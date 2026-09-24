@@ -26,20 +26,20 @@ const initState = () => ({
 
 // ─── Styled helpers ───────────────────────────────────────────────────────────
 const inp = {
-  background: '#0d1117', border: '1px solid #1e2d3d', borderRadius: 5,
-  color: '#e2e8f0', padding: '7px 10px', fontSize: 13, width: '100%',
+  background: '#ffffff', border: '1px solid #e6dfd6', borderRadius: 5,
+  color: '#1c1917', padding: '7px 10px', fontSize: 13, width: '100%',
   fontFamily: 'system-ui, sans-serif', outline: 'none', boxSizing: 'border-box',
 };
-const lbl = { display: 'block', fontSize: 11, color: '#94a3b8', marginBottom: 4,
+const lbl = { display: 'block', fontSize: 11, color: '#57534e', marginBottom: 4,
   textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'system-ui, sans-serif' };
-const card = { background: '#0d1117', border: '1px solid #1a2235', borderRadius: 8,
+const card = { background: '#ffffff', border: '1px solid #e6dfd6', borderRadius: 8,
   padding: '18px 20px', marginBottom: 16 };
 const mono = { fontFamily: 'monospace', fontWeight: 700 };
 
 function NI({ value, onChange, placeholder = '0', prefix = '$', style = {} }) {
   return (
     <div style={{ position: 'relative' }}>
-      {prefix && <span style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: '#475569', fontSize: 13, pointerEvents: 'none' }}>{prefix}</span>}
+      {prefix && <span style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: '#44403c', fontSize: 13, pointerEvents: 'none' }}>{prefix}</span>}
       <input
         type="number"
         value={value}
@@ -53,11 +53,11 @@ function NI({ value, onChange, placeholder = '0', prefix = '$', style = {} }) {
 
 function PctFlatToggle({ type, onChange }) {
   return (
-    <div style={{ display: 'flex', borderRadius: 4, overflow: 'hidden', border: '1px solid #1e2d3d', flexShrink: 0 }}>
+    <div style={{ display: 'flex', borderRadius: 4, overflow: 'hidden', border: '1px solid #e6dfd6', flexShrink: 0 }}>
       {[['pct', '%'], ['flat', '$']].map(([v, l]) => (
         <button key={v} onClick={() => onChange(v)}
           style={{ padding: '6px 10px', fontSize: 12, border: 'none', cursor: 'pointer', fontFamily: 'system-ui, sans-serif',
-            background: type === v ? '#1e3a5f' : '#0d1117', color: type === v ? '#60a5fa' : '#475569' }}>
+            background: type === v ? '#1e3a5f' : '#ffffff', color: type === v ? '#1d4ed8' : '#44403c' }}>
           {l}
         </button>
       ))}
@@ -66,18 +66,18 @@ function PctFlatToggle({ type, onChange }) {
 }
 
 // ─── Waterfall row ────────────────────────────────────────────────────────────
-function WRow({ label, sub, amount, color = '#e2e8f0', bold = false, indent = false, borderTop = false, note }) {
+function WRow({ label, sub, amount, color = '#1c1917', bold = false, indent = false, borderTop = false, note }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12,
-      borderTop: borderTop ? '1px solid #1e2d3d' : 'none', paddingTop: borderTop ? 10 : 0, marginTop: borderTop ? 4 : 0 }}>
+      borderTop: borderTop ? '1px solid #e6dfd6' : 'none', paddingTop: borderTop ? 10 : 0, marginTop: borderTop ? 4 : 0 }}>
       <div style={{ minWidth: 0 }}>
-        <span style={{ fontSize: bold ? 13 : 12, color: bold ? '#e2e8f0' : '#94a3b8',
+        <span style={{ fontSize: bold ? 13 : 12, color: bold ? '#1c1917' : '#57534e',
           fontWeight: bold ? 700 : 400, fontFamily: 'system-ui, sans-serif',
           paddingLeft: indent ? 12 : 0 }}>
           {label}
         </span>
-        {sub && <span style={{ fontSize: 10, color: '#475569', marginLeft: 6, fontFamily: 'system-ui, sans-serif' }}>{sub}</span>}
-        {note && <div style={{ fontSize: 10, color: '#475569', paddingLeft: indent ? 12 : 0, fontFamily: 'system-ui, sans-serif' }}>{note}</div>}
+        {sub && <span style={{ fontSize: 10, color: '#44403c', marginLeft: 6, fontFamily: 'system-ui, sans-serif' }}>{sub}</span>}
+        {note && <div style={{ fontSize: 10, color: '#44403c', paddingLeft: indent ? 12 : 0, fontFamily: 'system-ui, sans-serif' }}>{note}</div>}
       </div>
       <span style={{ ...mono, fontSize: bold ? 14 : 12, color, flexShrink: 0 }}>{amount}</span>
     </div>
@@ -182,32 +182,32 @@ export default function CommissionCalcApp() {
 <title>Commission Summary${s.dealName ? ' — ' + s.dealName : ''}</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,-apple-system,sans-serif;color:#1e293b;background:#fff;padding:48px;max-width:680px;margin:0 auto}
+body{font-family:system-ui,-apple-system,sans-serif;color:#44403c;background:#fff;padding:48px;max-width:680px;margin:0 auto}
 h1{font-size:22px;font-weight:700;letter-spacing:0.3px;margin-bottom:2px}
-.subtitle{font-size:12px;color:#64748b;margin-bottom:28px}
-.hero{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:18px 22px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center}
-.hero-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin-bottom:4px}
-.hero-amount{font-size:30px;font-weight:700;color:#16a34a;font-family:monospace}
-.hero-meta{text-align:right;font-size:12px;color:#64748b}
+.subtitle{font-size:12px;color:#57534e;margin-bottom:28px}
+.hero{background:#fff7f3;border:1px solid #f6ddd2;border-radius:8px;padding:18px 22px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center}
+.hero-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#57534e;margin-bottom:4px}
+.hero-amount{font-size:30px;font-weight:700;color:#C4592F;font-family:monospace}
+.hero-meta{text-align:right;font-size:12px;color:#57534e}
 .section{margin-bottom:22px}
-.section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#94a3b8;border-bottom:1px solid #e2e8f0;padding-bottom:6px;margin-bottom:10px}
+.section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#57534e;border-bottom:1px solid #e2e8f0;padding-bottom:6px;margin-bottom:10px}
 table{width:100%;border-collapse:collapse;font-size:13px}
 td,th{padding:5px 0;vertical-align:baseline}
-th{color:#64748b;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;padding-bottom:7px;border-bottom:1px solid #e2e8f0}
+th{color:#57534e;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;padding-bottom:7px;border-bottom:1px solid #e2e8f0}
 td:last-child,th:last-child{text-align:right;font-family:monospace}
-td:nth-child(2){color:#64748b;font-size:11px;padding:0 12px}
+td:nth-child(2){color:#57534e;font-size:11px;padding:0 12px}
 tr.gci td{font-weight:600;font-size:14px;padding-top:0}
-tr.gci td:last-child{color:#16a34a}
-tr.indent td{padding-left:14px;color:#64748b}
+tr.gci td:last-child{color:#C4592F}
+tr.indent td{padding-left:14px;color:#57534e}
 tr.subtotal td{font-weight:600;border-top:1px solid #e2e8f0;padding-top:7px;padding-bottom:7px}
-tr.final td{font-weight:700;font-size:15px;border-top:2px solid #16a34a;padding-top:10px;color:#1e293b}
-tr.final td:last-child{color:#16a34a}
+tr.final td{font-weight:700;font-size:15px;border-top:2px solid #C4592F;padding-top:10px;color:#44403c}
+tr.final td:last-child{color:#C4592F}
 .amt{font-family:monospace}
-.green{color:#16a34a}
+.green{color:#C4592F}
 .red{color:#dc2626}
-tr.base td{background:#f0fdf4;font-weight:700}
-.delta{font-size:10px;color:#94a3b8;font-family:system-ui,sans-serif}
-.footer{margin-top:32px;font-size:10px;color:#94a3b8;text-align:center;border-top:1px solid #f1f5f9;padding-top:14px}
+tr.base td{background:#fff7f3;font-weight:700}
+.delta{font-size:10px;color:#57534e;font-family:system-ui,sans-serif}
+.footer{margin-top:32px;font-size:10px;color:#57534e;text-align:center;border-top:1px solid #f1f5f9;padding-top:14px}
 @media print{body{padding:24px}@page{margin:0.5in;size:letter portrait}}
 </style></head><body>
 <h1>Commission Summary${s.dealName ? ' — ' + s.dealName : ''}</h1>
@@ -242,24 +242,24 @@ ${salePrice > 0 ? `<div class="section">
     win.document.close();
   };
 
-  const btnAdd = { background: 'transparent', border: '1px dashed #1e2d3d', borderRadius: 5,
-    color: '#94a3b8', fontSize: 12, padding: '6px 12px', cursor: 'pointer',
+  const btnAdd = { background: 'transparent', border: '1px dashed #e6dfd6', borderRadius: 5,
+    color: '#57534e', fontSize: 12, padding: '6px 12px', cursor: 'pointer',
     fontFamily: 'system-ui, sans-serif', width: '100%', textAlign: 'left' };
-  const btnDel = { background: 'transparent', border: 'none', color: '#64748b',
+  const btnDel = { background: 'transparent', border: 'none', color: '#57534e',
     fontSize: 16, cursor: 'pointer', lineHeight: 1, padding: '2px 4px', flexShrink: 0 };
-  const hdr = { fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase',
+  const hdr = { fontSize: 11, fontWeight: 700, color: '#57534e', textTransform: 'uppercase',
     letterSpacing: '0.08em', marginBottom: 14, fontFamily: 'system-ui, sans-serif' };
 
   return (
-    <div style={{ maxWidth: 840, margin: '0 auto', padding: '28px 24px', fontFamily: 'system-ui, sans-serif' }}>
+    <div className="page-content" style={{ fontFamily: 'system-ui, sans-serif' }}>
 
       {/* Header */}
       <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h2 style={{ fontWeight: 700, fontSize: 20, color: '#e2e8f0', margin: 0, letterSpacing: 0.2 }}>
+          <h2 style={{ fontWeight: 700, fontSize: 20, color: '#1c1917', margin: 0, letterSpacing: 0.2 }}>
             💰 Commission Calculator
           </h2>
-          <p style={{ color: '#94a3b8', fontSize: 13, marginTop: 5, marginBottom: 0 }}>
+          <p style={{ color: '#57534e', fontSize: 13, marginTop: 5, marginBottom: 0 }}>
             Calculate advisor net from GCI after expenses, referrals, and brokerage splits.
           </p>
         </div>
@@ -268,8 +268,8 @@ ${salePrice > 0 ? `<div class="section">
           disabled={grossGCI === 0}
           style={{
             background: grossGCI > 0 ? '#1e3a5f' : 'transparent',
-            border: `1px solid ${grossGCI > 0 ? '#2563eb' : '#1a2235'}`,
-            borderRadius: 6, color: grossGCI > 0 ? '#60a5fa' : '#334155',
+            border: `1px solid ${grossGCI > 0 ? '#2563eb' : '#e6dfd6'}`,
+            borderRadius: 6, color: grossGCI > 0 ? '#1d4ed8' : '#44403c',
             fontSize: 13, fontWeight: 600, padding: '8px 16px', cursor: grossGCI > 0 ? 'pointer' : 'default',
             fontFamily: 'system-ui, sans-serif', flexShrink: 0, marginTop: 2,
           }}
@@ -305,7 +305,7 @@ ${salePrice > 0 ? `<div class="section">
               <span style={lbl}>Minimum Commission (optional floor)</span>
               <NI value={s.minComm} onChange={v => set({ minComm: v })} placeholder="15,000" />
               {minComm > 0 && rawGCI < minComm && (
-                <div style={{ fontSize: 11, color: '#fbbf24', marginTop: 4 }}>
+                <div style={{ fontSize: 11, color: '#b45309', marginTop: 4 }}>
                   Minimum applied — rate would yield {fmtD(rawGCI)}, floor raises to {fmtD(minComm)}
                 </div>
               )}
@@ -316,7 +316,7 @@ ${salePrice > 0 ? `<div class="section">
           <div style={card}>
             <div style={hdr}>Deal Expenses</div>
             {s.expenses.length === 0 && (
-              <div style={{ fontSize: 12, color: '#64748b', marginBottom: 10 }}>
+              <div style={{ fontSize: 12, color: '#57534e', marginBottom: 10 }}>
                 Marketing, travel, legal, due diligence, etc.
               </div>
             )}
@@ -336,7 +336,7 @@ ${salePrice > 0 ? `<div class="section">
           {/* Referral / Co-Broker Splits */}
           <div style={card}>
             <div style={hdr}>Referral & Co-Broker Fees</div>
-            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 10 }}>
+            <div style={{ fontSize: 11, color: '#57534e', marginBottom: 10 }}>
               % of GCI or flat amount paid to referrers, buyer's agents, or support brokers.
             </div>
             {s.referrals.map((r, i) => (
@@ -364,7 +364,7 @@ ${salePrice > 0 ? `<div class="section">
               <NI value={s.advisorPct} onChange={v => set({ advisorPct: Math.min(100, Math.max(0, pn(v))) })}
                 placeholder="100" prefix="%" />
               {pn(s.advisorPct) < 100 && (
-                <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                <div style={{ fontSize: 11, color: '#57534e', marginTop: 4 }}>
                   Brokerage retains {(100 - pn(s.advisorPct)).toFixed(1)}% — {fmtD(brokerRetain)}
                 </div>
               )}
@@ -373,9 +373,9 @@ ${salePrice > 0 ? `<div class="section">
 
           {/* Team Splits */}
           <div style={card}>
-            <div style={hdr}>Team Splits <span style={{ fontWeight: 400, color: '#64748b', textTransform: 'none', letterSpacing: 0 }}>(% of advisor's net)</span></div>
+            <div style={hdr}>Team Splits <span style={{ fontWeight: 400, color: '#57534e', textTransform: 'none', letterSpacing: 0 }}>(% of advisor's net)</span></div>
             {s.teamSplits.length === 0 && (
-              <div style={{ fontSize: 12, color: '#64748b', marginBottom: 10 }}>
+              <div style={{ fontSize: 12, color: '#57534e', marginBottom: 10 }}>
                 Split advisor's share with team members or partners.
               </div>
             )}
@@ -400,16 +400,16 @@ ${salePrice > 0 ? `<div class="section">
 
           {/* Summary card */}
           {grossGCI > 0 && (
-            <div style={{ background: 'rgba(46,184,96,0.07)', border: '1px solid rgba(46,184,96,0.2)',
+            <div style={{ background: 'rgba(196,89,47,0.07)', border: '1px solid rgba(196,89,47,0.2)',
               borderRadius: 8, padding: '16px 20px', marginBottom: 16, textAlign: 'center' }}>
-              <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+              <div style={{ fontSize: 11, color: '#57534e', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
                 Advisor Net Commission
               </div>
-              <div style={{ ...mono, fontSize: 32, color: advisorNet > 0 ? '#2eb860' : '#ef4444' }}>
+              <div style={{ ...mono, fontSize: 32, color: advisorNet > 0 ? '#C4592F' : '#dc2626' }}>
                 {fmtD(advisorNet)}
               </div>
               {salePrice > 0 && (
-                <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
+                <div style={{ fontSize: 12, color: '#57534e', marginTop: 4 }}>
                   {fmtPct(effectivePct)} of {fmtD(salePrice)} sale price
                 </div>
               )}
@@ -421,7 +421,7 @@ ${salePrice > 0 ? `<div class="section">
             <div style={hdr}>Commission Waterfall</div>
 
             {grossGCI === 0 ? (
-              <div style={{ fontSize: 13, color: '#64748b', textAlign: 'center', padding: '20px 0' }}>
+              <div style={{ fontSize: 13, color: '#57534e', textAlign: 'center', padding: '20px 0' }}>
                 Enter a sale price to see the breakdown.
               </div>
             ) : (
@@ -430,33 +430,33 @@ ${salePrice > 0 ? `<div class="section">
                 {/* GCI */}
                 <WRow label="Gross Commission (GCI)" bold
                   sub={`${fmtPct(commRate)} × ${fmtD(salePrice)}${minComm > 0 && rawGCI < minComm ? ' (floor)' : ''}`}
-                  amount={fmtD(grossGCI)} color="#2eb860" />
+                  amount={fmtD(grossGCI)} color="#C4592F" />
 
                 {/* Expenses */}
                 {totalExpenses > 0 && (
                   <>
-                    <WRow label="Deal Expenses" sub="itemized" amount={`(${fmtD(totalExpenses)})`} color="#f87171" indent />
+                    <WRow label="Deal Expenses" sub="itemized" amount={`(${fmtD(totalExpenses)})`} color="#dc2626" indent />
                     {s.expenses.filter(e => pn(e.amount) > 0).map(e => (
                       <WRow key={e.id} label={e.label || 'Expense'} indent
-                        amount={`(${fmtD(pn(e.amount))})`} color="#475569" />
+                        amount={`(${fmtD(pn(e.amount))})`} color="#44403c" />
                     ))}
                     <WRow label="Net GCI After Expenses" bold borderTop
-                      amount={fmtD(netAfterExp)} color={netAfterExp >= 0 ? '#e2e8f0' : '#ef4444'} />
+                      amount={fmtD(netAfterExp)} color={netAfterExp >= 0 ? '#1c1917' : '#dc2626'} />
                   </>
                 )}
 
                 {/* Referrals */}
                 {totalReferrals > 0 && (
                   <>
-                    <WRow label="Referral / Co-Broker Fees" sub="itemized" amount={`(${fmtD(totalReferrals)})`} color="#f87171" indent />
+                    <WRow label="Referral / Co-Broker Fees" sub="itemized" amount={`(${fmtD(totalReferrals)})`} color="#dc2626" indent />
                     {s.referrals.map((r, i) => {
                       const amt = referralAmounts[i];
                       if (!amt) return null;
                       const sub = r.type === 'pct' ? `${pn(r.value)}% of GCI` : 'flat';
-                      return <WRow key={r.id} label={r.label || 'Referral'} sub={sub} indent amount={`(${fmtD(amt)})`} color="#475569" />;
+                      return <WRow key={r.id} label={r.label || 'Referral'} sub={sub} indent amount={`(${fmtD(amt)})`} color="#44403c" />;
                     })}
                     <WRow label="Net GCI After Referrals" bold borderTop
-                      amount={fmtD(netAfterRef)} color={netAfterRef >= 0 ? '#e2e8f0' : '#ef4444'} />
+                      amount={fmtD(netAfterRef)} color={netAfterRef >= 0 ? '#1c1917' : '#dc2626'} />
                   </>
                 )}
 
@@ -464,32 +464,32 @@ ${salePrice > 0 ? `<div class="section">
                 {pn(s.advisorPct) < 100 && (
                   <>
                     <WRow label="Brokerage Retention" sub={`${(100 - pn(s.advisorPct)).toFixed(1)}%`} indent
-                      amount={`(${fmtD(brokerRetain)})`} color="#475569" />
+                      amount={`(${fmtD(brokerRetain)})`} color="#44403c" />
                     <WRow label="Advisor Share" bold borderTop
                       sub={`${pn(s.advisorPct).toFixed(1)}% of net`}
-                      amount={fmtD(advisorShare)} color="#e2e8f0" />
+                      amount={fmtD(advisorShare)} color="#1c1917" />
                   </>
                 )}
 
                 {/* Team splits */}
                 {totalTeam > 0 && (
                   <>
-                    <WRow label="Team Splits" sub="itemized" amount={`(${fmtD(totalTeam)})`} color="#f87171" indent />
+                    <WRow label="Team Splits" sub="itemized" amount={`(${fmtD(totalTeam)})`} color="#dc2626" indent />
                     {s.teamSplits.map((t, i) => {
                       const amt = teamAmounts[i];
                       if (!amt) return null;
-                      return <WRow key={t.id} label={t.label || 'Team Member'} sub={`${pn(t.pct)}%`} indent amount={`(${fmtD(amt)})`} color="#475569" />;
+                      return <WRow key={t.id} label={t.label || 'Team Member'} sub={`${pn(t.pct)}%`} indent amount={`(${fmtD(amt)})`} color="#44403c" />;
                     })}
                   </>
                 )}
 
                 {/* Final advisor net */}
-                <div style={{ borderTop: '2px solid #2eb860', paddingTop: 12, marginTop: 4,
+                <div style={{ borderTop: '2px solid #C4592F', paddingTop: 12, marginTop: 4,
                   display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: '#e2e8f0', fontFamily: 'system-ui, sans-serif' }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: '#1c1917', fontFamily: 'system-ui, sans-serif' }}>
                     Advisor Net
                   </span>
-                  <span style={{ ...mono, fontSize: 20, color: advisorNet > 0 ? '#2eb860' : '#ef4444' }}>
+                  <span style={{ ...mono, fontSize: 20, color: advisorNet > 0 ? '#C4592F' : '#dc2626' }}>
                     {fmtD(advisorNet)}
                   </span>
                 </div>
@@ -497,8 +497,8 @@ ${salePrice > 0 ? `<div class="section">
                 {/* Effective rate */}
                 {salePrice > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
-                    <span style={{ fontSize: 11, color: '#475569', fontFamily: 'system-ui, sans-serif' }}>Effective rate on sale price</span>
-                    <span style={{ ...mono, fontSize: 11, color: '#475569' }}>{fmtPct(effectivePct)}</span>
+                    <span style={{ fontSize: 11, color: '#44403c', fontFamily: 'system-ui, sans-serif' }}>Effective rate on sale price</span>
+                    <span style={{ ...mono, fontSize: 11, color: '#44403c' }}>{fmtPct(effectivePct)}</span>
                   </div>
                 )}
 
@@ -512,10 +512,10 @@ ${salePrice > 0 ? `<div class="section">
               <div style={hdr}>Sensitivity — Sale Price</div>
               <table style={{ width: '100%', fontSize: 11, borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #1e2d3d' }}>
-                    <th style={{ textAlign: 'left', padding: '4px 0 6px', color: '#475569' }}>Price</th>
-                    <th style={{ textAlign: 'right', padding: '4px 0 6px', color: '#475569' }}>GCI</th>
-                    <th style={{ textAlign: 'right', padding: '4px 0 6px', color: '#475569' }}>Advisor Net</th>
+                  <tr style={{ borderBottom: '1px solid #e6dfd6' }}>
+                    <th style={{ textAlign: 'left', padding: '4px 0 6px', color: '#44403c' }}>Price</th>
+                    <th style={{ textAlign: 'right', padding: '4px 0 6px', color: '#44403c' }}>GCI</th>
+                    <th style={{ textAlign: 'right', padding: '4px 0 6px', color: '#44403c' }}>Advisor Net</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -531,13 +531,13 @@ ${salePrice > 0 ? `<div class="section">
                     const advNet = advShare - s.teamSplits.reduce((sum, t) => sum + advShare * (pn(t.pct) / 100), 0);
                     const isBase = pctDelta === 0;
                     return (
-                      <tr key={pctDelta} style={{ borderBottom: '1px solid #0d1117',
-                        background: isBase ? 'rgba(46,184,96,0.05)' : 'transparent' }}>
-                        <td style={{ padding: '5px 0', color: isBase ? '#2eb860' : '#94a3b8', fontFamily: 'monospace' }}>
-                          {fmtD(p)}{pctDelta !== 0 && <span style={{ color: '#475569', fontSize: 10 }}> ({pctDelta > 0 ? '+' : ''}{pctDelta}%)</span>}
+                      <tr key={pctDelta} style={{ borderBottom: '1px solid #efe8e0',
+                        background: isBase ? 'rgba(196,89,47,0.05)' : 'transparent' }}>
+                        <td style={{ padding: '5px 0', color: isBase ? '#C4592F' : '#57534e', fontFamily: 'monospace' }}>
+                          {fmtD(p)}{pctDelta !== 0 && <span style={{ color: '#44403c', fontSize: 10 }}> ({pctDelta > 0 ? '+' : ''}{pctDelta}%)</span>}
                         </td>
-                        <td style={{ textAlign: 'right', padding: '5px 0', color: '#94a3b8', fontFamily: 'monospace' }}>{fmtD(g)}</td>
-                        <td style={{ textAlign: 'right', padding: '5px 0', color: advNet >= 0 ? '#2eb860' : '#ef4444', fontFamily: 'monospace', fontWeight: 700 }}>
+                        <td style={{ textAlign: 'right', padding: '5px 0', color: '#57534e', fontFamily: 'monospace' }}>{fmtD(g)}</td>
+                        <td style={{ textAlign: 'right', padding: '5px 0', color: advNet >= 0 ? '#C4592F' : '#dc2626', fontFamily: 'monospace', fontWeight: 700 }}>
                           {fmtD(advNet)}
                         </td>
                       </tr>
@@ -550,8 +550,8 @@ ${salePrice > 0 ? `<div class="section">
 
           {/* Reset */}
           <button onClick={() => setS(initState())}
-            style={{ background: 'transparent', border: '1px solid #1a2235', borderRadius: 6,
-              color: '#475569', fontSize: 12, padding: '8px 16px', cursor: 'pointer',
+            style={{ background: 'transparent', border: '1px solid #e6dfd6', borderRadius: 6,
+              color: '#44403c', fontSize: 12, padding: '8px 16px', cursor: 'pointer',
               fontFamily: 'system-ui, sans-serif', width: '100%' }}>
             Reset Calculator
           </button>

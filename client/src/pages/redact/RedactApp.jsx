@@ -159,14 +159,14 @@ export default function RedactApp() {
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 24px' }}>
+    <div className="page-content">
 
       {/* ── Header ── */}
       <div style={{ marginBottom: 28 }}>
-        <h2 style={{ fontFamily: 'system-ui, sans-serif', fontWeight: 700, fontSize: 22, color: '#e2e8f0', margin: 0, letterSpacing: 0.3 }}>
+        <h2 style={{ fontFamily: 'system-ui, sans-serif', fontWeight: 700, fontSize: 22, color: '#1c1917', margin: 0, letterSpacing: 0.3 }}>
           🔏 Tax Return Redactor
         </h2>
-        <p style={{ color: '#64748b', fontSize: 13, marginTop: 6, marginBottom: 0, fontFamily: 'system-ui, sans-serif' }}>
+        <p style={{ color: '#57534e', fontSize: 13, marginTop: 6, marginBottom: 0, fontFamily: 'system-ui, sans-serif' }}>
           Automatically remove SSNs, preparer info, and other personal data before adding returns to a buyer data room.
         </p>
       </div>
@@ -178,12 +178,12 @@ export default function RedactApp() {
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
         style={{
-          border: `2px dashed ${dragOver ? '#2eb860' : file ? '#1e3a5f' : '#1a2235'}`,
+          border: `2px dashed ${dragOver ? '#C4592F' : file ? '#e4dcd2' : '#44403c'}`,
           borderRadius: 8,
           padding: '32px 24px',
           textAlign: 'center',
           cursor: busy ? 'default' : 'pointer',
-          background: dragOver ? 'rgba(46,184,96,0.05)' : '#0d1117',
+          background: dragOver ? 'rgba(196,89,47,0.05)' : '#ffffff',
           transition: 'border-color 0.18s, background 0.18s',
           marginBottom: 20,
         }}
@@ -200,10 +200,10 @@ export default function RedactApp() {
         {file ? (
           <div>
             <div style={{ fontSize: 32, marginBottom: 8 }}>📄</div>
-            <div style={{ color: '#e2e8f0', fontWeight: 600, fontSize: 14, fontFamily: 'system-ui, sans-serif' }}>{file.name}</div>
-            <div style={{ color: '#64748b', fontSize: 12, marginTop: 4, fontFamily: 'system-ui, sans-serif' }}>{fmtBytes(file.size)}</div>
+            <div style={{ color: '#1c1917', fontWeight: 600, fontSize: 14, fontFamily: 'system-ui, sans-serif' }}>{file.name}</div>
+            <div style={{ color: '#57534e', fontSize: 12, marginTop: 4, fontFamily: 'system-ui, sans-serif' }}>{fmtBytes(file.size)}</div>
             {!busy && (
-              <div style={{ color: '#2d3f57', fontSize: 12, marginTop: 8, fontFamily: 'system-ui, sans-serif' }}>
+              <div style={{ color: '#57534e', fontSize: 12, marginTop: 8, fontFamily: 'system-ui, sans-serif' }}>
                 Click to change file
               </div>
             )}
@@ -211,10 +211,10 @@ export default function RedactApp() {
         ) : (
           <div>
             <div style={{ fontSize: 36, marginBottom: 10 }}>📂</div>
-            <div style={{ color: '#94a3b8', fontSize: 14, fontWeight: 500, fontFamily: 'system-ui, sans-serif' }}>
+            <div style={{ color: '#57534e', fontSize: 14, fontWeight: 500, fontFamily: 'system-ui, sans-serif' }}>
               Drop a tax return PDF here, or click to browse
             </div>
-            <div style={{ color: '#2d3f57', fontSize: 12, marginTop: 6, fontFamily: 'system-ui, sans-serif' }}>
+            <div style={{ color: '#57534e', fontSize: 12, marginTop: 6, fontFamily: 'system-ui, sans-serif' }}>
               Supports: 1120-S · 1065 · 1120 · Schedule C · 3-year packages
             </div>
           </div>
@@ -227,8 +227,8 @@ export default function RedactApp() {
           onClick={handleRedact}
           disabled={!canRedact}
           style={{
-            background:    canRedact ? '#2eb860' : '#1a2235',
-            color:         canRedact ? '#fff'    : '#334155',
+            background:    canRedact ? '#C4592F' : '#f4efe9',
+            color:         canRedact ? '#fff'    : '#44403c',
             border:        'none',
             borderRadius:  6,
             padding:       '10px 22px',
@@ -247,11 +247,11 @@ export default function RedactApp() {
             onClick={handleReset}
             style={{
               background: 'transparent',
-              border: '1px solid #1a2235',
+              border: '1px solid #e6dfd6',
               borderRadius: 6,
               padding: '10px 16px',
               fontSize: 13,
-              color: '#64748b',
+              color: '#57534e',
               cursor: 'pointer',
               fontFamily: 'system-ui, sans-serif',
             }}
@@ -263,30 +263,30 @@ export default function RedactApp() {
 
       {/* ── Progress ── */}
       {busy && (
-        <div style={{ background: '#0d1117', border: '1px solid #1a2235', borderRadius: 8, padding: '16px 18px', marginBottom: 20 }}>
+        <div style={{ background: '#ffffff', border: '1px solid #e6dfd6', borderRadius: 8, padding: '16px 18px', marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <span style={{ color: '#94a3b8', fontSize: 13, fontFamily: 'system-ui, sans-serif' }}>
+            <span style={{ color: '#57534e', fontSize: 13, fontFamily: 'system-ui, sans-serif' }}>
               {progress.message || 'Processing…'}
             </span>
             {pct !== null && (
-              <span style={{ color: '#2eb860', fontSize: 13, fontWeight: 600, fontFamily: 'system-ui, sans-serif' }}>
+              <span style={{ color: '#C4592F', fontSize: 13, fontWeight: 600, fontFamily: 'system-ui, sans-serif' }}>
                 {pct}%
               </span>
             )}
           </div>
           {/* Progress bar */}
-          <div style={{ height: 4, background: '#1a2235', borderRadius: 2, overflow: 'hidden' }}>
+          <div style={{ height: 4, background: '#f4efe9', borderRadius: 2, overflow: 'hidden' }}>
             <div style={{
               height: '100%',
               width:  pct !== null ? `${pct}%` : '100%',
-              background: '#2eb860',
+              background: '#C4592F',
               borderRadius: 2,
               transition: 'width 0.4s ease',
               animation: pct === null ? 'redact-pulse 1.5s ease-in-out infinite' : 'none',
             }} />
           </div>
           {progress.total > 0 && (
-            <div style={{ color: '#334155', fontSize: 11, marginTop: 6, fontFamily: 'system-ui, sans-serif' }}>
+            <div style={{ color: '#44403c', fontSize: 11, marginTop: 6, fontFamily: 'system-ui, sans-serif' }}>
               Page {progress.current} of {progress.total}
             </div>
           )}
@@ -295,20 +295,20 @@ export default function RedactApp() {
 
       {/* ── Complete ── */}
       {state === 'complete' && downloadUrl && (
-        <div style={{ background: 'rgba(46,184,96,0.07)', border: '1px solid rgba(46,184,96,0.25)', borderRadius: 8, padding: '16px 18px', marginBottom: 20 }}>
+        <div style={{ background: 'rgba(196,89,47,0.07)', border: '1px solid rgba(196,89,47,0.25)', borderRadius: 8, padding: '16px 18px', marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             <div>
-              <div style={{ color: '#2eb860', fontWeight: 700, fontSize: 14, fontFamily: 'system-ui, sans-serif' }}>
+              <div style={{ color: '#C4592F', fontWeight: 700, fontSize: 14, fontFamily: 'system-ui, sans-serif' }}>
                 ✓ Redaction complete
               </div>
-              <div style={{ color: '#64748b', fontSize: 12, marginTop: 3, fontFamily: 'system-ui, sans-serif' }}>
+              <div style={{ color: '#57534e', fontSize: 12, marginTop: 3, fontFamily: 'system-ui, sans-serif' }}>
                 {filename}
               </div>
             </div>
             <button
               onClick={handleDownload}
               style={{
-                background: '#2eb860',
+                background: '#C4592F',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 6,
@@ -328,15 +328,15 @@ export default function RedactApp() {
       {/* ── Error ── */}
       {state === 'error' && errorMsg && (
         <div style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, padding: '14px 16px', marginBottom: 20 }}>
-          <div style={{ color: '#ef4444', fontSize: 13, fontFamily: 'system-ui, sans-serif' }}>
+          <div style={{ color: '#dc2626', fontSize: 13, fontFamily: 'system-ui, sans-serif' }}>
             {errorMsg}
           </div>
         </div>
       )}
 
       {/* ── What gets redacted info card ── */}
-      <div style={{ background: '#0d1117', border: '1px solid #1a2235', borderRadius: 8, padding: '16px 18px' }}>
-        <div style={{ color: '#64748b', fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 12, fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ background: '#ffffff', border: '1px solid #e6dfd6', borderRadius: 8, padding: '16px 18px' }}>
+        <div style={{ color: '#57534e', fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 12, fontFamily: 'system-ui, sans-serif' }}>
           What gets redacted
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 20px' }}>
@@ -355,13 +355,13 @@ export default function RedactApp() {
             <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
               <span style={{
                 fontSize: 11,
-                color: item.redacted ? '#ef4444' : '#2eb860',
+                color: item.redacted ? '#dc2626' : '#C4592F',
                 flexShrink: 0,
                 lineHeight: 1,
               }}>
                 {item.redacted ? '✕' : '✓'}
               </span>
-              <span style={{ color: '#64748b', fontSize: 12, fontFamily: 'system-ui, sans-serif' }}>
+              <span style={{ color: '#57534e', fontSize: 12, fontFamily: 'system-ui, sans-serif' }}>
                 {item.label}
               </span>
             </div>

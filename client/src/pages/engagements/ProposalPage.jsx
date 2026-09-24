@@ -40,11 +40,11 @@ const fmtMoney = (n) => {
 function Placeholder({ children }) {
   return (
     <div style={{
-      border: '1px dashed #2d3f57',
-      background: '#0d1117',
+      border: '1px dashed #e6dfd6',
+      background: '#ffffff',
       borderRadius: 6,
       padding: '12px 14px',
-      color: '#64748b',
+      color: '#57534e',
       fontSize: 13,
       lineHeight: 1.55,
       fontStyle: 'italic',
@@ -62,7 +62,7 @@ function Field({ label, value, onChange, placeholder, multiline, hint, readOnly 
         <label>{label}</label>
         <div style={{
           fontSize: 14,
-          color: text ? '#e2e8f0' : '#64748b',
+          color: text ? '#1c1917' : '#57534e',
           lineHeight: 1.55,
           whiteSpace: 'pre-wrap',
           minHeight: multiline ? 48 : undefined,
@@ -80,7 +80,7 @@ function Field({ label, value, onChange, placeholder, multiline, hint, readOnly 
       ) : (
         <input value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder} />
       )}
-      {hint && <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>{hint}</div>}
+      {hint && <div style={{ fontSize: 11, color: '#44403c', marginTop: 4 }}>{hint}</div>}
     </div>
   );
 }
@@ -89,8 +89,8 @@ function Section({ id, n, title, kicker, children }) {
   return (
     <section id={id} style={{
       scrollMarginTop: 24,
-      background: '#1e293b',
-      border: '1px solid #1e2d45',
+      background: 'rgba(255,255,255,0.94)',
+      border: '1px solid #e6dfd6',
       borderRadius: 10,
       padding: '28px 32px',
       marginBottom: 18,
@@ -101,11 +101,11 @@ function Section({ id, n, title, kicker, children }) {
           fontSize: 12,
           fontWeight: 700,
           letterSpacing: 2,
-          color: '#2eb860',
+          color: '#C4592F',
         }}>{n}</div>
         <div>
           {kicker && (
-            <div style={{ fontSize: 10, letterSpacing: 1.6, textTransform: 'uppercase', color: '#475569', marginBottom: 2 }}>
+            <div style={{ fontSize: 10, letterSpacing: 1.6, textTransform: 'uppercase', color: '#44403c', marginBottom: 2 }}>
               {kicker}
             </div>
           )}
@@ -113,7 +113,7 @@ function Section({ id, n, title, kicker, children }) {
             fontFamily: 'Oswald, sans-serif',
             fontWeight: 600,
             fontSize: 22,
-            color: '#e2e8f0',
+            color: '#1c1917',
             letterSpacing: 0.4,
             textTransform: 'uppercase',
             margin: 0,
@@ -206,7 +206,7 @@ export default function ProposalPage() {
 
   if (error) {
     return (
-      <div className="page-content" style={{ maxWidth: 640, margin: '0 auto', padding: '48px 24px' }}>
+      <div className="page-content" style={{ paddingTop: 48, paddingBottom: 48 }}>
         <div className="alert alert-error">{error}</div>
         {canEdit && (
           <Link to="/engagements"><button className="btn-ghost">← Back to proposals</button></Link>
@@ -217,7 +217,7 @@ export default function ProposalPage() {
 
   if (!proposal || !packet) {
     return (
-      <div style={{ padding: 48, textAlign: 'center', color: '#64748b' }}>
+      <div style={{ padding: 48, textAlign: 'center', color: '#57534e' }}>
         <div className="spinner spinner-dark" style={{ width: 24, height: 24, borderWidth: 3, display: 'inline-block' }} />
         <div style={{ marginTop: 10 }}>Loading private proposal…</div>
       </div>
@@ -242,19 +242,19 @@ export default function ProposalPage() {
   const F = (props) => <Field readOnly={!canEdit} {...props} />;
 
   return (
-    <div style={{ maxWidth: 920, margin: '0 auto', padding: '28px 24px 80px' }}>
+    <div className="page-content" style={{ paddingBottom: 80 }}>
       <div className="no-print" style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         marginBottom: 18, gap: 12, flexWrap: 'wrap',
       }}>
         {canEdit ? (
-          <Link to="/engagements" style={{ color: '#94a3b8', fontSize: 13, textDecoration: 'none' }}>← All proposals</Link>
+          <Link to="/engagements" style={{ color: '#57534e', fontSize: 13, textDecoration: 'none' }}>← All proposals</Link>
         ) : (
-          <span style={{ color: '#64748b', fontSize: 12, letterSpacing: 0.6, textTransform: 'uppercase' }}>
+          <span style={{ color: '#57534e', fontSize: 12, letterSpacing: 0.6, textTransform: 'uppercase' }}>
             Private proposal · noindex
           </span>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: '#64748b' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: '#57534e' }}>
           {canEdit && (
             <span>{saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved' : saveStatus === 'error' ? 'Save failed' : 'Private · noindex'}</span>
           )}
@@ -268,8 +268,8 @@ export default function ProposalPage() {
         {SECTIONS.map(s => (
           <a key={s.id} href={`#${s.id}`} style={{
             fontSize: 10, letterSpacing: 0.6, textTransform: 'uppercase',
-            color: '#64748b', textDecoration: 'none',
-            border: '1px solid #1e2d45', borderRadius: 99, padding: '4px 8px',
+            color: '#57534e', textDecoration: 'none',
+            border: '1px solid #e6dfd6', borderRadius: 99, padding: '4px 8px',
           }}>{s.n} {s.label}</a>
         ))}
       </nav>
@@ -278,7 +278,7 @@ export default function ProposalPage() {
       <Section id="cover" n="01" kicker="Peterson Acquisitions · The Deal Team" title="QSI™ Seller Exit System">
         <div style={{
           fontFamily: 'Oswald, sans-serif', fontSize: 15, letterSpacing: 1.2,
-          textTransform: 'uppercase', color: '#C1622F', marginBottom: 16,
+          textTransform: 'uppercase', color: '#C4592F', marginBottom: 16,
         }}>
           Seller Engagement Proposal
         </div>
@@ -291,7 +291,7 @@ export default function ProposalPage() {
           <F label="Blind company label" value={cover.blindCompanyLabel} onChange={v => patchCover('blindCompanyLabel', v)} placeholder="Never the legal name on this page" />
         </div>
         {hookBits.length > 0 && (
-          <div style={{ marginTop: 8, fontSize: 11, color: '#475569' }}>Data hooks: {hookBits.join(' · ')}</div>
+          <div style={{ marginTop: 8, fontSize: 11, color: '#44403c' }}>Data hooks: {hookBits.join(' · ')}</div>
         )}
       </Section>
 
@@ -314,13 +314,13 @@ export default function ProposalPage() {
       <Section id="exit" n="03" title="What “Exit Strong” means" kicker="Firmwide skeleton">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {EXIT_PILLARS.map(p => (
-            <div key={p.title} style={{ background: '#0d1117', border: '1px solid #1a2235', borderRadius: 8, padding: '16px 18px' }}>
-              <div style={{ fontFamily: 'Oswald, sans-serif', fontSize: 14, letterSpacing: 1, textTransform: 'uppercase', color: '#2eb860', marginBottom: 8 }}>{p.title}</div>
-              <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.55 }}>{p.body}</div>
+            <div key={p.title} style={{ background: '#ffffff', border: '1px solid #e6dfd6', borderRadius: 8, padding: '16px 18px' }}>
+              <div style={{ fontFamily: 'Oswald, sans-serif', fontSize: 14, letterSpacing: 1, textTransform: 'uppercase', color: '#C4592F', marginBottom: 8 }}>{p.title}</div>
+              <div style={{ fontSize: 13, color: '#57534e', lineHeight: 1.55 }}>{p.body}</div>
             </div>
           ))}
         </div>
-        <div style={{ marginTop: 14, fontSize: 13, color: '#94a3b8' }}>
+        <div style={{ marginTop: 14, fontSize: 13, color: '#57534e' }}>
           Confidentiality → Control → Certainty → Legacy. That is the order. We do not skip a lock to chase a faster “yes.”
         </div>
       </Section>
@@ -400,17 +400,17 @@ export default function ProposalPage() {
       <Section id="odds" n="07" title="How we stack the odds" kicker="Four locks + FAILURE → HARVEST">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
           {FOUR_LOCKS.map(lock => (
-            <div key={lock.title} style={{ background: '#0d1117', border: '1px solid #1a2235', borderRadius: 8, padding: '14px 16px' }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0', marginBottom: 6 }}>{lock.title}</div>
-              <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.5 }}>{lock.body}</div>
+            <div key={lock.title} style={{ background: '#ffffff', border: '1px solid #e6dfd6', borderRadius: 8, padding: '14px 16px' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#1c1917', marginBottom: 6 }}>{lock.title}</div>
+              <div style={{ fontSize: 13, color: '#57534e', lineHeight: 1.5 }}>{lock.body}</div>
             </div>
           ))}
         </div>
-        <div style={{ background: '#111827', border: '1px solid #C1622F', borderRadius: 8, padding: '16px 18px' }}>
-          <div style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: 1.4, fontSize: 13, color: '#C1622F', textTransform: 'uppercase', marginBottom: 6 }}>
+        <div style={{ background: '#f7f3ee', border: '1px solid #C4592F', borderRadius: 8, padding: '16px 18px' }}>
+          <div style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: 1.4, fontSize: 13, color: '#C4592F', textTransform: 'uppercase', marginBottom: 6 }}>
             FAILURE → HARVEST
           </div>
-          <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.55 }}>
+          <div style={{ fontSize: 13, color: '#57534e', lineHeight: 1.55 }}>
             If the sale path is wrong, we do not force a listing. The work converts: you keep the intelligence, the model review, and a clearer harvest option — recast, rebuild, or wait — instead of a public failure.
           </div>
         </div>
@@ -419,7 +419,7 @@ export default function ProposalPage() {
       {/* 8 Stack */}
       <Section id="stack" n="08" title="Engagement stack" kicker="What’s in the fee · Lead Engine reconciled list">
         {canEdit && (
-          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 14, lineHeight: 1.55 }}>
+          <div style={{ fontSize: 12, color: '#57534e', marginBottom: 14, lineHeight: 1.55 }}>
             Default seed is the 13-item firm stack from Lead Engine (Michael Decide). Editable per proposal. Item 13 representation term is a fill-in — not a hardcoded duration.
           </div>
         )}
@@ -429,11 +429,11 @@ export default function ProposalPage() {
         <ol style={{ margin: stackItems.length ? '0 0 12px' : '12px 0 12px', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
           {stackItems.map((item, i) => (
             <li key={i} style={{
-              background: '#0d1117', border: '1px solid #1a2235', borderRadius: 8, padding: '10px 12px',
+              background: '#ffffff', border: '1px solid #e6dfd6', borderRadius: 8, padding: '10px 12px',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{
-                  fontFamily: 'Oswald, sans-serif', fontSize: 13, color: '#2eb860', minWidth: 22,
+                  fontFamily: 'Oswald, sans-serif', fontSize: 13, color: '#C4592F', minWidth: 22,
                 }}>{String(i + 1).padStart(2, '0')}</span>
                 {canEdit ? (
                   <input
@@ -448,7 +448,7 @@ export default function ProposalPage() {
                     placeholder="Stack item"
                   />
                 ) : (
-                  <div style={{ fontSize: 14, color: '#e2e8f0', lineHeight: 1.45 }}>{stackLabel(item) || '—'}</div>
+                  <div style={{ fontSize: 14, color: '#1c1917', lineHeight: 1.45 }}>{stackLabel(item) || '—'}</div>
                 )}
                 {canEdit && (
                   <button
@@ -477,10 +477,10 @@ export default function ProposalPage() {
                         placeholder="____ months"
                         style={{ maxWidth: 160 }}
                       />
-                      <span style={{ fontSize: 12, color: '#64748b' }}>months (fill-in — not a firm claim)</span>
+                      <span style={{ fontSize: 12, color: '#57534e' }}>months (fill-in — not a firm claim)</span>
                     </>
                   ) : (
-                    <span style={{ fontSize: 14, color: '#94a3b8' }}>
+                    <span style={{ fontSize: 14, color: '#57534e' }}>
                       {stackTerm(item) ? `${stackTerm(item)} months` : '____ months'}
                     </span>
                   )}
@@ -503,7 +503,7 @@ export default function ProposalPage() {
       {/* 9 Investment */}
       <Section id="invest" n="09" title="Investment" kicker="Fee / terms / in-out — fill-in">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-          <div style={{ background: '#0d1117', border: '1px solid #1a5e35', borderRadius: 8, padding: '18px 20px' }}>
+          <div style={{ background: '#ffffff', border: '1px solid #e8cfc3', borderRadius: 8, padding: '18px 20px' }}>
             <F
               label="Engagement fee"
               value={inv.launchFee === 0 || inv.launchFee ? String(inv.launchFee) : ''}
@@ -512,12 +512,12 @@ export default function ProposalPage() {
               hint="Fill-in only. Do not assume $2,500 or $23,000 — enter the fee for this engagement."
             />
             {inv.launchFee !== '' && inv.launchFee != null && Number(String(inv.launchFee).replace(/[$,]/g, '')) > 0 && (
-              <div style={{ fontFamily: 'Oswald, sans-serif', fontSize: 28, color: '#2eb860', marginTop: 4 }}>
+              <div style={{ fontFamily: 'Oswald, sans-serif', fontSize: 28, color: '#C4592F', marginTop: 4 }}>
                 {fmtMoney(String(inv.launchFee).replace(/[$,]/g, ''))}
               </div>
             )}
           </div>
-          <div style={{ background: '#0d1117', border: '1px solid #1a2235', borderRadius: 8, padding: '18px 20px' }}>
+          <div style={{ background: '#ffffff', border: '1px solid #e6dfd6', borderRadius: 8, padding: '18px 20px' }}>
             <F
               label="Optional market-value sum"
               value={inv.marketValueSum === 0 || inv.marketValueSum ? String(inv.marketValueSum) : ''}
@@ -527,16 +527,16 @@ export default function ProposalPage() {
             />
           </div>
         </div>
-        <div style={{ background: '#0d1117', border: '1px solid #1e2d45', borderRadius: 8, padding: '16px 18px', marginBottom: 12 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0', marginBottom: 8 }}>Success commission</div>
-          <div style={{ fontSize: 15, color: '#cbd5e1', lineHeight: 1.6 }}>
+        <div style={{ background: '#ffffff', border: '1px solid #e6dfd6', borderRadius: 8, padding: '16px 18px', marginBottom: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#1c1917', marginBottom: 8 }}>Success commission</div>
+          <div style={{ fontSize: 15, color: '#44403c', lineHeight: 1.6 }}>
             <span style={{
               display: 'inline-block', minWidth: 56, borderBottom: '1px solid #475569',
-              textAlign: 'center', color: '#94a3b8', marginRight: 4,
+              textAlign: 'center', color: '#57534e', marginRight: 4,
             }}>{inv.successCommissionPct || '____'}</span>
             % of purchase price, floor not less than {fmtMoney(inv.successCommissionFloor)}.
           </div>
-          <div style={{ fontSize: 11, color: '#475569', marginTop: 8 }}>
+          <div style={{ fontSize: 11, color: '#44403c', marginTop: 8 }}>
             {canEdit ? 'Fill-in from the Engagement Agreement template — no invented percentage.' : 'Percent and floor as agreed on the Engagement Agreement.'}
           </div>
           <div style={{ marginTop: 12, maxWidth: 200 }}>
@@ -581,8 +581,8 @@ export default function ProposalPage() {
             ['prepareThenEngage', 'Prepare, then engage', 'Work the gaps (books, owner role, timing) then sign — not a forever stall.'],
             ['wait', 'Wait', 'Stay independent. Keep the intel. Revisit when the harvest is actually available.'],
           ].map(([key, title, fallback]) => (
-            <div key={key} style={{ background: '#0d1117', border: '1px solid #1a2235', borderRadius: 8, padding: '14px 16px' }}>
-              <div style={{ fontFamily: 'Oswald, sans-serif', fontSize: 13, letterSpacing: 1, textTransform: 'uppercase', color: '#2eb860', marginBottom: 8 }}>{title}</div>
+            <div key={key} style={{ background: '#ffffff', border: '1px solid #e6dfd6', borderRadius: 8, padding: '14px 16px' }}>
+              <div style={{ fontFamily: 'Oswald, sans-serif', fontSize: 13, letterSpacing: 1, textTransform: 'uppercase', color: '#C4592F', marginBottom: 8 }}>{title}</div>
               {canEdit ? (
                 <textarea
                   value={packet.noBs?.[key] || ''}
@@ -591,7 +591,7 @@ export default function ProposalPage() {
                   rows={4}
                 />
               ) : (
-                <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.55 }}>
+                <div style={{ fontSize: 13, color: '#57534e', lineHeight: 1.55 }}>
                   {(packet.noBs?.[key] || '').trim() || fallback}
                 </div>
               )}
@@ -612,8 +612,8 @@ export default function ProposalPage() {
           />
         )}
         {!packet.nextStep?.ask && (
-          <div style={{ fontSize: 15, color: '#e2e8f0', lineHeight: 1.6, marginTop: 4 }}>
-            Decide on this walkthrough: <strong style={{ color: '#2eb860' }}>engage</strong>, prepare-then-engage, or wait.
+          <div style={{ fontSize: 15, color: '#1c1917', lineHeight: 1.6, marginTop: 4 }}>
+            Decide on this walkthrough: <strong style={{ color: '#C4592F' }}>engage</strong>, prepare-then-engage, or wait.
             This URL stays with you for spouse and CPA — it is not a public page.
           </div>
         )}
@@ -621,14 +621,14 @@ export default function ProposalPage() {
 
       {/* 12 Footer */}
       <Section id="footer" n="12" title="Confidentiality" kicker="Private link rules">
-        <ul style={{ margin: 0, paddingLeft: 18, color: '#94a3b8', fontSize: 13, lineHeight: 1.7 }}>
-          <li>This page is a private advisor URL. It is <strong style={{ color: '#e2e8f0' }}>noindex</strong> and is not a public marketing site.</li>
+        <ul style={{ margin: 0, paddingLeft: 18, color: '#57534e', fontSize: 13, lineHeight: 1.7 }}>
+          <li>This page is a private advisor URL. It is <strong style={{ color: '#1c1917' }}>noindex</strong> and is not a public marketing site.</li>
           <li>Do not forward the link beyond seller, spouse, and CPA without the advisor’s OK.</li>
-          <li>The company appears only as a <strong style={{ color: '#e2e8f0' }}>blind label</strong>. Do not add the legal name to this page.</li>
+          <li>The company appears only as a <strong style={{ color: '#1c1917' }}>blind label</strong>. Do not add the legal name to this page.</li>
           <li>Guessing or sharing the token is treated as a confidentiality break. Tokens are unguessable by design.</li>
           <li>Sellers, spouse, and CPA open this URL with no login. Brokers sign in to create, edit, or delete.</li>
         </ul>
-        <div style={{ marginTop: 16, fontSize: 11, color: '#334155', letterSpacing: 0.4 }}>
+        <div style={{ marginTop: 16, fontSize: 11, color: '#44403c', letterSpacing: 0.4 }}>
           {cover.proposalId || 'Proposal'} · {cover.date || ''} · Peterson Acquisitions — The Deal Team
         </div>
       </Section>

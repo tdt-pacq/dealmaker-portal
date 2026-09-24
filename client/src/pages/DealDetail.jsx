@@ -28,10 +28,10 @@ function PipelineBar({ status, dealId, onUpdate }) {
   const activeIdx = PIPELINE_STAGES.indexOf(status);
 
   return (
-    <div className="pipeline-bar-wrap" style={{ background: '#1e293b', border: '1px solid #2d3748', borderRadius: 8, padding: '14px 20px', marginBottom: 20 }}>
+    <div className="pipeline-bar-wrap" style={{ background: 'rgba(255,255,255,0.94)', border: '1px solid #e4dcd2', borderRadius: 8, padding: '14px 20px', marginBottom: 20 }}>
       {isWithdrawn ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
-          <span style={{ fontSize: 13, color: '#ef4444', fontWeight: 600 }}>⊗ Withdrawn</span>
+          <span style={{ fontSize: 13, color: '#dc2626', fontWeight: 600 }}>⊗ Withdrawn</span>
           <button className="btn-ghost btn-sm" style={{ marginLeft: 'auto' }} onClick={() => handleStageClick('draft')}>
             Reactivate as Draft
           </button>
@@ -55,20 +55,20 @@ function PipelineBar({ status, dealId, onUpdate }) {
                   title={isCurrent ? `Current stage: ${STAGE_LABELS[stage]}` : `Move to ${STAGE_LABELS[stage]}`}
                 >
                   <div style={{
-                    width: 28, height: 28, borderRadius: '50%', border: `2px solid ${isCurrent ? '#2eb860' : isPast ? '#1a5e35' : '#2d3748'}`,
-                    background: isCurrent ? '#2eb860' : isPast ? '#1a5e35' : '#0f1117',
+                    width: 28, height: 28, borderRadius: '50%', border: `2px solid ${isCurrent || isPast ? '#C4592F' : '#e4dcd2'}`,
+                    background: isCurrent || isPast ? '#C4592F' : 'transparent',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 12, color: isCurrent ? '#fff' : isPast ? '#4ade80' : '#475569',
+                    fontSize: 12, color: isCurrent || isPast ? '#fff' : '#44403c',
                     fontWeight: 700,
                   }}>
                     {isPast ? '✓' : i + 1}
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: isCurrent ? 700 : 400, color: isCurrent ? '#e2e8f0' : isPast ? '#4ade80' : '#475569', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: 11, fontWeight: isCurrent ? 700 : 400, color: isCurrent ? '#1c1917' : isPast ? '#A34826' : '#44403c', whiteSpace: 'nowrap' }}>
                     {STAGE_LABELS[stage]}
                   </span>
                 </button>
                 {i < PIPELINE_STAGES.length - 1 && (
-                  <div style={{ flex: 1, height: 2, background: isPast ? '#1a5e35' : '#2d3748', minWidth: 20 }} />
+                  <div style={{ flex: 1, height: 2, background: isPast ? '#C4592F' : '#e6dfd6', minWidth: 20 }} />
                 )}
               </React.Fragment>
             );
@@ -77,7 +77,7 @@ function PipelineBar({ status, dealId, onUpdate }) {
             className="btn-ghost btn-sm"
             onClick={() => handleStageClick('withdrawn')}
             disabled={saving}
-            style={{ marginLeft: 16, color: '#ef4444', flexShrink: 0 }}
+            style={{ marginLeft: 16, color: '#dc2626', flexShrink: 0 }}
             title="Mark as withdrawn"
           >
             ✕ Withdraw
@@ -116,7 +116,7 @@ function ActivityTab({ dealId }) {
   return (
     <div className="output-panel" style={{ padding: 24 }}>
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>
+        <div style={{ textAlign: 'center', padding: 40, color: '#57534e' }}>
           <div className="spinner spinner-dark" style={{ width: 24, height: 24, borderWidth: 3, display: 'inline-block' }} />
         </div>
       ) : events.length === 0 ? (
@@ -131,17 +131,17 @@ function ActivityTab({ dealId }) {
             <div key={ev.id} style={{ display: 'flex', gap: 16, paddingBottom: 20, position: 'relative' }}>
               {/* Connector line */}
               {i < events.length - 1 && (
-                <div style={{ position: 'absolute', left: 14, top: 30, bottom: 0, width: 2, background: '#1e293b' }} />
+                <div style={{ position: 'absolute', left: 14, top: 30, bottom: 0, width: 2, background: 'rgba(255,255,255,0.94)' }} />
               )}
               <div style={{
-                width: 30, height: 30, borderRadius: '50%', background: '#1e293b', border: '1px solid #2d3748',
+                width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.94)', border: '1px solid #e4dcd2',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0, zIndex: 1,
               }}>
                 {EVENT_ICONS[ev.event_type] || '•'}
               </div>
               <div style={{ paddingTop: 4 }}>
-                <div style={{ fontSize: 14, color: '#e2e8f0', fontWeight: 500 }}>{ev.description}</div>
-                <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+                <div style={{ fontSize: 14, color: '#1c1917', fontWeight: 500 }}>{ev.description}</div>
+                <div style={{ fontSize: 12, color: '#57534e', marginTop: 2 }}>
                   {ev.user_display_name} · {fmtTime(ev.created_at)}
                 </div>
               </div>
@@ -281,10 +281,10 @@ function BlindAdTab({ deal, onUpdate }) {
       )}
 
       {generating && !text && (
-        <div style={{ padding: 60, textAlign: 'center', color: '#888' }}>
+        <div style={{ padding: 60, textAlign: 'center', color: '#57534e' }}>
           <div className="spinner spinner-dark" style={{ width: 32, height: 32, borderWidth: 4, display: 'inline-block' }} />
           <div style={{ marginTop: 14, fontSize: 14 }}>Generating blind ad copy…</div>
-          <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>This usually takes 10–20 seconds</div>
+          <div style={{ fontSize: 12, color: '#57534e', marginTop: 6 }}>This usually takes 10–20 seconds</div>
         </div>
       )}
 
@@ -366,10 +366,10 @@ function FlyerTab({ deal, onUpdate }) {
       )}
 
       {generating && !html && (
-        <div style={{ padding: 60, textAlign: 'center', color: '#888' }}>
+        <div style={{ padding: 60, textAlign: 'center', color: '#57534e' }}>
           <div className="spinner spinner-dark" style={{ width: 32, height: 32, borderWidth: 4, display: 'inline-block' }} />
           <div style={{ marginTop: 14, fontSize: 14 }}>Generating flyer HTML…</div>
-          <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>This usually takes 15–30 seconds</div>
+          <div style={{ fontSize: 12, color: '#57534e', marginTop: 6 }}>This usually takes 15–30 seconds</div>
         </div>
       )}
 
@@ -455,15 +455,15 @@ function CbrTab({ deal, onUpdate }) {
       )}
 
       {generating && !html && (
-        <div style={{ padding: 60, textAlign: 'center', color: '#888' }}>
+        <div style={{ padding: 60, textAlign: 'center', color: '#57534e' }}>
           <div className="spinner spinner-dark" style={{ width: 32, height: 32, borderWidth: 4, display: 'inline-block' }} />
           <div style={{ marginTop: 14, fontSize: 14 }}>Generating Confidential Business Review…</div>
-          <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>
+          <div style={{ fontSize: 12, color: '#57534e', marginTop: 6 }}>
             {elapsed < 60
               ? `${elapsed}s elapsed — usually takes 30–90 seconds`
               : `${elapsed}s elapsed — still working, almost there…`}
           </div>
-          <div style={{ marginTop: 20, background: '#1e293b', borderRadius: 8, padding: '12px 20px', display: 'inline-block', fontSize: 12, color: '#64748b' }}>
+          <div style={{ marginTop: 20, background: 'rgba(255,255,255,0.94)', borderRadius: 8, padding: '12px 20px', display: 'inline-block', fontSize: 12, color: '#57534e' }}>
             Cover → TOC → Executive Summary → Products → Marketing → Sales → Customers → Employees → Financials → Growth → Transaction → Deal Team
           </div>
         </div>
@@ -472,13 +472,13 @@ function CbrTab({ deal, onUpdate }) {
       {html && (
         <div style={{ position: 'relative' }}>
           <div style={{
-            background: '#0a0e18', color: '#2eb860', padding: '8px 16px',
+            background: 'rgba(255,255,255,0.72)', color: '#C4592F', padding: '8px 16px',
             fontSize: 11, fontFamily: 'Oswald, sans-serif', letterSpacing: 1,
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            borderBottom: '1px solid #1e2d45',
+            borderBottom: '1px solid #e6dfd6',
           }}>
             <span>CBR PREVIEW — CONFIDENTIAL</span>
-            <span style={{ color: '#475569' }}>Scroll to view all slides • Download PDF for print-quality output</span>
+            <span style={{ color: '#44403c' }}>Scroll to view all slides • Download PDF for print-quality output</span>
           </div>
           <iframe
             className="preview-iframe"
@@ -556,9 +556,9 @@ export default function DealDetail() {
           <div className="page-title" style={{ fontSize: 22 }}>{deal.deal_name}</div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 4, flexWrap: 'wrap' }}>
             <span className={`badge badge-${deal.status}`}>{deal.status}</span>
-            {deal.advisor_name && <span style={{ fontSize: 13, color: '#64748b' }}>Advisor: {deal.advisor_name}</span>}
+            {deal.advisor_name && <span style={{ fontSize: 13, color: '#57534e' }}>Advisor: {deal.advisor_name}</span>}
             {interviewData.business_city_state && (
-              <span style={{ fontSize: 13, color: '#64748b' }}>📍 {interviewData.business_city_state}</span>
+              <span style={{ fontSize: 13, color: '#57534e' }}>📍 {interviewData.business_city_state}</span>
             )}
           </div>
           <div className="page-subtitle" style={{ marginTop: 8 }}>
@@ -589,8 +589,8 @@ export default function DealDetail() {
                 ['Employees', interviewData.employees_count],
               ].filter(([, v]) => v).map(([label, value]) => (
                 <div key={label}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
-                  <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'Oswald, sans-serif', color: '#e2e8f0', marginTop: 2 }}>{value}</div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#57534e', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'Oswald, sans-serif', color: '#1c1917', marginTop: 2 }}>{value}</div>
                 </div>
               ))}
             </div>
@@ -617,7 +617,7 @@ export default function DealDetail() {
             {tab.label}
             {tab.hasContent && (
               <span style={{
-                marginLeft: 6, fontSize: 10, background: 'rgba(46,184,96,0.15)', color: '#4ade80',
+                marginLeft: 6, fontSize: 10, background: 'rgba(196,89,47,0.15)', color: '#A34826',
                 borderRadius: 10, padding: '1px 6px', fontWeight: 600
               }}>✓</span>
             )}

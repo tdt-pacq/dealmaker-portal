@@ -2,40 +2,40 @@
 /* body and html selectors are scoped to #analyzer-root */
   *{box-sizing:border-box;}
   #analyzer-root{width:100%;overflow-x:hidden;}
-  #analyzer-root{background:#0f1117;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;width:100%;}
-  input[type=range]{accent-color:#10b981;width:100%;}
+  #analyzer-root{background:transparent;color:#1c1917;font-family:system-ui,-apple-system,sans-serif;width:100%;}
+  input[type=range]{accent-color:#C4592F;width:100%;}
   .sidebar-btn{transition:all 0.12s;border-left:3px solid transparent;}
-  .sidebar-btn:hover{background:#1a2232;}
-  .sidebar-btn.active{background:#0a2416;border-left-color:#2eb860;color:#2eb860;}
-  .card{background:#161b27;border:1px solid #1e2d45;border-radius:8px;}
-  .input-field{background:#0d1117;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;padding:8px 12px;width:100%;font-size:14px;}
-  .input-field:focus{outline:none;border-color:#2eb860;box-shadow:0 0 0 2px rgba(46,184,96,0.18);}
+  .sidebar-btn:hover{background:#f4efe9;}
+  .sidebar-btn.active{background:rgba(196,89,47,0.10);border-left-color:#C4592F;color:#C4592F;}
+  .card{background:rgba(255,255,255,0.92);border:1px solid #e6dfd6;border-radius:8px;}
+  .input-field{background:#ffffff;border:1px solid #e4dcd2;border-radius:6px;color:#1c1917;padding:8px 12px;width:100%;font-size:14px;}
+  .input-field:focus{outline:none;border-color:#C4592F;box-shadow:0 0 0 2px rgba(196,89,47,0.18);}
   .input-field:disabled{opacity:0.35;cursor:not-allowed;}
-  .calc-field{background:#061a0d;border:1px solid #1a5e35;border-radius:6px;color:#2eb860;padding:8px 12px;font-size:14px;font-family:monospace;width:100%;}
+  .calc-field{background:#fff8f4;border:1px solid #e8cfc3;border-radius:6px;color:#C4592F;padding:8px 12px;font-size:14px;font-family:monospace;width:100%;}
   /* Green emphasis for positive numbers */
-  .text-green-400{color:#2eb860!important;}
-  .text-green-300{color:#5cd686!important;}
+  .text-green-400{color:#C4592F!important;}
+  .text-green-300{color:#C4592F!important;}
   /* Accent color overrides for Tailwind blue classes */
-  .text-blue-300,.text-blue-400{color:#6de09a!important;}
-  .bg-blue-600,.bg-blue-700{background-color:#2eb860!important;}
-  .bg-blue-800{background-color:#228a4a!important;}
-  .bg-blue-900{background-color:#0c2a18!important;}
-  .hover\:bg-blue-600:hover,.hover\:bg-blue-700:hover{background-color:#27a050!important;}
-  .hover\:bg-blue-800:hover{background-color:#1a7a3e!important;}
-  .hover\:bg-blue-900:hover{background-color:#061208!important;}
-  .hover\:text-blue-300:hover{color:#6de09a!important;}
-  .border-blue-900{border-color:#0c2a18!important;}
-  .accent-blue-500{accent-color:#2eb860!important;}
-  .lbl{font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:block;}
+  .text-blue-300,.text-blue-400{color:#C4592F!important;}
+  .bg-blue-600,.bg-blue-700{background-color:#C4592F!important;}
+  .bg-blue-800{background-color:#A34826!important;}
+  .bg-blue-900{background-color:#f8efe8!important;}
+  .hover\:bg-blue-600:hover,.hover\:bg-blue-700:hover{background-color:#A34826!important;}
+  .hover\:bg-blue-800:hover{background-color:#8f3e24!important;}
+  .hover\:bg-blue-900:hover{background-color:#f8efe8!important;}
+  .hover\:text-blue-300:hover{color:#C4592F!important;}
+  .border-blue-900{border-color:#e8cfc3!important;}
+  .accent-blue-500{accent-color:#C4592F!important;}
+  .lbl{font-size:12px;color:#57534e;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:block;}
   .mono{font-family:'Courier New',monospace;}
   ::-webkit-scrollbar{width:5px;height:5px;}
-  ::-webkit-scrollbar-track{background:#0d1117;}
-  ::-webkit-scrollbar-thumb{background:#2d3748;border-radius:3px;}
+  ::-webkit-scrollbar-track{background:#ffffff;}
+  ::-webkit-scrollbar-thumb{background:#d6d3d1;border-radius:3px;}
   @media print{
     @page{margin:.75in;}
     .no-print{display:none!important;}
     *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
-    body{background:#fff!important;color:#111!important;}
+    body{background:#fff!important;color:#1c1917!important;}
 
     /* ── Release ALL overflow/height clipping ── */
     html,body,#root{height:auto!important;overflow:visible!important;min-height:0!important;}
@@ -67,8 +67,8 @@
     .card{background:#fff!important;border:1px solid #d1d5db!important;box-shadow:none!important;break-inside:avoid;page-break-inside:avoid;margin-bottom:12pt!important;}
 
     /* Make all report text dark and readable */
-    .report-body *{color:#111!important;}
-    .rpt-green{color:#059669!important;}
+    .report-body *{color:#1c1917!important;}
+    .rpt-green{color:#A34826!important;}
     .rpt-red{color:#dc2626!important;}
     .rpt-amber{color:#b45309!important;}
     .rpt-purple{color:#6d28d9!important;}
@@ -79,3 +79,32 @@
     /* Ensure the report main content area fills page width */
     .report-body{width:100%!important;max-width:100%!important;padding:0!important;}
   }
+
+/* Light-theme overrides for Tailwind utilities used inside the analyzer */
+#analyzer-root .text-gray-200,
+#analyzer-root .text-gray-300 { color: #292524 !important; }
+#analyzer-root .text-gray-400,
+#analyzer-root .text-gray-500 { color: #57534e !important; }
+#analyzer-root .text-gray-600 { color: #78716c !important; }
+#analyzer-root .border-gray-700,
+#analyzer-root .border-gray-800 { border-color: #e6dfd6 !important; }
+#analyzer-root .bg-gray-700,
+#analyzer-root .bg-gray-800,
+#analyzer-root .bg-gray-900,
+#analyzer-root .hover\:bg-gray-700:hover,
+#analyzer-root .hover\:bg-gray-800:hover,
+#analyzer-root .hover\:bg-gray-900:hover { background-color: #ffffff !important; }
+#analyzer-root .text-yellow-400,
+#analyzer-root .text-yellow-600 { color: #b45309 !important; }
+#analyzer-root .text-red-400,
+#analyzer-root .text-red-500,
+#analyzer-root .hover\:text-red-400:hover,
+#analyzer-root .hover\:text-red-300:hover { color: #dc2626 !important; }
+#analyzer-root .text-purple-300 { color: #6d28d9 !important; }
+#analyzer-root .bg-green-900,
+#analyzer-root .bg-yellow-900,
+#analyzer-root .bg-red-900,
+#analyzer-root .bg-green-900\/30,
+#analyzer-root .bg-yellow-900\/30,
+#analyzer-root .bg-red-900\/30 { background-color: #fff7f3 !important; }
+#analyzer-root .accent-green-500 { accent-color: #C4592F; }

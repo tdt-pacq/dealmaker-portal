@@ -124,7 +124,7 @@ export default function EngagementsList() {
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="card-header">
           <span className="card-title">New proposal</span>
-          <span style={{ fontSize: 11, color: '#64748b' }}>Creates an unguessable private URL</span>
+          <span style={{ fontSize: 11, color: '#57534e' }}>Creates an unguessable private URL</span>
         </div>
         <form onSubmit={handleCreate} className="card-body">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
@@ -145,11 +145,11 @@ export default function EngagementsList() {
               <input value={form.blindCompanyLabel} onChange={e => set('blindCompanyLabel', e.target.value)} placeholder="e.g. Specialty manufacturer — SE" />
             </div>
             <div className="field-group" style={{ marginBottom: 0 }}>
-              <label>MPA / Analyzer <span style={{ fontWeight: 400, color: '#64748b' }}>(optional)</span></label>
+              <label>MPA / Analyzer <span style={{ fontWeight: 400, color: '#57534e' }}>(optional)</span></label>
               <input value={form.analyzer_deal_slug} onChange={e => set('analyzer_deal_slug', e.target.value)} placeholder="Firestore deal slug — no invented numbers" />
             </div>
             <div className="field-group" style={{ marginBottom: 0 }}>
-              <label>BIR / Business Intel <span style={{ fontWeight: 400, color: '#64748b' }}>(optional)</span></label>
+              <label>BIR / Business Intel <span style={{ fontWeight: 400, color: '#57534e' }}>(optional)</span></label>
               <select value={form.discovery_report_id} onChange={e => set('discovery_report_id', e.target.value)}>
                 <option value="">None — not required</option>
                 {reports.map(r => (
@@ -160,7 +160,7 @@ export default function EngagementsList() {
               </select>
             </div>
             <div className="field-group" style={{ marginBottom: 0, gridColumn: '1 / 3' }}>
-              <label>Deal Marketing account <span style={{ fontWeight: 400, color: '#64748b' }}>(optional)</span></label>
+              <label>Deal Marketing account <span style={{ fontWeight: 400, color: '#57534e' }}>(optional)</span></label>
               <select value={form.deal_id} onChange={e => set('deal_id', e.target.value)}>
                 <option value="">None — marketing starts after engagement is signed</option>
                 {deals.map(d => (
@@ -170,7 +170,7 @@ export default function EngagementsList() {
             </div>
           </div>
           <div style={{ marginTop: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
-            <div style={{ fontSize: 12, color: '#64748b', maxWidth: 640 }}>
+            <div style={{ fontSize: 12, color: '#57534e', maxWidth: 640 }}>
               MPA, BIR, Discovery, and Deal Marketing links are optional — none are required to create a proposal.
               Marketing does not run until after the engagement fee is signed. 12-section skeleton is fixed.
               Stack seeds the Lead Engine 13-item list (editable). Engagement fee is fill-in — no invented numbers.
@@ -185,10 +185,10 @@ export default function EngagementsList() {
       <div className="card">
         <div className="card-header">
           <span className="card-title">Proposals</span>
-          <span style={{ fontSize: 12, color: '#64748b' }}>{proposals.length} total</span>
+          <span style={{ fontSize: 12, color: '#57534e' }}>{proposals.length} total</span>
         </div>
         {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#64748b' }}>
+          <div style={{ padding: 40, textAlign: 'center', color: '#57534e' }}>
             <div className="spinner spinner-dark" style={{ width: 24, height: 24, borderWidth: 3, display: 'inline-block' }} />
             <div style={{ marginTop: 10, fontSize: 14 }}>Loading…</div>
           </div>
@@ -220,14 +220,14 @@ export default function EngagementsList() {
                 return (
                   <tr key={p.id}>
                     <td>
-                      <Link to={`/engagements/${p.share_token}`} style={{ fontWeight: 600, color: '#e2e8f0' }}>
+                      <Link to={`/engagements/${p.share_token}`} style={{ fontWeight: 600, color: '#1c1917' }}>
                         {cover.blindCompanyLabel || cover.proposalId || 'Untitled proposal'}
                       </Link>
-                      <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{cover.proposalId}</div>
+                      <div style={{ fontSize: 11, color: '#57534e', marginTop: 2 }}>{cover.proposalId}</div>
                     </td>
                     <td>{cover.sellerNames || '—'}</td>
                     <td>{cover.brokerName || p.created_by_display_name || '—'}</td>
-                    <td style={{ color: '#94a3b8', fontSize: 12 }}>{hooks.length ? hooks.join(' · ') : '—'}</td>
+                    <td style={{ color: '#57534e', fontSize: 12 }}>{hooks.length ? hooks.join(' · ') : '—'}</td>
                     <td>{fmt(p.updated_at)}</td>
                     <td>
                       <div style={{ display: 'flex', gap: 8 }}>
