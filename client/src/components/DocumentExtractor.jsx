@@ -160,7 +160,7 @@ function DropZone({
           multiple={multiple || undefined}
           style={{ display: 'none' }}
           onChange={e => {
-            const chosen = e.target.files;
+            const chosen = [...e.target.files];
             e.target.value = '';
             onUpload(chosen);
           }}
@@ -574,7 +574,11 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
                   accept="image/*"
                   multiple
                   style={{ display: 'none' }}
-                  onChange={e => uploadFiles('biz_photo', e.target.files)}
+                  onChange={e => {
+                    const chosen = [...e.target.files];
+                    e.target.value = '';
+                    uploadFiles('biz_photo', chosen);
+                  }}
                 />
                 <div className="doc-photo-grid">
                   {bizPhotos.map((photo, index) => (
