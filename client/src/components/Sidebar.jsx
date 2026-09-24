@@ -81,10 +81,12 @@ export default function Sidebar({ collapsed, mobileOpen = false, onToggle, onClo
       data-portal-sidebar
       className={`portal-sidebar${collapsed ? ' is-collapsed' : ''}${mobileOpen ? ' is-mobile-open' : ''}`}
       style={{
-      width: collapsed ? 56 : 220,
+      width: collapsed ? 56 : 248,
       minHeight: '100vh',
-      background: '#0a0e18',
-      borderRight: '1px solid #1a2235',
+      background: 'rgba(255,255,255,0.62)',
+      backdropFilter: 'blur(18px) saturate(1.15)',
+      WebkitBackdropFilter: 'blur(18px) saturate(1.15)',
+      borderRight: '1px solid rgba(255,255,255,0.85)',
       display: 'flex',
       flexDirection: 'column',
       flexShrink: 0,
@@ -103,47 +105,30 @@ export default function Sidebar({ collapsed, mobileOpen = false, onToggle, onClo
         alignItems: 'center',
         justifyContent: collapsed ? 'center' : 'space-between',
         padding: collapsed ? '18px 0' : '20px 16px 16px',
-        borderBottom: '1px solid #1a2235',
+        borderBottom: '1px solid #e6dfd6',
         minHeight: 72,
         flexShrink: 0,
       }}>
-        {!collapsed && (
-          <Link to="/" onClick={handleNav} style={{ textDecoration: 'none' }}>
-            <div>
-              <div style={{
-                fontFamily: 'Oswald, sans-serif',
-                fontWeight: 700,
-                fontSize: 15,
-                color: '#e2e8f0',
-                letterSpacing: 2.5,
-                textTransform: 'uppercase',
-                lineHeight: 1.15,
-              }}>
-                Dealmaker
-              </div>
-              <div style={{
-                fontFamily: 'Oswald, sans-serif',
-                fontWeight: 700,
-                fontSize: 15,
-                color: '#C1622F',
-                letterSpacing: 2.5,
-                textTransform: 'uppercase',
-                lineHeight: 1.15,
-              }}>
-                Portal
-              </div>
-            </div>
-          </Link>
-        )}
+        <Link
+          to="/"
+          onClick={handleNav}
+          className="brand-lockup"
+          aria-label="Dealmaker Portal"
+          title="Dealmaker Portal"
+          style={{ textDecoration: 'none', minWidth: 0 }}
+        >
+          <img src="/phoenix-icon.svg" alt="" width="64" height="74" />
+          {!collapsed && <span className="brand-lockup-name">Dealmaker Portal</span>}
+        </Link>
 
         <button
           onClick={onToggle}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           style={{
             background: 'transparent',
-            border: '1px solid #1a2235',
+            border: '1px solid #e6dfd6',
             borderRadius: 5,
-            color: '#334155',
+            color: '#44403c',
             width: 28,
             height: 28,
             display: 'flex',
@@ -154,8 +139,8 @@ export default function Sidebar({ collapsed, mobileOpen = false, onToggle, onClo
             flexShrink: 0,
             transition: 'border-color 0.15s, color 0.15s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = '#2eb860'; e.currentTarget.style.color = '#2eb860'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a2235'; e.currentTarget.style.color = '#334155'; }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#C4592F'; e.currentTarget.style.color = '#C4592F'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = '#e6dfd6'; e.currentTarget.style.color = '#44403c'; }}
         >
           {collapsed ? '›' : '‹'}
         </button>
@@ -189,13 +174,13 @@ export default function Sidebar({ collapsed, mobileOpen = false, onToggle, onClo
                     fontWeight: 700,
                     letterSpacing: 2,
                     textTransform: 'uppercase',
-                    color: '#2d3f57',
+                    color: '#57534e',
                     fontFamily: 'system-ui, sans-serif',
                   }}>
                     {section.label}
                   </span>
                   <span style={{
-                    color: '#2d3f57',
+                    color: '#57534e',
                     fontSize: 13,
                     lineHeight: 1,
                     transform: sectionOpen ? 'rotate(90deg)' : 'rotate(0deg)',
@@ -236,7 +221,7 @@ export default function Sidebar({ collapsed, mobileOpen = false, onToggle, onClo
                                 <span style={{
                                   fontSize: 12.5,
                                   fontWeight: 500,
-                                  color: '#64748b',
+                                  color: '#57534e',
                                   fontFamily: 'system-ui, sans-serif',
                                   flex: 1,
                                   whiteSpace: 'nowrap',
@@ -249,9 +234,9 @@ export default function Sidebar({ collapsed, mobileOpen = false, onToggle, onClo
                                   fontSize: 8,
                                   fontWeight: 700,
                                   letterSpacing: 0.5,
-                                  color: '#2d3f57',
-                                  background: '#111827',
-                                  border: '1px solid #1a2235',
+                                  color: '#57534e',
+                                  background: '#f7f3ee',
+                                  border: '1px solid #e6dfd6',
                                   borderRadius: 3,
                                   padding: '1px 5px',
                                   textTransform: 'uppercase',
@@ -275,12 +260,12 @@ export default function Sidebar({ collapsed, mobileOpen = false, onToggle, onClo
                           gap: 9,
                           padding: collapsed ? '8px 0' : '7px 10px',
                           borderRadius: 5,
-                          borderLeft: active ? '2px solid #2eb860' : '2px solid transparent',
-                          background: active ? 'rgba(46,184,96,0.09)' : 'transparent',
+                          borderLeft: active ? '2px solid #C4592F' : '2px solid transparent',
+                          background: active ? 'rgba(196,89,47,0.09)' : 'transparent',
                           transition: 'background 0.14s, border-color 0.14s',
                           justifyContent: collapsed ? 'center' : 'flex-start',
                         }}
-                        onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+                        onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(28,25,23,0.04)'; }}
                         onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
                       >
                         <span style={{ fontSize: 14, lineHeight: 1, flexShrink: 0 }}>{item.icon}</span>
@@ -288,7 +273,7 @@ export default function Sidebar({ collapsed, mobileOpen = false, onToggle, onClo
                           <span style={{
                             fontSize: 12.5,
                             fontWeight: active ? 600 : 500,
-                            color: active ? '#e2e8f0' : '#94a3b8',
+                            color: active ? '#C4592F' : '#57534e',
                             fontFamily: 'system-ui, sans-serif',
                             transition: 'color 0.14s',
                             whiteSpace: 'nowrap',
@@ -341,7 +326,7 @@ export default function Sidebar({ collapsed, mobileOpen = false, onToggle, onClo
       {/* ── Account ── */}
       <div style={{
         padding: collapsed ? '12px 6px' : '12px 8px',
-        borderTop: '1px solid #1a2235',
+        borderTop: '1px solid #e6dfd6',
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',
@@ -354,9 +339,9 @@ export default function Sidebar({ collapsed, mobileOpen = false, onToggle, onClo
           style={{
             width: '100%',
             background: 'transparent',
-            border: '1px solid #1a2235',
+            border: '1px solid #e6dfd6',
             borderRadius: 5,
-            color: '#64748b',
+            color: '#57534e',
             fontSize: collapsed ? 14 : 11,
             fontWeight: 600,
             letterSpacing: collapsed ? 0 : 0.8,
@@ -370,8 +355,8 @@ export default function Sidebar({ collapsed, mobileOpen = false, onToggle, onClo
             justifyContent: 'center',
             gap: 6,
           }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = '#2eb860'; e.currentTarget.style.color = '#2eb860'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a2235'; e.currentTarget.style.color = '#64748b'; }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#C4592F'; e.currentTarget.style.color = '#C4592F'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = '#e6dfd6'; e.currentTarget.style.color = '#57534e'; }}
         >
           {collapsed ? '🔑' : 'Change Password'}
         </button>
@@ -381,9 +366,9 @@ export default function Sidebar({ collapsed, mobileOpen = false, onToggle, onClo
           style={{
             width: '100%',
             background: 'transparent',
-            border: '1px solid #1a2235',
+            border: '1px solid #e6dfd6',
             borderRadius: 5,
-            color: '#334155',
+            color: '#44403c',
             fontSize: collapsed ? 14 : 11,
             fontWeight: 600,
             letterSpacing: collapsed ? 0 : 0.8,
@@ -397,8 +382,8 @@ export default function Sidebar({ collapsed, mobileOpen = false, onToggle, onClo
             justifyContent: 'center',
             gap: 6,
           }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = '#ef4444'; e.currentTarget.style.color = '#ef4444'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a2235'; e.currentTarget.style.color = '#334155'; }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#dc2626'; e.currentTarget.style.color = '#dc2626'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = '#e6dfd6'; e.currentTarget.style.color = '#44403c'; }}
         >
           {collapsed ? '⎋' : 'Sign Out'}
         </button>

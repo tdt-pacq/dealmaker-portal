@@ -102,19 +102,19 @@ const FinancialSpreadTable = ({years, ytdThrough=''}) => {
   return (
   <table style={{width:'100%',fontSize:11,borderCollapse:'collapse'}}>
     <thead>
-      <tr style={{borderBottom:'2px solid #1e2d45'}}>
-        <th style={{textAlign:'left',padding:'5px 0',color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,width:'36%'}}>Metric</th>
+      <tr style={{borderBottom:'2px solid #e6dfd6'}}>
+        <th style={{textAlign:'left',padding:'5px 0',color:'#44403c',fontSize:10,textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,width:'36%'}}>Metric</th>
         {years.map((y,i)=>{
           const isYTD = isYtdYear(y);
           const hasAnn = isYTD && months > 0;
           return [
-            <th key={'y'+i} style={{textAlign:'right',padding:'5px 8px',color:'#475569',fontSize:10,textTransform:'uppercase',fontWeight:600}}>
+            <th key={'y'+i} style={{textAlign:'right',padding:'5px 8px',color:'#44403c',fontSize:10,textTransform:'uppercase',fontWeight:600}}>
               {isYTD && months > 0 ? `YTD (${months}mo)` : (isYTD ? 'YTD' : y.year)}
             </th>,
             hasAnn
-              ? <th key={'y'+i+'ann'} style={{textAlign:'right',padding:'5px 8px',color:'#a78bfa',fontSize:9,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.04em'}}>Ann.</th>
+              ? <th key={'y'+i+'ann'} style={{textAlign:'right',padding:'5px 8px',color:'#6d28d9',fontSize:9,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.04em'}}>Ann.</th>
               : null,
-            <th key={'y'+i+'p'} style={{textAlign:'right',padding:'5px 12px 5px 0',color:'#334155',fontSize:9,fontWeight:400}}>% Rev</th>
+            <th key={'y'+i+'p'} style={{textAlign:'right',padding:'5px 12px 5px 0',color:'#44403c',fontSize:9,fontWeight:400}}>% Rev</th>
           ];
         })}
       </tr>
@@ -123,8 +123,8 @@ const FinancialSpreadTable = ({years, ytdThrough=''}) => {
       {SPREAD_ROWS.map(([lbl,fn,bold])=>{
         const isSDE=lbl.startsWith("Seller");
         return (
-          <tr key={lbl} style={{borderBottom:`1px solid ${bold?'#1e2d45':'#0d1117'}`,background:isSDE?'#061208':bold?'#0a1205':'transparent'}}>
-            <td style={{padding:'5px 0',color:isSDE?'#2eb860':bold?'#cbd5e1':'#64748b',fontWeight:bold?600:400,fontSize:11}}>{lbl}</td>
+          <tr key={lbl} style={{borderBottom:`1px solid ${bold?'#e6dfd6':'#efe8e0'}`,background:isSDE?'#f8efe8':bold?'#f8efe8':'transparent'}}>
+            <td style={{padding:'5px 0',color:isSDE?'#C4592F':bold?'#44403c':'#57534e',fontWeight:bold?600:400,fontSize:11}}>{lbl}</td>
             {years.map((y,i)=>{
               const isYTD = isYtdYear(y);
               const hasAnn = isYTD && months > 0;
@@ -135,11 +135,11 @@ const FinancialSpreadTable = ({years, ytdThrough=''}) => {
               const p=lbl==='Revenue'?'100%':(rev>0?`${(v/rev*100).toFixed(1)}%`:'—');
               const pa=hasAnn?(lbl==='Revenue'?'100%':(annRev>0?`${(va/annRev*100).toFixed(1)}%`:'—')):null;
               return [
-                <td key={'y'+i} className={isSDE?'rpt-green':bold?'':'rpt-muted'} style={{textAlign:'right',padding:'5px 8px',fontFamily:'monospace',color:isSDE?'#2eb860':bold?'#e2e8f0':'#94a3b8',fontWeight:bold?600:400}}>{fmtD(v)}</td>,
+                <td key={'y'+i} className={isSDE?'rpt-green':bold?'':'rpt-muted'} style={{textAlign:'right',padding:'5px 8px',fontFamily:'monospace',color:isSDE?'#C4592F':bold?'#1c1917':'#57534e',fontWeight:bold?600:400}}>{fmtD(v)}</td>,
                 hasAnn
-                  ? <td key={'y'+i+'ann'} style={{textAlign:'right',padding:'5px 8px',fontFamily:'monospace',color:isSDE?'#a78bfa':bold?'#c4b5fd':'#7c6fcd',fontWeight:bold?600:400,fontSize:10,fontStyle:'italic'}}>{fmtD(va)}</td>
+                  ? <td key={'y'+i+'ann'} style={{textAlign:'right',padding:'5px 8px',fontFamily:'monospace',color:isSDE?'#6d28d9':bold?'#6d28d9':'#5b21b6',fontWeight:bold?600:400,fontSize:10,fontStyle:'italic'}}>{fmtD(va)}</td>
                   : null,
-                <td key={'y'+i+'p'} className="rpt-muted" style={{textAlign:'right',padding:'5px 12px 5px 0',fontFamily:'monospace',color:'#334155',fontSize:10}}>{hasAnn ? pa : p}</td>
+                <td key={'y'+i+'p'} className="rpt-muted" style={{textAlign:'right',padding:'5px 12px 5px 0',fontFamily:'monospace',color:'#44403c',fontSize:10}}>{hasAnn ? pa : p}</td>
               ];
             })}
           </tr>
@@ -215,7 +215,7 @@ const Tog = ({on,set,label}) => (
 );
 
 /* ── SVG Bar Chart ─────────────────────────────────── */
-const BarChart = ({data,dataKey,color='#2eb860',label='',fmtAxis}) => {
+const BarChart = ({data,dataKey,color='#C4592F',label='',fmtAxis}) => {
   const W=340,H=160,PAD={t:10,r:10,b:30,l:60};
   const vals=data.map(d=>d[dataKey]||0);
   const maxV=Math.max(...vals,1);
@@ -233,7 +233,7 @@ const BarChart = ({data,dataKey,color='#2eb860',label='',fmtAxis}) => {
       {Array.from({length:ticks+1},(_,i)=>{
         const v=minV+(range/ticks)*i;
         const y=PAD.t+scaleY(v);
-        return <g key={i}><line x1={PAD.l} x2={PAD.l+innerW} y1={y} y2={y} stroke="#1f2937" strokeDasharray="3 3"/><text x={PAD.l-4} y={y+4} textAnchor="end" fontSize="9" fill="#64748b">{fmtTick(v)}</text></g>;
+        return <g key={i}><line x1={PAD.l} x2={PAD.l+innerW} y1={y} y2={y} stroke="#a8a29e" strokeDasharray="3 3"/><text x={PAD.l-4} y={y+4} textAnchor="end" fontSize="9" fill="#57534e">{fmtTick(v)}</text></g>;
       })}
       {data.map((d,i)=>{
         const x=PAD.l+gap*i+gap/2-bw/2;
@@ -243,18 +243,18 @@ const BarChart = ({data,dataKey,color='#2eb860',label='',fmtAxis}) => {
         return (
           <g key={i}>
             <rect x={x} y={by} width={bw} height={Math.max(barH,1)} fill={color} rx="2"/>
-            <text x={x+bw/2} y={PAD.t+innerH+18} textAnchor="middle" fontSize="10" fill="#94a3b8">{d.year}</text>
+            <text x={x+bw/2} y={PAD.t+innerH+18} textAnchor="middle" fontSize="10" fill="#57534e">{d.year}</text>
           </g>
         );
       })}
-      <line x1={PAD.l} x2={PAD.l} y1={PAD.t} y2={PAD.t+innerH} stroke="#374151"/>
-      <line x1={PAD.l} x2={PAD.l+innerW} y1={PAD.t+zeroY} y2={PAD.t+zeroY} stroke="#374151"/>
+      <line x1={PAD.l} x2={PAD.l} y1={PAD.t} y2={PAD.t+innerH} stroke="#44403c"/>
+      <line x1={PAD.l} x2={PAD.l+innerW} y1={PAD.t+zeroY} y2={PAD.t+zeroY} stroke="#44403c"/>
     </svg>
   );
 };
 
 /* ── SVG Line Chart ────────────────────────────────── */
-const LineChart = ({data,dataKey,color='#10b981'}) => {
+const LineChart = ({data,dataKey,color='#C4592F'}) => {
   const W=340,H=140,PAD={t:10,r:10,b:30,l:60};
   const vals=data.map(d=>d[dataKey]||0);
   const maxV=Math.max(...vals,1),minV=Math.min(...vals,0);
@@ -268,17 +268,17 @@ const LineChart = ({data,dataKey,color='#10b981'}) => {
     <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{overflow:'visible'}}>
       {[0,1,2,3,4].map(i=>{
         const v=minV+(range/4)*i; const y=PAD.t+scaleY(v);
-        return <g key={i}><line x1={PAD.l} x2={PAD.l+innerW} y1={y} y2={y} stroke="#1f2937" strokeDasharray="3 3"/><text x={PAD.l-4} y={y+4} textAnchor="end" fontSize="9" fill="#64748b">{fmtTick(v)}</text></g>;
+        return <g key={i}><line x1={PAD.l} x2={PAD.l+innerW} y1={y} y2={y} stroke="#a8a29e" strokeDasharray="3 3"/><text x={PAD.l-4} y={y+4} textAnchor="end" fontSize="9" fill="#57534e">{fmtTick(v)}</text></g>;
       })}
       <polyline points={pts} fill="none" stroke={color} strokeWidth="2"/>
       {data.map((d,i)=>(
         <g key={i}>
           <circle cx={PAD.l+gap*i} cy={PAD.t+scaleY(d[dataKey]||0)} r="4" fill={color}/>
-          <text x={PAD.l+gap*i} y={PAD.t+innerH+18} textAnchor="middle" fontSize="10" fill="#94a3b8">{d.year}</text>
+          <text x={PAD.l+gap*i} y={PAD.t+innerH+18} textAnchor="middle" fontSize="10" fill="#57534e">{d.year}</text>
         </g>
       ))}
-      <line x1={PAD.l} x2={PAD.l} y1={PAD.t} y2={PAD.t+innerH} stroke="#374151"/>
-      <line x1={PAD.l} x2={PAD.l+innerW} y1={PAD.t+innerH} y2={PAD.t+innerH} stroke="#374151"/>
+      <line x1={PAD.l} x2={PAD.l} y1={PAD.t} y2={PAD.t+innerH} stroke="#44403c"/>
+      <line x1={PAD.l} x2={PAD.l+innerW} y1={PAD.t+innerH} y2={PAD.t+innerH} stroke="#44403c"/>
     </svg>
   );
 };
@@ -286,7 +286,7 @@ const LineChart = ({data,dataKey,color='#10b981'}) => {
 /* ── SVG Stacked Bar ───────────────────────────────── */
 const StackedBar = ({data}) => {
   const W=480,H=200,PAD={t:10,r:120,b:30,l:60};
-  const keys=[{k:'ebitda',c:'#2eb860',l:'EBITDA'},{k:'oc',c:'#3b82f6',l:"Owner's Comp"},{k:'ab',c:'#f59e0b',l:'Add-Backs'}];
+  const keys=[{k:'ebitda',c:'#C4592F',l:'EBITDA'},{k:'oc',c:'#1d4ed8',l:"Owner's Comp"},{k:'ab',c:'#b45309',l:'Add-Backs'}];
   const totals=data.map(d=>keys.reduce((s,k)=>s+Math.max(0,d[k.k]||0),0));
   const maxV=Math.max(...totals,1);
   const innerW=W-PAD.l-PAD.r, innerH=H-PAD.t-PAD.b;
@@ -296,7 +296,7 @@ const StackedBar = ({data}) => {
     <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{overflow:'visible'}}>
       {[0,1,2,3,4].map(i=>{
         const v=(maxV/4)*i; const y=PAD.t+innerH*(1-v/maxV);
-        return <g key={i}><line x1={PAD.l} x2={PAD.l+innerW} y1={y} y2={y} stroke="#1f2937" strokeDasharray="3 3"/><text x={PAD.l-4} y={y+4} textAnchor="end" fontSize="9" fill="#64748b">{v>=1000000?'$'+(v/1000000).toFixed(1)+'M':v>=1000?'$'+(v/1000).toFixed(0)+'k':'$'+v}</text></g>;
+        return <g key={i}><line x1={PAD.l} x2={PAD.l+innerW} y1={y} y2={y} stroke="#a8a29e" strokeDasharray="3 3"/><text x={PAD.l-4} y={y+4} textAnchor="end" fontSize="9" fill="#57534e">{v>=1000000?'$'+(v/1000000).toFixed(1)+'M':v>=1000?'$'+(v/1000).toFixed(0)+'k':'$'+v}</text></g>;
       })}
       {data.map((d,i)=>{
         const x=PAD.l+gap*i+gap/2-bw/2;
@@ -309,16 +309,16 @@ const StackedBar = ({data}) => {
             cum+=val;
             return <rect key={k.k} x={x} y={y} width={bw} height={Math.max(h,0)} fill={k.c} rx="1"/>;
           })}
-          <text x={x+bw/2} y={PAD.t+innerH+18} textAnchor="middle" fontSize="10" fill="#94a3b8">{d.year}</text>
+          <text x={x+bw/2} y={PAD.t+innerH+18} textAnchor="middle" fontSize="10" fill="#57534e">{d.year}</text>
         </g>;
       })}
-      <line x1={PAD.l} x2={PAD.l} y1={PAD.t} y2={PAD.t+innerH} stroke="#374151"/>
-      <line x1={PAD.l} x2={PAD.l+innerW} y1={PAD.t+innerH} y2={PAD.t+innerH} stroke="#374151"/>
+      <line x1={PAD.l} x2={PAD.l} y1={PAD.t} y2={PAD.t+innerH} stroke="#44403c"/>
+      <line x1={PAD.l} x2={PAD.l+innerW} y1={PAD.t+innerH} y2={PAD.t+innerH} stroke="#44403c"/>
       {/* Legend */}
       {keys.map((k,i)=>(
         <g key={k.k} transform={`translate(${PAD.l+innerW+10},${PAD.t+i*22})`}>
           <rect width="10" height="10" fill={k.c} rx="2"/>
-          <text x="14" y="9" fontSize="10" fill="#94a3b8">{k.l}</text>
+          <text x="14" y="9" fontSize="10" fill="#57534e">{k.l}</text>
         </g>
       ))}
     </svg>
@@ -327,7 +327,7 @@ const StackedBar = ({data}) => {
 
 /* ── Year Section ──────────────────────────────────── */
 const pctRev=(v,rev)=>rev>0?`${(v/rev*100).toFixed(1)}%`:'';
-const PctBadge=({v,rev})=>{ const p=pctRev(v,rev); return p?<span style={{fontSize:9,color:'#64748b',marginLeft:4}}>({p})</span>:null; };
+const PctBadge=({v,rev})=>{ const p=pctRev(v,rev); return p?<span style={{fontSize:9,color:'#57534e',marginLeft:4}}>({p})</span>:null; };
 
 const YearSec = ({yd,onChange,onImport,reVal=0,yearEditable=true}) => {
   const c=calcSDE(yd);
@@ -345,7 +345,7 @@ const YearSec = ({yd,onChange,onImport,reVal=0,yearEditable=true}) => {
           {yearEditable && !isYTD ? (
             <input
               className="input-field py-1.5"
-              style={{fontSize:15,fontWeight:700,color:'#93c5fd',width:78,textAlign:'center'}}
+              style={{fontSize:15,fontWeight:700,color:'#1d4ed8',width:78,textAlign:'center'}}
               value={yd.year}
               onClick={e=>e.stopPropagation()}
               onChange={e=>{
@@ -365,7 +365,7 @@ const YearSec = ({yd,onChange,onImport,reVal=0,yearEditable=true}) => {
           </select>
         </div>
         <div className="flex items-center gap-4">
-          {onImport&&<button onClick={e=>{e.stopPropagation();onImport();}} style={{fontSize:12,padding:'5px 12px',background:'#1e293b',color:'#94a3b8',border:'1px solid #334155',borderRadius:4,cursor:'pointer',whiteSpace:'nowrap'}}>Import PDF</button>}
+          {onImport&&<button onClick={e=>{e.stopPropagation();onImport();}} style={{fontSize:12,padding:'5px 12px',background:'rgba(255,255,255,0.94)',color:'#57534e',border:'1px solid #e4dcd2',borderRadius:4,cursor:'pointer',whiteSpace:'nowrap'}}>Import PDF</button>}
           <div className="text-right">
             <span className="text-sm text-gray-500 mr-2">SDE</span>
             <span className={`mono font-bold text-base ${c.sde>=0?'text-green-400':'text-red-400'}`}>{(pn(yd.revenue)||c.sde)?fmtD(c.sde):'—'}</span>
@@ -384,7 +384,7 @@ const YearSec = ({yd,onChange,onImport,reVal=0,yearEditable=true}) => {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <span className="lbl">Other Income <span style={{fontSize:11,color:'#475569'}}>(Line 5 / Stmt 1)</span></span>
+              <span className="lbl">Other Income <span style={{fontSize:11,color:'#44403c'}}>(Line 5 / Stmt 1)</span></span>
               <NI value={yd.otherIncome} placeholder="0" onChange={v=>set('otherIncome',v)}/>
             </div>
             <div/>
@@ -424,7 +424,7 @@ const YearSec = ({yd,onChange,onImport,reVal=0,yearEditable=true}) => {
               <span className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Rent / Real Estate Add-Back</span>
             </div>
             {reVal>0&&(
-              <div style={{background:'rgba(217,119,6,0.08)',border:'1px solid rgba(217,119,6,0.2)',borderRadius:4,padding:'6px 10px',fontSize:12,color:'#fbbf24',marginBottom:8}}>
+              <div style={{background:'rgba(217,119,6,0.08)',border:'1px solid rgba(217,119,6,0.2)',borderRadius:4,padding:'6px 10px',fontSize:12,color:'#b45309',marginBottom:8}}>
                 Real estate included in deal — if the business currently leases its space, add back the rent expense below and set RE NOI to 0 (buyer will own the property; occupancy cost becomes debt service).
               </div>
             )}
@@ -609,7 +609,7 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
           <Tog on={state.ytdEnabled} set={v=>set({...state,ytdEnabled:v,ytdThrough:v?state.ytdThrough:'',sdeBasis:state.sdeBasis==='ytd'?'recent':state.sdeBasis})} label="YTD"/>
         </div>
         {hasDupYears&&(
-          <div style={{marginBottom:12,padding:'10px 12px',background:'#3b1d0a',border:'1px solid #b45309',borderRadius:6,fontSize:12,color:'#fdba74'}}>
+          <div style={{marginBottom:12,padding:'10px 12px',background:'#fff7ed',border:'1px solid #b45309',borderRadius:6,fontSize:12,color:'#c2410c'}}>
             Duplicate tax years detected. Edit the year labels so each completed return has a unique year — valuations use the most recent completed tax year, not YTD.
           </div>
         )}
@@ -620,23 +620,23 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
           return (
             <div>
               {/* YTD through-date row — trend analysis only, never valuation basis */}
-              <div style={{display:'flex',alignItems:'center',gap:12,padding:'10px 16px',background:'#0f172a',borderRadius:'8px 8px 0 0',border:'1px solid #1e293b',borderBottom:'none',marginTop:8}}>
-                <span style={{fontSize:11,color:'#64748b',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.06em'}}>YTD Through</span>
+              <div style={{display:'flex',alignItems:'center',gap:12,padding:'10px 16px',background:'#f7f3ee',borderRadius:'8px 8px 0 0',border:'1px solid #e6dfd6',borderBottom:'none',marginTop:8}}>
+                <span style={{fontSize:11,color:'#57534e',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.06em'}}>YTD Through</span>
                 <input type="month" value={state.ytdThrough||''}
                   onChange={e=>set({...state,ytdThrough:e.target.value})}
-                  style={{background:'#1e293b',color:'#e2e8f0',border:'1px solid #334155',borderRadius:4,padding:'3px 8px',fontSize:12,outline:'none'}}/>
-                {months>0&&<span style={{fontSize:11,color:'#94a3b8'}}>{months} month{months!==1?'s':''} of data</span>}
+                  style={{background:'rgba(255,255,255,0.94)',color:'#1c1917',border:'1px solid #e4dcd2',borderRadius:4,padding:'3px 8px',fontSize:12,outline:'none'}}/>
+                {months>0&&<span style={{fontSize:11,color:'#57534e'}}>{months} month{months!==1?'s':''} of data</span>}
                 {annSDE>0&&(
-                  <span style={{marginLeft:'auto',fontSize:12,color:'#a78bfa',fontWeight:700}}>
+                  <span style={{marginLeft:'auto',fontSize:12,color:'#6d28d9',fontWeight:700}}>
                     ✦ Annualized SDE: <span style={{fontFamily:'monospace'}}>{fmtD(annSDE)}</span>
-                    <span style={{fontSize:10,color:'#7c6fcd',fontWeight:400,marginLeft:6}}>
+                    <span style={{fontSize:10,color:'#5b21b6',fontWeight:400,marginLeft:6}}>
                       ({fmtD(calcSDE(state.ytdData).sde)} × {(12/months).toFixed(2)})
                     </span>
                   </span>
                 )}
-                {state.ytdThrough&&months===0&&<span style={{marginLeft:'auto',fontSize:11,color:'#f87171'}}>Full-year — no annualization applied</span>}
+                {state.ytdThrough&&months===0&&<span style={{marginLeft:'auto',fontSize:11,color:'#dc2626'}}>Full-year — no annualization applied</span>}
               </div>
-              <div style={{padding:'8px 16px',background:'#111827',borderLeft:'1px solid #1e293b',borderRight:'1px solid #1e293b',fontSize:11,color:'#94a3b8'}}>
+              <div style={{padding:'8px 16px',background:'#f7f3ee',borderLeft:'1px solid #e6dfd6',borderRight:'1px solid #e6dfd6',fontSize:11,color:'#57534e'}}>
                 YTD is for trend checking only. Market price and valuations use Weighted Avg or Most Recent completed tax year.
               </div>
               <div style={{borderRadius:'0 0 8px 8px',overflow:'hidden'}}>
@@ -647,8 +647,8 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
         })()}
         {/* Buyer's Salary Normalization */}
         <div className="card p-5" style={{marginBottom:20}}>
-          <div style={{fontSize:14,fontWeight:800,color:'#f1f5f9',marginBottom:4}}>Buyer's Salary Normalization</div>
-          <p style={{fontSize:12,color:'#64748b',marginBottom:12}}>
+          <div style={{fontSize:14,fontWeight:800,color:'#292524',marginBottom:4}}>Buyer's Salary Normalization</div>
+          <p style={{fontSize:12,color:'#57534e',marginBottom:12}}>
             A replacement-owner salary the new buyer will need to pay themselves. Defaults to $75,000 and can be edited. It is subtracted from DSCR and cash-flow figures. Fair market multiples use the most recent (or weighted) SDE before this salary.
           </p>
           <div className="grid grid-cols-2 gap-4">
@@ -660,17 +660,17 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
         </div>
         {/* Financial Performance Spread */}
         <div className="card p-5" style={{marginBottom:20}}>
-          <div style={{fontSize:14,fontWeight:800,color:'#f1f5f9',marginBottom:14}}>Financial Performance &amp; Seller's Discretionary Earnings</div>
+          <div style={{fontSize:14,fontWeight:800,color:'#292524',marginBottom:14}}>Financial Performance &amp; Seller's Discretionary Earnings</div>
           <FinancialSpreadTable years={state.ytdEnabled?[...state.years,{...state.ytdData,year:'YTD'}]:state.years} ytdThrough={state.ytdEnabled?state.ytdThrough:''}/>
         </div>
         {/* Advisor Notes */}
-        <div style={{marginTop:20,padding:16,background:'#0f172a',borderRadius:8,border:'1px solid #1e293b'}}>
-          <div style={{fontSize:12,color:'#64748b',marginBottom:8,fontWeight:700,letterSpacing:1,textTransform:'uppercase'}}>Advisor Notes</div>
+        <div style={{marginTop:20,padding:16,background:'#f7f3ee',borderRadius:8,border:'1px solid #e6dfd6'}}>
+          <div style={{fontSize:12,color:'#57534e',marginBottom:8,fontWeight:700,letterSpacing:1,textTransform:'uppercase'}}>Advisor Notes</div>
           <textarea
             value={state.notes||''}
             onChange={e=>set({...state,notes:e.target.value})}
             placeholder="Deal context, conditions, assumptions, red flags, RE details..."
-            style={{width:'100%',minHeight:100,background:'#1e293b',color:'#e2e8f0',border:'1px solid #334155',borderRadius:6,padding:'10px 12px',fontSize:14,fontFamily:'inherit',resize:'vertical',boxSizing:'border-box'}}
+            style={{width:'100%',minHeight:100,background:'rgba(255,255,255,0.94)',color:'#1c1917',border:'1px solid #e4dcd2',borderRadius:6,padding:'10px 12px',fontSize:14,fontFamily:'inherit',resize:'vertical',boxSizing:'border-box'}}
           />
         </div>
       </div>
@@ -685,7 +685,7 @@ const T2 = ({state}) => {
   const base=[...years];
   if(ytdEnabled)base.push({...ytdData,year:'YTD'});
   const data=base.map(y=>{const c=calcSDE(y);return{year:String(y.year),revenue:c.rev,cogs:c.cogs,opx:c.opx,sde:c.sde};});
-  const charts=[{k:'revenue',l:'Total Sales / Revenue',c:'#2eb860'},{k:'cogs',l:'COGS / Cost of Sales',c:'#ef4444'},{k:'opx',l:'Operating Expenses',c:'#ef4444'},{k:'sde',l:'SDE Trend',c:'#2eb860'}];
+  const charts=[{k:'revenue',l:'Total Sales / Revenue',c:'#C4592F'},{k:'cogs',l:'COGS / Cost of Sales',c:'#dc2626'},{k:'opx',l:'Operating Expenses',c:'#dc2626'},{k:'sde',l:'SDE Trend',c:'#C4592F'}];
   return (
     <div>
       <h2 className="text-lg font-bold text-white mb-4">Dashboard</h2>
@@ -742,8 +742,8 @@ const T3 = ({state}) => {
             </div>
           </div>
         ))}
-        <div className="card p-5" style={{borderColor:'#1a5e35'}}>
-          <div className="text-base font-bold mb-4" style={{color:'#2eb860'}}>SDE Summary</div>
+        <div className="card p-5" style={{borderColor:'#e8cfc3'}}>
+          <div className="text-base font-bold mb-4" style={{color:'#C4592F'}}>SDE Summary</div>
           <div className="space-y-3">
             <div>
               <div className="text-sm text-gray-400 mb-1">Weighted Avg SDE</div>
@@ -762,7 +762,7 @@ const T3 = ({state}) => {
                   {rows.slice(1).map((y,i)=>{
                     const prev=calcSDE(rows[i]).rev, cur=calcSDE(y).rev;
                     const g=prev>0?((cur-prev)/prev*100):0;
-                    return <div key={y.year} style={{fontSize:11,fontFamily:'monospace',color:g>=0?'#2eb860':'#ef4444'}}>{rows[i].year}→{y.year}: {g>=0?'+':''}{g.toFixed(1)}%</div>;
+                    return <div key={y.year} style={{fontSize:11,fontFamily:'monospace',color:g>=0?'#C4592F':'#dc2626'}}>{rows[i].year}→{y.year}: {g>=0?'+':''}{g.toFixed(1)}%</div>;
                   })}
                 </div>
               ):null;
@@ -777,14 +777,14 @@ const T3 = ({state}) => {
         </div>
         <div className="card p-4">
           <h3 className="text-sm font-semibold text-gray-300 mb-3">SDE Trend</h3>
-          <LineChart data={chartData} dataKey="sde" color="#2eb860"/>
+          <LineChart data={chartData} dataKey="sde" color="#C4592F"/>
         </div>
       </div>
       {/* Margin % Trends */}
       <div style={{marginBottom:4}}>
-        <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:10}}>Margin Trends</div>
+        <div style={{fontSize:11,fontWeight:700,color:'#44403c',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:10}}>Margin Trends</div>
         <div className="grid grid-cols-3 gap-4">
-          {[{label:'Gross Margin %',k:'gm',color:'#60a5fa'},{label:'EBITDA Margin %',k:'em',color:'#a78bfa'},{label:'SDE Margin %',k:'sm',color:'#2eb860'}].map(ch=>(
+          {[{label:'Gross Margin %',k:'gm',color:'#1d4ed8'},{label:'EBITDA Margin %',k:'em',color:'#6d28d9'},{label:'SDE Margin %',k:'sm',color:'#C4592F'}].map(ch=>(
             <div key={ch.k} className="card p-4">
               <h3 className="text-sm font-semibold text-gray-300 mb-3">{ch.label}</h3>
               <BarChart data={marginData} dataKey={ch.k} color={ch.color} fmtAxis={pctFmt}/>
@@ -810,24 +810,24 @@ const TRatios = ({state}) => {
   const pct=(n,d)=>d>0?n/d*100:null;
   const days=(n,d)=>d>0?n/d*365:null;
   // color: green/yellow/red for ascending thresholds
-  const gc=(v,g,o)=>v==null?'#475569':v>=g?'#2eb860':v>=o?'#f59e0b':'#ef4444';
+  const gc=(v,g,o)=>v==null?'#44403c':v>=g?'#C4592F':v>=o?'#b45309':'#dc2626';
   // color: green/yellow/red for descending thresholds (lower is better)
-  const rc=(v,g,o)=>v==null?'#475569':v<=g?'#2eb860':v<=o?'#f59e0b':'#ef4444';
+  const rc=(v,g,o)=>v==null?'#44403c':v<=g?'#C4592F':v<=o?'#b45309':'#dc2626';
   const fP=v=>v==null?'—':v.toFixed(1)+'%';
   const fR=v=>v==null?'—':v.toFixed(2)+'x';
   const fD=v=>v==null?'—':v.toFixed(0)+' d';
 
   const SH=({title})=>(
-    <tr><td colSpan={yearData.length+1} style={{padding:'12px 0 4px',color:'#60a5fa',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',borderTop:'1px solid #1e2d45'}}>{title}</td></tr>
+    <tr><td colSpan={yearData.length+1} style={{padding:'12px 0 4px',color:'#1d4ed8',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',borderTop:'1px solid #e6dfd6'}}>{title}</td></tr>
   );
   const Row=({label,hint,vals,cols,fmt})=>(
-    <tr style={{borderBottom:'1px solid #0a0f1a'}}>
+    <tr style={{borderBottom:'1px solid #e6dfd6'}}>
       <td style={{padding:'7px 0',fontSize:11,width:'42%'}}>
-        <span style={{color:'#94a3b8'}}>{label}</span>
-        {hint&&<div style={{fontSize:9,color:'#334155',marginTop:1}}>{hint}</div>}
+        <span style={{color:'#57534e'}}>{label}</span>
+        {hint&&<div style={{fontSize:9,color:'#44403c',marginTop:1}}>{hint}</div>}
       </td>
       {yearData.map((d,i)=>(
-        <td key={d.year} style={{textAlign:'right',padding:'7px 10px',fontFamily:'monospace',fontSize:12,color:cols?cols[i]:'#94a3b8',fontWeight:600}}>{fmt(vals[i])}</td>
+        <td key={d.year} style={{textAlign:'right',padding:'7px 10px',fontFamily:'monospace',fontSize:12,color:cols?cols[i]:'#57534e',fontWeight:600}}>{fmt(vals[i])}</td>
       ))}
     </tr>
   );
@@ -838,13 +838,13 @@ const TRatios = ({state}) => {
   return (
     <div>
       <h2 className="text-lg font-bold text-white mb-1">Financial Ratio Analysis</h2>
-      <p style={{fontSize:12,color:'#475569',marginBottom:20}}>Ratios marked — require Balance Sheet data (populate the Balance Sheet tab to unlock them).</p>
+      <p style={{fontSize:12,color:'#44403c',marginBottom:20}}>Ratios marked — require Balance Sheet data (populate the Balance Sheet tab to unlock them).</p>
       <div className="card p-5">
         <table style={{width:'100%',borderCollapse:'collapse'}}>
           <thead>
-            <tr style={{borderBottom:'2px solid #1e2d45'}}>
-              <th style={{textAlign:'left',fontSize:10,color:'#475569',textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,paddingBottom:8,width:'42%'}}>Ratio</th>
-              {yearData.map(d=><th key={d.year} style={{textAlign:'right',padding:'0 10px 8px',fontSize:10,color:'#475569',textTransform:'uppercase',fontWeight:600}}>{d.year}</th>)}
+            <tr style={{borderBottom:'2px solid #e6dfd6'}}>
+              <th style={{textAlign:'left',fontSize:10,color:'#44403c',textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,paddingBottom:8,width:'42%'}}>Ratio</th>
+              {yearData.map(d=><th key={d.year} style={{textAlign:'right',padding:'0 10px 8px',fontSize:10,color:'#44403c',textTransform:'uppercase',fontWeight:600}}>{d.year}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -892,17 +892,17 @@ const TRatios = ({state}) => {
           </tbody>
         </table>
         {hasIndPct&&(
-          <div style={{marginTop:16,padding:'10px 14px',background:'#0a1628',borderRadius:6,border:'1px solid #1e2d45'}}>
-            <div style={{fontSize:10,color:'#a78bfa',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Industry Avg — {ind.name||'Imported'}</div>
+          <div style={{marginTop:16,padding:'10px 14px',background:'#f7f3ee',borderRadius:6,border:'1px solid #e6dfd6'}}>
+            <div style={{fontSize:10,color:'#6d28d9',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Industry Avg — {ind.name||'Imported'}</div>
             <div style={{display:'flex',gap:20,flexWrap:'wrap'}}>
-              {indGM>0&&<span style={{fontSize:11}}><span style={{color:'#64748b'}}>Gross Margin: </span><span style={{fontFamily:'monospace',color:'#e2e8f0',fontWeight:600}}>{indGM.toFixed(1)}%</span></span>}
-              {indCOGS>0&&<span style={{fontSize:11}}><span style={{color:'#64748b'}}>COGS: </span><span style={{fontFamily:'monospace',color:'#e2e8f0',fontWeight:600}}>{indCOGS.toFixed(1)}%</span></span>}
-              {indPT>0&&<span style={{fontSize:11}}><span style={{color:'#64748b'}}>Pre-Tax Profit: </span><span style={{fontFamily:'monospace',color:'#e2e8f0',fontWeight:600}}>{indPT.toFixed(1)}%</span></span>}
-              {indNM>0&&<span style={{fontSize:11}}><span style={{color:'#64748b'}}>Net Margin: </span><span style={{fontFamily:'monospace',color:'#e2e8f0',fontWeight:600}}>{indNM.toFixed(1)}%</span></span>}
+              {indGM>0&&<span style={{fontSize:11}}><span style={{color:'#57534e'}}>Gross Margin: </span><span style={{fontFamily:'monospace',color:'#1c1917',fontWeight:600}}>{indGM.toFixed(1)}%</span></span>}
+              {indCOGS>0&&<span style={{fontSize:11}}><span style={{color:'#57534e'}}>COGS: </span><span style={{fontFamily:'monospace',color:'#1c1917',fontWeight:600}}>{indCOGS.toFixed(1)}%</span></span>}
+              {indPT>0&&<span style={{fontSize:11}}><span style={{color:'#57534e'}}>Pre-Tax Profit: </span><span style={{fontFamily:'monospace',color:'#1c1917',fontWeight:600}}>{indPT.toFixed(1)}%</span></span>}
+              {indNM>0&&<span style={{fontSize:11}}><span style={{color:'#57534e'}}>Net Margin: </span><span style={{fontFamily:'monospace',color:'#1c1917',fontWeight:600}}>{indNM.toFixed(1)}%</span></span>}
             </div>
           </div>
         )}
-        <div style={{marginTop:12,fontSize:10,color:'#334155'}}>🟢 On target · 🟡 Monitor · 🔴 Below target · — Balance sheet data not yet entered</div>
+        <div style={{marginTop:12,fontSize:10,color:'#44403c'}}>🟠 On target · 🟡 Monitor · 🔴 Below target · — Balance sheet data not yet entered</div>
       </div>
     </div>
   );
@@ -995,7 +995,7 @@ const T4 = ({state,set}) => {
                 {loanStructure==='504'&&reVal>0?(
                   <>
                     <div className="text-xs text-gray-500 mt-0.5">{fmtD(bizMoPmt)}/mo 7(a) ({loanAmort}yr) + {fmtD(reMoPmt)}/mo 504 ({reAmort||25}yr @ {re504Rate||6.5}%)</div>
-                    <div className="text-xs font-bold mt-0.5" style={{color:'#2eb860'}}>= {fmtD(bizMoPmt+reMoPmt)}/mo SBA</div>
+                    <div className="text-xs font-bold mt-0.5" style={{color:'#C4592F'}}>= {fmtD(bizMoPmt+reMoPmt)}/mo SBA</div>
                   </>
                 ):(
                   <div className="text-xs text-gray-500 mt-0.5">
@@ -1004,7 +1004,7 @@ const T4 = ({state,set}) => {
                   </div>
                 )}
                 {ppMo>0&&<div className="text-xs text-gray-500 mt-0.5">+ {fmtD(ppMo)}/mo pari passu ({ppAmort}yr @ {ppRate}%)</div>}
-                {(ppMo>0||reMoPmt>0)&&<div className="text-xs font-bold mt-0.5" style={{color:'#2eb860'}}>= {fmtD(monthlyLoan)}/mo total</div>}
+                {(ppMo>0||reMoPmt>0)&&<div className="text-xs font-bold mt-0.5" style={{color:'#C4592F'}}>= {fmtD(monthlyLoan)}/mo total</div>}
               </div>
             )}
             </div>
@@ -1088,7 +1088,7 @@ const T4 = ({state,set}) => {
             <div><span className="lbl">Rate (%)</span><NI value={ppRate||7.5} onChange={v=>set({...state,ppRate:v})} placeholder="7.50"/></div>
             <div><span className="lbl">Term (yrs)</span><NI value={ppAmort||10} onChange={v=>set({...state,ppAmort:v})} placeholder="10"/></div>
           </div>
-          {ppMo>0&&<div className="text-xs mt-1" style={{color:'#fbbf24'}}>{fmtD(ppMo)}/mo pari passu — included in all debt service calculations</div>}
+          {ppMo>0&&<div className="text-xs mt-1" style={{color:'#b45309'}}>{fmtD(ppMo)}/mo pari passu — included in all debt service calculations</div>}
         </div>
       </div>
     </div>
@@ -1184,7 +1184,7 @@ const T5 = ({state,set,primeRate}) => {
         </div>
       </div>
       {reVal>0&&(
-        <div className="card p-4 mb-3" style={{borderColor:'#1e3a5f'}}>
+        <div className="card p-4 mb-3" style={{borderColor:'#e6dfd6'}}>
           <div className="grid grid-cols-3 gap-4 items-start">
             <div>
               <span className="lbl">RE Amortization (yrs)</span>
@@ -1193,12 +1193,12 @@ const T5 = ({state,set,primeRate}) => {
             </div>
             <div>
               <span className="lbl">Real Estate % of Project</span>
-              <div style={{fontSize:18,fontWeight:700,color:'#94a3b8',fontFamily:'monospace'}}>{rePct.toFixed(1)}%</div>
+              <div style={{fontSize:18,fontWeight:700,color:'#57534e',fontFamily:'monospace'}}>{rePct.toFixed(1)}%</div>
               <div className="text-xs text-gray-500 mt-1">{fmtD(reVal)} of {fmtD(totalProjectEst)} total</div>
             </div>
             <div>
               <span className="lbl">Loan Structure</span>
-              <div style={{fontSize:14,fontWeight:700,color:'#60a5fa',fontFamily:'monospace'}}>{(loanStructure||'7a')==='504'?'7(a) + 504':'7(a) Blended'}</div>
+              <div style={{fontSize:14,fontWeight:700,color:'#1d4ed8',fontFamily:'monospace'}}>{(loanStructure||'7a')==='504'?'7(a) + 504':'7(a) Blended'}</div>
               {(loanStructure||'7a')==='7a'?(
                 <div className="text-xs text-gray-500 mt-1">Blended term: {blended5}yr<br/>({rePct.toFixed(0)}% RE×{reAmort||25}yr + {(100-rePct).toFixed(0)}% biz×{loanAmort}yr)</div>
               ):(
@@ -1210,7 +1210,7 @@ const T5 = ({state,set,primeRate}) => {
       )}
       {mp5>0?(
         <div className="mb-4">
-          <div className="text-xs font-semibold mb-1" style={{color:'#60a5fa'}}>Deal DSCR — Actual Loan @ {fmtD(mp5)}{reVal>0?` (includes ${fmtD(reVal)} RE)`:''}</div>
+          <div className="text-xs font-semibold mb-1" style={{color:'#1d4ed8'}}>Deal DSCR — Actual Loan @ {fmtD(mp5)}{reVal>0?` (includes ${fmtD(reVal)} RE)`:''}</div>
           {reVal>0&&(loanStructure||'7a')==='504'&&(
             <div className="text-xs text-gray-500 mb-2">{fmtD(dealBizMo)}/mo 7(a) ({loanAmort}yr @ {loanRate}%) + {fmtD(dealREMo)}/mo 504 ({reAmort||25}yr @ {re504Rate||6.5}%){sfAnn>0?` + ${fmtD(sfPmt)}/mo seller note`:''}</div>
           )}
@@ -1239,7 +1239,7 @@ const T5 = ({state,set,primeRate}) => {
                       <span className="lbl">DSCR ({yd.year} SDE ÷ Deal DS)</span>
                       <div className={`mono font-bold text-xl ${dc}`}>{dscr>0?dscr.toFixed(2):'—'}</div>
                       <div className={`text-xs ${dc}`}>{lbl}</div>
-                      <div className="text-gray-600 mt-1">≥{t.green} green · ≥{t.yellow} yellow · below red</div>
+                      <div className="text-gray-600 mt-1">≥{t.green} on target · ≥{t.yellow} monitor · below minimum</div>
                     </div>
                     <div><span className="lbl">Max Price @ {dscrMin}× DSCR</span><div className="mono text-blue-400">{sde>0?fmtD(mp):'—'}</div></div>
                   </div>
@@ -1270,7 +1270,7 @@ const T5 = ({state,set,primeRate}) => {
                     <span className="lbl">DSCR ({yd.year} SDE ÷ {sfAnn>0?'Total':'SBA'} Debt Svc)</span>
                     <div className={`mono font-bold text-xl ${dc}`}>{dscr>0?dscr.toFixed(2):'—'}</div>
                     <div className={`text-xs ${dc}`}>{lbl}</div>
-                    <div className="text-gray-600 mt-1">≥{t.green} green · ≥{t.yellow} yellow · below red</div>
+                    <div className="text-gray-600 mt-1">≥{t.green} on target · ≥{t.yellow} monitor · below minimum</div>
                   </div>
                   <div><span className="lbl">Max Price @ {dscrMin}× DSCR</span><div className="mono text-blue-400">{sde>0?fmtD(mp):'—'}</div></div>
                 </div>
@@ -1279,10 +1279,10 @@ const T5 = ({state,set,primeRate}) => {
           })}
         </div>
       )}
-      <div className="card p-3 mb-4" style={{borderColor:'#1a5e35'}}>
+      <div className="card p-3 mb-4" style={{borderColor:'#e8cfc3'}}>
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <div className="text-xs font-semibold" style={{color:'#2eb860'}}>SDE × 3 Lender Sizing Reference — {(sdeBasis==='weighted'?'Weighted Avg':'Most Recent')} SDE{hasBuyerSalary?' after buyer\'s salary':''}: {fmtD(basisSDE)}</div>
+            <div className="text-xs font-semibold" style={{color:'#C4592F'}}>SDE × 3 Lender Sizing Reference — {(sdeBasis==='weighted'?'Weighted Avg':'Most Recent')} SDE{hasBuyerSalary?' after buyer\'s salary':''}: {fmtD(basisSDE)}</div>
             <div className="text-xs text-gray-500 mt-0.5">Loan: {fmtD(basisLoan)} · {fmtD(basisMo)}/mo · {fmtD(basisAnn)}/yr{sfAnn>0?` + ${fmtD(sfAnn)}/yr seller note = ${fmtD(totalAnn)}/yr total`:''}</div>
             <div className="text-xs text-gray-500 mt-0.5">Year ratios = year SDE ÷ that debt service. Strong / Marginal / Below Min update with Required DSCR ({dscrMin}×).</div>
           </div>
@@ -1357,20 +1357,20 @@ const T6 = ({state,set,importBalanceSheet}) => {
         <div style={{display:'grid',gridTemplateColumns:'180px repeat(3, 1fr)',gap:'0 12px'}}>
           <div/>
           {state.years.map((y,i)=>(
-            <div key={i} style={{textAlign:'center',paddingBottom:8,borderBottom:'1px solid #1e2d45',marginBottom:8}}>
-              <div style={{fontWeight:700,color:'#60a5fa',fontSize:13,marginBottom:4}}>{y.year}</div>
-              <button onClick={()=>importBalanceSheet(i)} style={{fontSize:10,padding:'3px 8px',background:'#1e293b',color:'#94a3b8',border:'1px solid #334155',borderRadius:4,cursor:'pointer'}}> Import PDF</button>
+            <div key={i} style={{textAlign:'center',paddingBottom:8,borderBottom:'1px solid #e6dfd6',marginBottom:8}}>
+              <div style={{fontWeight:700,color:'#1d4ed8',fontSize:13,marginBottom:4}}>{y.year}</div>
+              <button onClick={()=>importBalanceSheet(i)} style={{fontSize:10,padding:'3px 8px',background:'rgba(255,255,255,0.94)',color:'#57534e',border:'1px solid #e4dcd2',borderRadius:4,cursor:'pointer'}}> Import PDF</button>
             </div>
           ))}
-          <div style={{gridColumn:'1/-1',borderBottom:'1px solid #1e2d45',marginBottom:6}}/>
-          <div style={{fontSize:11,fontWeight:700,color:'#60a5fa',padding:'4px 0',gridColumn:'1/-1'}}>Assets</div>
+          <div style={{gridColumn:'1/-1',borderBottom:'1px solid #e6dfd6',marginBottom:6}}/>
+          <div style={{fontSize:11,fontWeight:700,color:'#1d4ed8',padding:'4px 0',gridColumn:'1/-1'}}>Assets</div>
           {assetFields.map(([f,l])=>[
-            <div key={f+'l'} style={{fontSize:11,color:'#94a3b8',display:'flex',alignItems:'center',padding:'3px 0'}}>{l}</div>,
+            <div key={f+'l'} style={{fontSize:11,color:'#57534e',display:'flex',alignItems:'center',padding:'3px 0'}}>{l}</div>,
             ...bsArr.map((bs,i)=><div key={f+i}><NI value={bs[f]} onChange={v=>setBS(i,f,v)}/></div>)
           ])}
-          <div style={{fontSize:11,fontWeight:700,color:'#f87171',padding:'8px 0 4px',gridColumn:'1/-1'}}>Liabilities &amp; Equity</div>
+          <div style={{fontSize:11,fontWeight:700,color:'#dc2626',padding:'8px 0 4px',gridColumn:'1/-1'}}>Liabilities &amp; Equity</div>
           {liabFields.map(([f,l])=>[
-            <div key={f+'l'} style={{fontSize:11,color:'#94a3b8',display:'flex',alignItems:'center',padding:'3px 0'}}>{l}</div>,
+            <div key={f+'l'} style={{fontSize:11,color:'#57534e',display:'flex',alignItems:'center',padding:'3px 0'}}>{l}</div>,
             ...bsArr.map((bs,i)=><div key={f+i}><NI value={bs[f]} onChange={v=>setBS(i,f,v)}/></div>)
           ])}
         </div>
@@ -1379,8 +1379,8 @@ const T6 = ({state,set,importBalanceSheet}) => {
         <h3 className="text-sm font-bold text-gray-300 mb-3">Benchmark Ratios</h3>
         <table className="w-full">
           <thead><tr className="border-b border-gray-700">
-            <th style={{textAlign:'left',fontSize:11,color:'#475569',fontWeight:600,paddingBottom:6,width:'40%'}}>Metric</th>
-            {state.years.map((y,i)=><th key={i} style={{textAlign:'right',fontSize:11,color:'#60a5fa',fontWeight:700,paddingBottom:6,paddingLeft:8}}>{y.year}</th>)}
+            <th style={{textAlign:'left',fontSize:11,color:'#44403c',fontWeight:600,paddingBottom:6,width:'40%'}}>Metric</th>
+            {state.years.map((y,i)=><th key={i} style={{textAlign:'right',fontSize:11,color:'#1d4ed8',fontWeight:700,paddingBottom:6,paddingLeft:8}}>{y.year}</th>)}
           </tr></thead>
           <tbody>
             {ratioRow('Days Receivables',ratios.map(r=>r.dAR>0?r.dAR.toFixed(1)+' d':'—'))}
@@ -1427,7 +1427,7 @@ const TIndustry = ({state,set,importIndustryReport}) => {
   const badge=(actual,bench,higherBetter=true)=>{
     if(actual===null||actual===undefined||!bench)return null;
     const better=higherBetter?actual>=bench:actual<=bench;
-    return <span style={{marginLeft:6,fontSize:10,fontWeight:700,color:better?'#2eb860':'#f87171'}}>{better?'▲':'▼'}</span>;
+    return <span style={{marginLeft:6,fontSize:10,fontWeight:700,color:better?'#C4592F':'#dc2626'}}>{better?'▲':'▼'}</span>;
   };
 
   const pct=(v,dec=1)=>v!=null?v.toFixed(dec)+'%':'—';
@@ -1437,7 +1437,7 @@ const TIndustry = ({state,set,importIndustryReport}) => {
       <td className="py-2 text-gray-400 text-xs pr-3" style={{width:'30%'}}>{label}</td>
       <td className="py-2 text-right mono text-purple-300 text-xs px-2" style={{width:'17%'}}>{bench!=null&&bench!==''?fmt(pn(bench)):'—'}</td>
       {yearVals.map((v,i)=>(
-        <td key={i} className="py-2 text-right mono text-xs px-2" style={{width:'17%',color:v!==null?'#e2e8f0':'#475569'}}>
+        <td key={i} className="py-2 text-right mono text-xs px-2" style={{width:'17%',color:v!==null?'#1c1917':'#44403c'}}>
           {v!==null?fmt(v):'—'}{badge(v,pn(bench),higherBetter)}
         </td>
       ))}
@@ -1455,19 +1455,19 @@ const TIndustry = ({state,set,importIndustryReport}) => {
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
           <div>
             <h2 className="text-lg font-bold text-white mb-1">Industry Benchmarks</h2>
-            {ind.name&&<div style={{color:'#a78bfa',fontSize:13,fontWeight:600}}>{ind.name}{ind.naics?` · NAICS ${ind.naics}`:''}</div>}
-            {ind.source&&<div style={{color:'#64748b',fontSize:11,marginTop:2}}>{ind.source}{ind.reportYear?` · ${ind.reportYear}`:''}</div>}
+            {ind.name&&<div style={{color:'#6d28d9',fontSize:13,fontWeight:600}}>{ind.name}{ind.naics?` · NAICS ${ind.naics}`:''}</div>}
+            {ind.source&&<div style={{color:'#57534e',fontSize:11,marginTop:2}}>{ind.source}{ind.reportYear?` · ${ind.reportYear}`:''}</div>}
           </div>
-          <button onClick={importIndustryReport} style={{fontSize:11,padding:'6px 12px',background:'#1e293b',color:'#94a3b8',border:'1px solid #334155',borderRadius:6,cursor:'pointer',whiteSpace:'nowrap'}}> Import Industry PDF</button>
+          <button onClick={importIndustryReport} style={{fontSize:11,padding:'6px 12px',background:'rgba(255,255,255,0.94)',color:'#57534e',border:'1px solid #e4dcd2',borderRadius:6,cursor:'pointer',whiteSpace:'nowrap'}}> Import Industry PDF</button>
         </div>
         {!hasData&&(
-          <div style={{color:'#475569',fontSize:12,fontStyle:'italic',padding:'12px 0'}}>No industry data yet. Click "Import Industry PDF" to upload a Business Brokerage Press or BizMiner report and extract benchmarks automatically.</div>
+          <div style={{color:'#44403c',fontSize:12,fontStyle:'italic',padding:'12px 0'}}>No industry data yet. Click "Import Industry PDF" to upload a Business Brokerage Press or BizMiner report and extract benchmarks automatically.</div>
         )}
         {/* Manual overrides */}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8,marginTop:8}}>
           {[['name','Industry Name'],['naics','NAICS Code'],['source','Report Source'],['reportYear','Report Year']].map(([f,l])=>(
             <div key={f}>
-              <div style={{fontSize:10,color:'#64748b',marginBottom:3}}>{l}</div>
+              <div style={{fontSize:10,color:'#57534e',marginBottom:3}}>{l}</div>
               <input className="input-field" style={{fontSize:11}} value={ind[f]||''} onChange={e=>setInd(f,e.target.value)} placeholder={l}/>
             </div>
           ))}
@@ -1479,9 +1479,9 @@ const TIndustry = ({state,set,importIndustryReport}) => {
         <h3 className="text-sm font-bold text-gray-300 mb-3">Income Statement Comparison</h3>
         <table className="w-full">
           <thead><tr className="border-b border-gray-700">
-            <th style={{textAlign:'left',fontSize:10,color:'#475569',fontWeight:600,paddingBottom:6,width:'30%'}}>Metric</th>
-            <th style={{textAlign:'right',fontSize:10,color:'#a78bfa',fontWeight:700,paddingBottom:6,paddingLeft:8,width:'17%'}}>Industry Avg</th>
-            {years.map((y,i)=><th key={i} style={{textAlign:'right',fontSize:10,color:'#60a5fa',fontWeight:700,paddingBottom:6,paddingLeft:8,width:'17%'}}>{y.year}</th>)}
+            <th style={{textAlign:'left',fontSize:10,color:'#44403c',fontWeight:600,paddingBottom:6,width:'30%'}}>Metric</th>
+            <th style={{textAlign:'right',fontSize:10,color:'#6d28d9',fontWeight:700,paddingBottom:6,paddingLeft:8,width:'17%'}}>Industry Avg</th>
+            {years.map((y,i)=><th key={i} style={{textAlign:'right',fontSize:10,color:'#1d4ed8',fontWeight:700,paddingBottom:6,paddingLeft:8,width:'17%'}}>{y.year}</th>)}
           </tr></thead>
           <tbody>
             {row('Gross Margin %',ind.grossMarginPct,actuals.map(a=>a.grossMarginPct))}
@@ -1491,59 +1491,59 @@ const TIndustry = ({state,set,importIndustryReport}) => {
             {row('Net Income %',ind.netMarginPct,actuals.map(a=>a.netMarginPct))}
           </tbody>
         </table>
-        <div style={{fontSize:10,color:'#475569',marginTop:8}}>▲ above benchmark · ▼ below benchmark · Industry Avg from imported report</div>
+        <div style={{fontSize:10,color:'#44403c',marginTop:8}}>▲ above benchmark · ▼ below benchmark · Industry Avg from imported report</div>
       </div>
 
       {/* Valuation Comparison */}
       <div className="card p-4 mb-4">
         <h3 className="text-sm font-bold text-gray-300 mb-1">Valuation Comparison</h3>
-        {recRev>0&&<div style={{fontSize:10,color:'#64748b',marginBottom:10}}>Revenue tier: <span style={{color:'#60a5fa',fontWeight:600}}>{tierLabel}</span> (based on most recent year revenue {fmtD(recRev)})</div>}
+        {recRev>0&&<div style={{fontSize:10,color:'#57534e',marginBottom:10}}>Revenue tier: <span style={{color:'#1d4ed8',fontWeight:600}}>{tierLabel}</span> (based on most recent year revenue {fmtD(recRev)})</div>}
         <table className="w-full">
           <thead><tr className="border-b border-gray-700">
-            <th style={{textAlign:'left',fontSize:10,color:'#475569',fontWeight:600,paddingBottom:6,width:'40%'}}>Metric</th>
-            <th style={{textAlign:'right',fontSize:10,color:'#a78bfa',fontWeight:700,paddingBottom:6,paddingLeft:8}}>Industry</th>
-            <th style={{textAlign:'right',fontSize:10,color:'#60a5fa',fontWeight:700,paddingBottom:6,paddingLeft:8}}>This Deal</th>
+            <th style={{textAlign:'left',fontSize:10,color:'#44403c',fontWeight:600,paddingBottom:6,width:'40%'}}>Metric</th>
+            <th style={{textAlign:'right',fontSize:10,color:'#6d28d9',fontWeight:700,paddingBottom:6,paddingLeft:8}}>Industry</th>
+            <th style={{textAlign:'right',fontSize:10,color:'#1d4ed8',fontWeight:700,paddingBottom:6,paddingLeft:8}}>This Deal</th>
           </tr></thead>
           <tbody>
             <tr className="border-b border-gray-800">
               <td className="py-2 text-gray-400 text-xs pr-3">Rules of Thumb — x SDE</td>
               <td className="py-2 text-right mono text-purple-300 text-xs px-2">{ind.sdeMult?pn(ind.sdeMult)+'×':'—'}</td>
-              <td className="py-2 text-right mono text-xs px-2" style={{color:'#e2e8f0'}}>{askPrice>0&&recSDE>0?(askPrice/recSDE).toFixed(2)+'×':'—'}</td>
+              <td className="py-2 text-right mono text-xs px-2" style={{color:'#1c1917'}}>{askPrice>0&&recSDE>0?(askPrice/recSDE).toFixed(2)+'×':'—'}</td>
             </tr>
             <tr className="border-b border-gray-800">
               <td className="py-2 text-gray-400 text-xs pr-3">Rules of Thumb — x EBITDA</td>
               <td className="py-2 text-right mono text-purple-300 text-xs px-2">{ind.ebitdaMult?pn(ind.ebitdaMult)+'×':'—'}</td>
-              <td className="py-2 text-right mono text-xs px-2" style={{color:'#e2e8f0'}}>{askPrice>0&&recEBITDA>0?(askPrice/recEBITDA).toFixed(2)+'×':'—'}</td>
+              <td className="py-2 text-right mono text-xs px-2" style={{color:'#1c1917'}}>{askPrice>0&&recEBITDA>0?(askPrice/recEBITDA).toFixed(2)+'×':'—'}</td>
             </tr>
             <tr className="border-b border-gray-800">
               <td className="py-2 text-gray-400 text-xs pr-3">Rules of Thumb — % of Annual Sales</td>
               <td className="py-2 text-right mono text-purple-300 text-xs px-2">{ind.revenueMultPct?pn(ind.revenueMultPct)+'%':'—'}</td>
-              <td className="py-2 text-right mono text-xs px-2" style={{color:'#e2e8f0'}}>{askPrice>0&&recRev>0?pct(askPrice/recRev*100):'—'}</td>
+              <td className="py-2 text-right mono text-xs px-2" style={{color:'#1c1917'}}>{askPrice>0&&recRev>0?pct(askPrice/recRev*100):'—'}</td>
             </tr>
             <tr className="border-b border-gray-800">
               <td className="py-2 text-gray-400 text-xs pr-3">MVIC/SDE — {tierLabel} tier</td>
               <td className="py-2 text-right mono text-purple-300 text-xs px-2">{tierSDE>0?tierSDE.toFixed(2)+'×':'—'}</td>
-              <td className="py-2 text-right mono text-xs px-2" style={{color:'#e2e8f0'}}>{askPrice>0&&recSDE>0?(askPrice/recSDE).toFixed(2)+'×':'—'}</td>
+              <td className="py-2 text-right mono text-xs px-2" style={{color:'#1c1917'}}>{askPrice>0&&recSDE>0?(askPrice/recSDE).toFixed(2)+'×':'—'}</td>
             </tr>
             <tr className="border-b border-gray-800">
               <td className="py-2 text-gray-400 text-xs pr-3">MVIC/EBITDA — {tierLabel} tier</td>
               <td className="py-2 text-right mono text-purple-300 text-xs px-2">{tierEBITDA>0?tierEBITDA.toFixed(2)+'×':'—'}</td>
-              <td className="py-2 text-right mono text-xs px-2" style={{color:'#e2e8f0'}}>{askPrice>0&&recEBITDA>0?(askPrice/recEBITDA).toFixed(2)+'×':'—'}</td>
+              <td className="py-2 text-right mono text-xs px-2" style={{color:'#1c1917'}}>{askPrice>0&&recEBITDA>0?(askPrice/recEBITDA).toFixed(2)+'×':'—'}</td>
             </tr>
           </tbody>
         </table>
         {/* Implied values from industry multiples */}
         {(tierSDE>0||pn(ind.sdeMult)>0)&&recSDE>0&&(
-          <div style={{marginTop:12,padding:'10px 12px',background:'#0f1623',borderRadius:6,border:'1px solid #1e2d45'}}>
-            <div style={{fontSize:10,color:'#64748b',marginBottom:6,fontWeight:600}}>IMPLIED VALUE RANGE (based on most recent SDE of {fmtD(recSDE)})</div>
+          <div style={{marginTop:12,padding:'10px 12px',background:'#f7f3ee',borderRadius:6,border:'1px solid #e6dfd6'}}>
+            <div style={{fontSize:10,color:'#57534e',marginBottom:6,fontWeight:600}}>IMPLIED VALUE RANGE (based on most recent SDE of {fmtD(recSDE)})</div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
-              {pn(ind.sdeMultUnder1M)>0&&<div style={{textAlign:'center'}}><div style={{fontSize:9,color:'#64748b'}}>Under $1M tier</div><div style={{color:'#a78bfa',fontWeight:700,fontSize:13}}>{fmtD(recSDE*pn(ind.sdeMultUnder1M))}</div><div style={{fontSize:9,color:'#475569'}}>{pn(ind.sdeMultUnder1M).toFixed(2)}× SDE</div></div>}
-              {pn(ind.sdeMult1to5M)>0&&<div style={{textAlign:'center'}}><div style={{fontSize:9,color:'#64748b'}}>$1M–$5M tier</div><div style={{color:'#a78bfa',fontWeight:700,fontSize:13}}>{fmtD(recSDE*pn(ind.sdeMult1to5M))}</div><div style={{fontSize:9,color:'#475569'}}>{pn(ind.sdeMult1to5M).toFixed(2)}× SDE</div></div>}
-              {pn(ind.sdeMultOver5M)>0&&<div style={{textAlign:'center'}}><div style={{fontSize:9,color:'#64748b'}}>Over $5M tier</div><div style={{color:'#a78bfa',fontWeight:700,fontSize:13}}>{fmtD(recSDE*pn(ind.sdeMultOver5M))}</div><div style={{fontSize:9,color:'#475569'}}>{pn(ind.sdeMultOver5M).toFixed(2)}× SDE</div></div>}
+              {pn(ind.sdeMultUnder1M)>0&&<div style={{textAlign:'center'}}><div style={{fontSize:9,color:'#57534e'}}>Under $1M tier</div><div style={{color:'#6d28d9',fontWeight:700,fontSize:13}}>{fmtD(recSDE*pn(ind.sdeMultUnder1M))}</div><div style={{fontSize:9,color:'#44403c'}}>{pn(ind.sdeMultUnder1M).toFixed(2)}× SDE</div></div>}
+              {pn(ind.sdeMult1to5M)>0&&<div style={{textAlign:'center'}}><div style={{fontSize:9,color:'#57534e'}}>$1M–$5M tier</div><div style={{color:'#6d28d9',fontWeight:700,fontSize:13}}>{fmtD(recSDE*pn(ind.sdeMult1to5M))}</div><div style={{fontSize:9,color:'#44403c'}}>{pn(ind.sdeMult1to5M).toFixed(2)}× SDE</div></div>}
+              {pn(ind.sdeMultOver5M)>0&&<div style={{textAlign:'center'}}><div style={{fontSize:9,color:'#57534e'}}>Over $5M tier</div><div style={{color:'#6d28d9',fontWeight:700,fontSize:13}}>{fmtD(recSDE*pn(ind.sdeMultOver5M))}</div><div style={{fontSize:9,color:'#44403c'}}>{pn(ind.sdeMultOver5M).toFixed(2)}× SDE</div></div>}
             </div>
-            {askPrice>0&&<div style={{marginTop:8,paddingTop:8,borderTop:'1px solid #1e2d45',fontSize:11,color:'#94a3b8'}}>
-              Asking price: <span style={{color:'#fbbf24',fontWeight:700}}>{fmtD(askPrice)}</span>
-              {tierSDE>0&&<span style={{marginLeft:12}}>vs. {tierLabel} tier implied: <span style={{fontWeight:700,color:askPrice<=recSDE*tierSDE*1.1?'#2eb860':'#f87171'}}>{fmtD(recSDE*tierSDE)}</span></span>}
+            {askPrice>0&&<div style={{marginTop:8,paddingTop:8,borderTop:'1px solid #e6dfd6',fontSize:11,color:'#57534e'}}>
+              Asking price: <span style={{color:'#b45309',fontWeight:700}}>{fmtD(askPrice)}</span>
+              {tierSDE>0&&<span style={{marginLeft:12}}>vs. {tierLabel} tier implied: <span style={{fontWeight:700,color:askPrice<=recSDE*tierSDE*1.1?'#C4592F':'#dc2626'}}>{fmtD(recSDE*tierSDE)}</span></span>}
             </div>}
           </div>
         )}
@@ -1555,14 +1555,14 @@ const TIndustry = ({state,set,importIndustryReport}) => {
           <h3 className="text-sm font-bold text-gray-300 mb-3">Industry Multiples — All Tiers</h3>
           <table className="w-full">
             <thead><tr className="border-b border-gray-700">
-              <th style={{textAlign:'left',fontSize:10,color:'#475569',fontWeight:600,paddingBottom:6}}>Revenue Tier</th>
-              <th style={{textAlign:'right',fontSize:10,color:'#60a5fa',fontWeight:700,paddingBottom:6}}>MVIC/SDE</th>
-              <th style={{textAlign:'right',fontSize:10,color:'#34d399',fontWeight:700,paddingBottom:6}}>MVIC/EBITDA</th>
+              <th style={{textAlign:'left',fontSize:10,color:'#44403c',fontWeight:600,paddingBottom:6}}>Revenue Tier</th>
+              <th style={{textAlign:'right',fontSize:10,color:'#1d4ed8',fontWeight:700,paddingBottom:6}}>MVIC/SDE</th>
+              <th style={{textAlign:'right',fontSize:10,color:'#C4592F',fontWeight:700,paddingBottom:6}}>MVIC/EBITDA</th>
             </tr></thead>
             <tbody>
               {[['Under $1M','sdeMultUnder1M','ebitdaMultUnder1M'],['$1M – $5M','sdeMult1to5M','ebitdaMult1to5M'],['Over $5M','sdeMultOver5M','ebitdaMultOver5M']].map(([label,sF,eF])=>(
                 <tr key={label} className="border-b border-gray-800">
-                  <td className="py-2 text-gray-400 text-xs">{label}{tierLabel===label.replace(' Net Sales','')&&<span style={{marginLeft:6,fontSize:9,color:'#60a5fa',fontWeight:700}}>← this deal</span>}</td>
+                  <td className="py-2 text-gray-400 text-xs">{label}{tierLabel===label.replace(' Net Sales','')&&<span style={{marginLeft:6,fontSize:9,color:'#1d4ed8',fontWeight:700}}>← this deal</span>}</td>
                   <td className="py-2 text-right mono text-blue-300 text-xs">{pn(ind[sF])>0?pn(ind[sF]).toFixed(2)+'×':'—'}</td>
                   <td className="py-2 text-right mono text-green-300 text-xs">{pn(ind[eF])>0?pn(ind[eF]).toFixed(2)+'×':'—'}</td>
                 </tr>
@@ -1667,19 +1667,19 @@ const TBuyerROI = ({state,set}) => {
   };
 
   const noData=mp===0||sde===0;
-  const stat=(label,val,color='#e2e8f0',sub)=>(
-    <div style={{textAlign:'center',padding:'12px 16px',background:'#0f1623',borderRadius:8,border:'1px solid #1e2d45'}}>
-      <div style={{fontSize:10,color:'#64748b',marginBottom:4,fontWeight:600,textTransform:'uppercase',letterSpacing:'.04em'}}>{label}</div>
+  const stat=(label,val,color='#1c1917',sub)=>(
+    <div style={{textAlign:'center',padding:'12px 16px',background:'#f7f3ee',borderRadius:8,border:'1px solid #e6dfd6'}}>
+      <div style={{fontSize:10,color:'#57534e',marginBottom:4,fontWeight:600,textTransform:'uppercase',letterSpacing:'.04em'}}>{label}</div>
       <div style={{fontFamily:'monospace',fontWeight:800,fontSize:18,color}}>{val}</div>
-      {sub&&<div style={{fontSize:10,color:'#475569',marginTop:3}}>{sub}</div>}
+      {sub&&<div style={{fontSize:10,color:'#44403c',marginTop:3}}>{sub}</div>}
     </div>
   );
 
   if(noData) return (
     <div>
       <h2 className="text-lg font-bold text-white mb-4">Buyer ROI Analysis</h2>
-      <div className="card p-6" style={{textAlign:'center',color:'#475569',fontSize:13}}>
-        Enter deal data in <strong style={{color:'#94a3b8'}}>Sources & Uses</strong> (market price) and <strong style={{color:'#94a3b8'}}>Income Statement</strong> (SDE) to see buyer ROI analysis.
+      <div className="card p-6" style={{textAlign:'center',color:'#44403c',fontSize:13}}>
+        Enter deal data in <strong style={{color:'#57534e'}}>Sources & Uses</strong> (market price) and <strong style={{color:'#57534e'}}>Income Statement</strong> (SDE) to see buyer ROI analysis.
       </div>
     </div>
   );
@@ -1688,17 +1688,17 @@ const TBuyerROI = ({state,set}) => {
     <div>
       <h2 className="text-lg font-bold text-white mb-1">Buyer ROI Analysis</h2>
       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16,flexWrap:'wrap'}}>
-        <span style={{fontSize:11,color:'#64748b'}}>SDE Basis:</span>
-        <div style={{display:'flex',borderRadius:4,overflow:'hidden',border:'1px solid #334155'}}>
+        <span style={{fontSize:11,color:'#57534e'}}>SDE Basis:</span>
+        <div style={{display:'flex',borderRadius:4,overflow:'hidden',border:'1px solid #e4dcd2'}}>
           {['weighted','recent'].map(b=>(
             <button key={b} onClick={()=>set({...state,sdeBasis:b})}
-              style={{padding:'2px 10px',fontSize:11,cursor:'pointer',background:sdeBasis===b?'#1d4ed8':'#0f172a',color:sdeBasis===b?'#fff':'#94a3b8',border:'none'}}>
+              style={{padding:'2px 10px',fontSize:11,cursor:'pointer',background:sdeBasis===b?'#1d4ed8':'#f7f3ee',color:sdeBasis===b?'#fff':'#57534e',border:'none'}}>
               {b==='weighted'?'Weighted Avg':'Most Recent'}
             </button>
           ))}
         </div>
-        <span style={{fontSize:11,color:'#60a5fa',fontFamily:'monospace'}}>{fmtD(sde)}</span>
-        <span style={{fontSize:11,color:'#64748b',marginLeft:4}}>· Asking Price: <span style={{color:'#60a5fa'}}>{fmtD(mp)}</span></span>
+        <span style={{fontSize:11,color:'#1d4ed8',fontFamily:'monospace'}}>{fmtD(sde)}</span>
+        <span style={{fontSize:11,color:'#57534e',marginLeft:4}}>· Asking Price: <span style={{color:'#1d4ed8'}}>{fmtD(mp)}</span></span>
       </div>
 
       {/* Card 1 — Investment Summary */}
@@ -1712,17 +1712,17 @@ const TBuyerROI = ({state,set}) => {
             ['Working Capital',pn(su?.wc)||0,'From S&U'],
             ['Total Cash to Close',totalCash,'All-in investment'],
           ].map(([l,v,s],i)=>(
-            <div key={i} style={{textAlign:'center',padding:'10px 8px',background:i===4?'#071a0b':'#0f1623',borderRadius:7,border:`1px solid ${i===4?'#1a5e35':'#1e2d45'}`}}>
-              <div style={{fontSize:9,color:'#64748b',marginBottom:3,fontWeight:600,textTransform:'uppercase'}}>{l}</div>
-              <div style={{fontFamily:'monospace',fontWeight:700,fontSize:14,color:i===4?'#2eb860':'#e2e8f0'}}>{fmtD(v)}</div>
-              <div style={{fontSize:9,color:'#475569',marginTop:2}}>{s}</div>
+            <div key={i} style={{textAlign:'center',padding:'10px 8px',background:i===4?'#f8efe8':'#f7f3ee',borderRadius:7,border:`1px solid ${i===4?'#e8cfc3':'#e6dfd6'}`}}>
+              <div style={{fontSize:9,color:'#57534e',marginBottom:3,fontWeight:600,textTransform:'uppercase'}}>{l}</div>
+              <div style={{fontFamily:'monospace',fontWeight:700,fontSize:14,color:i===4?'#C4592F':'#1c1917'}}>{fmtD(v)}</div>
+              <div style={{fontSize:9,color:'#44403c',marginTop:2}}>{s}</div>
             </div>
           ))}
         </div>
-        <div style={{background:'#0d1623',borderRadius:6,padding:'10px 14px',border:'1px solid #1e3a5f',display:'flex',alignItems:'center',gap:8}}>
+        <div style={{background:'#f7f3ee',borderRadius:6,padding:'10px 14px',border:'1px solid #e4dcd2',display:'flex',alignItems:'center',gap:8}}>
           <span style={{fontSize:18}}></span>
-          <span style={{fontSize:12,color:'#93c5fd'}}>
-            <strong style={{color:'#60a5fa'}}>{fmtD(totalCash)}</strong> invested controls a <strong style={{color:'#60a5fa'}}>{fmtD(mp)}</strong> business — <strong style={{color:'#fbbf24'}}>{leverage.toFixed(1)}:1 leverage</strong> via SBA financing
+          <span style={{fontSize:12,color:'#1d4ed8'}}>
+            <strong style={{color:'#1d4ed8'}}>{fmtD(totalCash)}</strong> invested controls a <strong style={{color:'#1d4ed8'}}>{fmtD(mp)}</strong> business — <strong style={{color:'#b45309'}}>{leverage.toFixed(1)}:1 leverage</strong> via SBA financing
           </span>
         </div>
       </div>
@@ -1733,49 +1733,49 @@ const TBuyerROI = ({state,set}) => {
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
           {/* Waterfall */}
           <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
-            <thead><tr style={{borderBottom:'1px solid #1e2d45'}}>
-              <th style={{textAlign:'left',color:'#475569',paddingBottom:6,fontSize:10,fontWeight:600}}>Component</th>
-              <th style={{textAlign:'right',color:'#64748b',paddingBottom:6,fontSize:10}}>Annual</th>
-              <th style={{textAlign:'right',color:'#64748b',paddingBottom:6,fontSize:10}}>Monthly</th>
+            <thead><tr style={{borderBottom:'1px solid #e6dfd6'}}>
+              <th style={{textAlign:'left',color:'#44403c',paddingBottom:6,fontSize:10,fontWeight:600}}>Component</th>
+              <th style={{textAlign:'right',color:'#57534e',paddingBottom:6,fontSize:10}}>Annual</th>
+              <th style={{textAlign:'right',color:'#57534e',paddingBottom:6,fontSize:10}}>Monthly</th>
             </tr></thead>
             <tbody>
-              <tr style={{borderBottom:'1px solid #0f1623'}}>
-                <td style={{padding:'6px 0',color:'#94a3b8'}}>Seller's Discretionary Earnings</td>
-                <td style={{textAlign:'right',fontFamily:'monospace',color:'#2eb860',paddingLeft:8}}>{fmtD(sde)}</td>
-                <td style={{textAlign:'right',fontFamily:'monospace',color:'#2eb860',paddingLeft:8}}>{fmtD(sde/12)}</td>
+              <tr style={{borderBottom:'1px solid #e6dfd6'}}>
+                <td style={{padding:'6px 0',color:'#57534e'}}>Seller's Discretionary Earnings</td>
+                <td style={{textAlign:'right',fontFamily:'monospace',color:'#C4592F',paddingLeft:8}}>{fmtD(sde)}</td>
+                <td style={{textAlign:'right',fontFamily:'monospace',color:'#C4592F',paddingLeft:8}}>{fmtD(sde/12)}</td>
               </tr>
-              <tr style={{borderBottom:'1px solid #0f1623'}}>
-                <td style={{padding:'6px 0',color:'#94a3b8',paddingLeft:8}}>− SBA Loan Payment</td>
-                <td style={{textAlign:'right',fontFamily:'monospace',color:'#f87171',paddingLeft:8}}>({fmtD(sbaAnnual)})</td>
-                <td style={{textAlign:'right',fontFamily:'monospace',color:'#f87171',paddingLeft:8}}>({fmtD(sbaMonthly)})</td>
+              <tr style={{borderBottom:'1px solid #e6dfd6'}}>
+                <td style={{padding:'6px 0',color:'#57534e',paddingLeft:8}}>− SBA Loan Payment</td>
+                <td style={{textAlign:'right',fontFamily:'monospace',color:'#dc2626',paddingLeft:8}}>({fmtD(sbaAnnual)})</td>
+                <td style={{textAlign:'right',fontFamily:'monospace',color:'#dc2626',paddingLeft:8}}>({fmtD(sbaMonthly)})</td>
               </tr>
-              {sfAnnual>0&&<tr style={{borderBottom:'1px solid #0f1623'}}>
-                <td style={{padding:'6px 0',color:'#94a3b8',paddingLeft:8}}>− Seller Financing</td>
-                <td style={{textAlign:'right',fontFamily:'monospace',color:'#f87171',paddingLeft:8}}>({fmtD(sfAnnual)})</td>
-                <td style={{textAlign:'right',fontFamily:'monospace',color:'#f87171',paddingLeft:8}}>({fmtD(sfMonthly)})</td>
+              {sfAnnual>0&&<tr style={{borderBottom:'1px solid #e6dfd6'}}>
+                <td style={{padding:'6px 0',color:'#57534e',paddingLeft:8}}>− Seller Financing</td>
+                <td style={{textAlign:'right',fontFamily:'monospace',color:'#dc2626',paddingLeft:8}}>({fmtD(sfAnnual)})</td>
+                <td style={{textAlign:'right',fontFamily:'monospace',color:'#dc2626',paddingLeft:8}}>({fmtD(sfMonthly)})</td>
               </tr>}
-              <tr style={{borderBottom:'1px solid #1e2d45',background:'#071a0b'}}>
-                <td style={{padding:'7px 0',color:'#2eb860',fontWeight:700}}>Net Cash Flow</td>
-                <td style={{textAlign:'right',fontFamily:'monospace',color:netCF>=0?'#2eb860':'#f87171',fontWeight:700,paddingLeft:8}}>{netCF>=0?fmtD(netCF):`(${fmtD(Math.abs(netCF))})`}</td>
-                <td style={{textAlign:'right',fontFamily:'monospace',color:netCF>=0?'#2eb860':'#f87171',fontWeight:700,paddingLeft:8}}>{netCF>=0?fmtD(netCF/12):`(${fmtD(Math.abs(netCF)/12)})`}</td>
+              <tr style={{borderBottom:'1px solid #e6dfd6',background:'#f8efe8'}}>
+                <td style={{padding:'7px 0',color:'#C4592F',fontWeight:700}}>Net Cash Flow</td>
+                <td style={{textAlign:'right',fontFamily:'monospace',color:netCF>=0?'#C4592F':'#dc2626',fontWeight:700,paddingLeft:8}}>{netCF>=0?fmtD(netCF):`(${fmtD(Math.abs(netCF))})`}</td>
+                <td style={{textAlign:'right',fontFamily:'monospace',color:netCF>=0?'#C4592F':'#dc2626',fontWeight:700,paddingLeft:8}}>{netCF>=0?fmtD(netCF/12):`(${fmtD(Math.abs(netCF)/12)})`}</td>
               </tr>
-              <tr style={{borderBottom:'1px solid #0f1623'}}>
-                <td style={{padding:'6px 0',color:'#94a3b8'}}>+ Equity Built (Loan Paydown)</td>
-                <td style={{textAlign:'right',fontFamily:'monospace',color:'#a78bfa',paddingLeft:8}}>{fmtD(totalEquityY1)}</td>
-                <td style={{textAlign:'right',fontFamily:'monospace',color:'#a78bfa',paddingLeft:8}}>{fmtD(totalEquityY1/12)}</td>
+              <tr style={{borderBottom:'1px solid #e6dfd6'}}>
+                <td style={{padding:'6px 0',color:'#57534e'}}>+ Equity Built (Loan Paydown)</td>
+                <td style={{textAlign:'right',fontFamily:'monospace',color:'#6d28d9',paddingLeft:8}}>{fmtD(totalEquityY1)}</td>
+                <td style={{textAlign:'right',fontFamily:'monospace',color:'#6d28d9',paddingLeft:8}}>{fmtD(totalEquityY1/12)}</td>
               </tr>
-              <tr style={{background:'#0d0f1a'}}>
-                <td style={{padding:'7px 0',color:'#e2e8f0',fontWeight:700}}>Total Economic Return</td>
-                <td style={{textAlign:'right',fontFamily:'monospace',color:'#e2e8f0',fontWeight:700,paddingLeft:8}}>{fmtD(totalReturnY1)}</td>
-                <td style={{textAlign:'right',fontFamily:'monospace',color:'#e2e8f0',fontWeight:700,paddingLeft:8}}>{fmtD(totalReturnY1/12)}</td>
+              <tr style={{background:'#f7f3ee'}}>
+                <td style={{padding:'7px 0',color:'#1c1917',fontWeight:700}}>Total Economic Return</td>
+                <td style={{textAlign:'right',fontFamily:'monospace',color:'#1c1917',fontWeight:700,paddingLeft:8}}>{fmtD(totalReturnY1)}</td>
+                <td style={{textAlign:'right',fontFamily:'monospace',color:'#1c1917',fontWeight:700,paddingLeft:8}}>{fmtD(totalReturnY1/12)}</td>
               </tr>
             </tbody>
           </table>
           {/* Headline metrics */}
           <div style={{display:'flex',flexDirection:'column',gap:8,justifyContent:'center'}}>
-            {stat('Cash-on-Cash Return',cashOnCash.toFixed(1)+'%',cashOnCash>=15?'#2eb860':cashOnCash>=10?'#fbbf24':'#f87171','Net CF ÷ Total Cash Invested')}
-            {stat('Total ROI (incl. equity)',effectiveROI.toFixed(1)+'%','#a78bfa','CF + Loan Paydown ÷ Investment')}
-            {stat('Payback Period',paybackYrs?paybackYrs.toFixed(1)+' yrs':'N/A',paybackYrs&&paybackYrs<7?'#2eb860':'#fbbf24','Years to recover full investment')}
+            {stat('Cash-on-Cash Return',cashOnCash.toFixed(1)+'%',cashOnCash>=15?'#C4592F':cashOnCash>=10?'#b45309':'#dc2626','Net CF ÷ Total Cash Invested')}
+            {stat('Total ROI (incl. equity)',effectiveROI.toFixed(1)+'%','#6d28d9','CF + Loan Paydown ÷ Investment')}
+            {stat('Payback Period',paybackYrs?paybackYrs.toFixed(1)+' yrs':'N/A',paybackYrs&&paybackYrs<7?'#C4592F':'#b45309','Years to recover full investment')}
           </div>
         </div>
       </div>
@@ -1787,7 +1787,7 @@ const TBuyerROI = ({state,set}) => {
           <div style={{display:'flex',gap:8,alignItems:'center'}}>
             {[['growthPct','Growth %','0'],['exitYears','Exit Yr','10'],['exitMultiple',`Exit Mult (auto: ${autoMult}×)`,'']].map(([f,l,ph])=>(
               <div key={f} style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
-                <div style={{fontSize:9,color:'#64748b',marginBottom:2}}>{l}</div>
+                <div style={{fontSize:9,color:'#57534e',marginBottom:2}}>{l}</div>
                 <input className="input-field" style={{width:70,fontSize:11,textAlign:'center'}}
                   value={roi[f]??''} onChange={e=>setROI(f,e.target.value)} placeholder={ph}/>
               </div>
@@ -1796,41 +1796,41 @@ const TBuyerROI = ({state,set}) => {
         </div>
         <div style={{maxHeight:220,overflowY:'auto',marginBottom:12}}>
           <table className="w-full" style={{fontSize:11}}>
-            <thead style={{position:'sticky',top:0,background:'#161b27'}}>
-              <tr style={{borderBottom:'1px solid #1e2d45'}}>
-                <th style={{textAlign:'left',color:'#475569',fontWeight:600,paddingBottom:5,paddingRight:8}}>Yr</th>
-                <th style={{textAlign:'right',color:'#60a5fa',fontWeight:600,paddingBottom:5,paddingLeft:8}}>SDE</th>
-                <th style={{textAlign:'right',color:netCF>=0?'#2eb860':'#f87171',fontWeight:600,paddingBottom:5,paddingLeft:8}}>Annual CF</th>
-                <th style={{textAlign:'right',color:'#94a3b8',fontWeight:600,paddingBottom:5,paddingLeft:8}}>Cumulative CF</th>
+            <thead style={{position:'sticky',top:0,background:'rgba(255,255,255,0.92)'}}>
+              <tr style={{borderBottom:'1px solid #e6dfd6'}}>
+                <th style={{textAlign:'left',color:'#44403c',fontWeight:600,paddingBottom:5,paddingRight:8}}>Yr</th>
+                <th style={{textAlign:'right',color:'#1d4ed8',fontWeight:600,paddingBottom:5,paddingLeft:8}}>SDE</th>
+                <th style={{textAlign:'right',color:netCF>=0?'#C4592F':'#dc2626',fontWeight:600,paddingBottom:5,paddingLeft:8}}>Annual CF</th>
+                <th style={{textAlign:'right',color:'#57534e',fontWeight:600,paddingBottom:5,paddingLeft:8}}>Cumulative CF</th>
               </tr>
             </thead>
             <tbody>
               {yearRows.map(({y,yearSDE,yearCF,cumulativeCF:cumCF})=>(
-                <tr key={y} style={{borderBottom:'1px solid #0f1623',background:y===exitYrs?'#0d1623':'transparent'}}>
-                  <td style={{padding:'4px 8px 4px 0',color:y===exitYrs?'#fbbf24':'#64748b',fontWeight:y===exitYrs?700:400}}>{y}{y===exitYrs&&' ★'}</td>
-                  <td style={{textAlign:'right',fontFamily:'monospace',color:'#60a5fa',paddingLeft:8}}>{fmtD(yearSDE)}</td>
-                  <td style={{textAlign:'right',fontFamily:'monospace',color:yearCF>=0?'#2eb860':'#f87171',paddingLeft:8}}>{yearCF>=0?fmtD(yearCF):`(${fmtD(Math.abs(yearCF))})`}</td>
-                  <td style={{textAlign:'right',fontFamily:'monospace',color:'#94a3b8',paddingLeft:8}}>{fmtD(cumCF)}</td>
+                <tr key={y} style={{borderBottom:'1px solid #e6dfd6',background:y===exitYrs?'#f7f3ee':'transparent'}}>
+                  <td style={{padding:'4px 8px 4px 0',color:y===exitYrs?'#b45309':'#57534e',fontWeight:y===exitYrs?700:400}}>{y}{y===exitYrs&&' ★'}</td>
+                  <td style={{textAlign:'right',fontFamily:'monospace',color:'#1d4ed8',paddingLeft:8}}>{fmtD(yearSDE)}</td>
+                  <td style={{textAlign:'right',fontFamily:'monospace',color:yearCF>=0?'#C4592F':'#dc2626',paddingLeft:8}}>{yearCF>=0?fmtD(yearCF):`(${fmtD(Math.abs(yearCF))})`}</td>
+                  <td style={{textAlign:'right',fontFamily:'monospace',color:'#57534e',paddingLeft:8}}>{fmtD(cumCF)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <div style={{background:'#071a0b',borderRadius:7,padding:'12px 14px',border:'1px solid #1a5e35'}}>
+        <div style={{background:'#f8efe8',borderRadius:7,padding:'12px 14px',border:'1px solid #e8cfc3'}}>
           <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>
             {[
-              ['Cumulative Cash Flow',fmtD(cumulativeCF),'#2eb860'],
-              ['+ Net Exit Proceeds',fmtD(netExitProceeds),'#a78bfa'],
-              ['= Total Wealth Created',fmtD(totalWealth),'#fbbf24'],
-              ['Annualized CAGR',(cagr*100).toFixed(1)+'%',cagr>=0.15?'#2eb860':cagr>=0.10?'#fbbf24':'#f87171'],
+              ['Cumulative Cash Flow',fmtD(cumulativeCF),'#C4592F'],
+              ['+ Net Exit Proceeds',fmtD(netExitProceeds),'#6d28d9'],
+              ['= Total Wealth Created',fmtD(totalWealth),'#b45309'],
+              ['Annualized CAGR',(cagr*100).toFixed(1)+'%',cagr>=0.15?'#C4592F':cagr>=0.10?'#b45309':'#dc2626'],
             ].map(([l,v,c])=>(
               <div key={l} style={{textAlign:'center'}}>
-                <div style={{fontSize:9,color:'#64748b',marginBottom:3,fontWeight:600,textTransform:'uppercase'}}>{l}</div>
+                <div style={{fontSize:9,color:'#57534e',marginBottom:3,fontWeight:600,textTransform:'uppercase'}}>{l}</div>
                 <div style={{fontFamily:'monospace',fontWeight:800,fontSize:15,color:c}}>{v}</div>
               </div>
             ))}
           </div>
-          <div style={{fontSize:10,color:'#475569',marginTop:8}}>Exit value = {exitYrs}-yr SDE × {exitMult}× multiple · Remaining debt deducted · Based on {basisLabel} SDE of {fmtD(sde)}</div>
+          <div style={{fontSize:10,color:'#44403c',marginTop:8}}>Exit value = {exitYrs}-yr SDE × {exitMult}× multiple · Remaining debt deducted · Based on {basisLabel} SDE of {fmtD(sde)}</div>
         </div>
       </div>
 
@@ -1838,32 +1838,32 @@ const TBuyerROI = ({state,set}) => {
       <div className="card p-4">
         <h3 className="text-sm font-bold text-gray-300 mb-3">Exit Scenarios — Year {exitYrs}</h3>
         <table className="w-full" style={{fontSize:12}}>
-          <thead><tr style={{borderBottom:'1px solid #1e2d45'}}>
-            <th style={{textAlign:'left',color:'#475569',fontWeight:600,paddingBottom:6,width:'35%'}}></th>
+          <thead><tr style={{borderBottom:'1px solid #e6dfd6'}}>
+            <th style={{textAlign:'left',color:'#44403c',fontWeight:600,paddingBottom:6,width:'35%'}}></th>
             {scenarios.map(s=>(
-              <th key={s.label} style={{textAlign:'center',color:s.label==='Market'?'#fbbf24':'#64748b',fontWeight:700,paddingBottom:6,paddingLeft:8}}>{s.label}<div style={{fontSize:9,fontWeight:400,color:'#475569'}}>{s.mult.toFixed(1)}× SDE</div></th>
+              <th key={s.label} style={{textAlign:'center',color:s.label==='Market'?'#b45309':'#57534e',fontWeight:700,paddingBottom:6,paddingLeft:8}}>{s.label}<div style={{fontSize:9,fontWeight:400,color:'#44403c'}}>{s.mult.toFixed(1)}× SDE</div></th>
             ))}
           </tr></thead>
           <tbody>
             {[
               ['Business Value at Exit', s=>fmtD(exitSDE*s.mult), ''],
-              ['− Remaining Debt', ()=>`(${fmtD(sbaRem+sfRem)})`, '#f87171'],
-              ['+ Cumulative Cash Flow', ()=>fmtD(cumulativeCF), '#2eb860'],
-              ['= Total Return', s=>fmtD(scenarioCalc(s.mult).total), '#fbbf24', true],
-              ['Total ROI on Investment', s=>scenarioCalc(s.mult).roi2.toFixed(0)+'%', '#a78bfa', true],
-              ['Annualized CAGR', s=>(scenarioCalc(s.mult).cagr2*100).toFixed(1)+'%', '#34d399', true],
+              ['− Remaining Debt', ()=>`(${fmtD(sbaRem+sfRem)})`, '#dc2626'],
+              ['+ Cumulative Cash Flow', ()=>fmtD(cumulativeCF), '#C4592F'],
+              ['= Total Return', s=>fmtD(scenarioCalc(s.mult).total), '#b45309', true],
+              ['Total ROI on Investment', s=>scenarioCalc(s.mult).roi2.toFixed(0)+'%', '#6d28d9', true],
+              ['Annualized CAGR', s=>(scenarioCalc(s.mult).cagr2*100).toFixed(1)+'%', '#C4592F', true],
             ].map(([label,valFn,color,bold])=>(
-              <tr key={label} style={{borderBottom:'1px solid #0f1623'}}>
-                <td style={{padding:'6px 0',color:'#94a3b8',fontSize:11}}>{label}</td>
+              <tr key={label} style={{borderBottom:'1px solid #e6dfd6'}}>
+                <td style={{padding:'6px 0',color:'#57534e',fontSize:11}}>{label}</td>
                 {scenarios.map(s=>{
                   const v=typeof valFn==='function'?valFn(s):valFn;
-                  return <td key={s.label} style={{textAlign:'center',fontFamily:'monospace',paddingLeft:8,color:color||'#e2e8f0',fontWeight:bold?700:400}}>{v}</td>;
+                  return <td key={s.label} style={{textAlign:'center',fontFamily:'monospace',paddingLeft:8,color:color||'#1c1917',fontWeight:bold?700:400}}>{v}</td>;
                 })}
               </tr>
             ))}
           </tbody>
         </table>
-        <div style={{fontSize:10,color:'#475569',marginTop:10}}>* Exit SDE = {fmtD(exitSDE)} (Year {exitYrs} with {(growth*100).toFixed(1)}% annual growth) · Remaining SBA loan balance: {fmtD(sbaRem)}</div>
+        <div style={{fontSize:10,color:'#44403c',marginTop:10}}>* Exit SDE = {fmtD(exitSDE)} (Year {exitYrs} with {(growth*100).toFixed(1)}% annual growth) · Remaining SBA loan balance: {fmtD(sbaRem)}</div>
       </div>
     </div>
   );
@@ -1939,29 +1939,29 @@ const TSeller = ({state, set}) => {
   const advisorMetrics = dscrMetrics(advisorPrice);
   const max125Metrics = dscrMetrics(max125);
 
-  const dscrColor = d => d>=1.5 ? '#2eb860' : d>=dscrMin ? '#fbbf24' : '#f87171';
-  const cashColor = v => v>0 ? '#2eb860' : '#f87171';
+  const dscrColor = d => d>=1.5 ? '#C4592F' : d>=dscrMin ? '#b45309' : '#dc2626';
+  const cashColor = v => v>0 ? '#C4592F' : '#dc2626';
   const statusBadge = m => {
-    if(!m) return <span style={{color:'#475569'}}>—</span>;
-    if(m.adjDSCR>=1.5) return <span style={{color:'#2eb860',fontWeight:700}}>✅ Strong</span>;
-    if(m.adjDSCR>=dscrMin) return <span style={{color:'#fbbf24',fontWeight:700}}>⚠ Marginal</span>;
-    return <span style={{color:'#f87171',fontWeight:700}}>❌ Below Min</span>;
+    if(!m) return <span style={{color:'#44403c'}}>—</span>;
+    if(m.adjDSCR>=1.5) return <span style={{color:'#C4592F',fontWeight:700}}>✅ Strong</span>;
+    if(m.adjDSCR>=dscrMin) return <span style={{color:'#b45309',fontWeight:700}}>⚠ Marginal</span>;
+    return <span style={{color:'#dc2626',fontWeight:700}}>❌ Below Min</span>;
   };
 
   const prices = [askingPrice, advisorPrice, max125];
   const mets = [askMetrics, advisorMetrics, max125Metrics];
   const colLabels = ["Seller's Price", "Advisor's Price", `Max @ ${dscrMin}×`];
-  const colColors = ['#f87171', '#2eb860', '#60a5fa'];
+  const colColors = ['#dc2626', '#C4592F', '#1d4ed8'];
 
   const adjSDE = sde - buyerSalary;
   const contAmt = sde * (contingencyPct/100);
 
   const tRow = (lbl, vals, getColor, bold=false, isDscr=false) => (
-    <tr style={{borderBottom:'1px solid #0d1117', background:bold?'#071a0b':'transparent'}}>
-      <td style={{padding:'5px 0',color:'#94a3b8',fontSize:11,fontWeight:bold?700:400,paddingLeft:bold?0:8}}>{lbl}</td>
+    <tr style={{borderBottom:'1px solid #efe8e0', background:bold?'#f8efe8':'transparent'}}>
+      <td style={{padding:'5px 0',color:'#57534e',fontSize:11,fontWeight:bold?700:400,paddingLeft:bold?0:8}}>{lbl}</td>
       {vals.map((v,i) => v==null
-        ? <td key={i} style={{textAlign:'right',color:'#475569',padding:'5px 12px'}}>—</td>
-        : <td key={i} style={{textAlign:'right',fontFamily:'monospace',fontSize:isDscr?13:11,fontWeight:isDscr||bold?700:400,color:getColor?getColor(v,i):'#e2e8f0',padding:'5px 12px'}}>
+        ? <td key={i} style={{textAlign:'right',color:'#44403c',padding:'5px 12px'}}>—</td>
+        : <td key={i} style={{textAlign:'right',fontFamily:'monospace',fontSize:isDscr?13:11,fontWeight:isDscr||bold?700:400,color:getColor?getColor(v,i):'#1c1917',padding:'5px 12px'}}>
             {isDscr ? v.toFixed(2) : fmtD(v)}
           </td>
       )}
@@ -1995,18 +1995,18 @@ const TSeller = ({state, set}) => {
     <div>
       <h2 className="text-lg font-bold text-white mb-1">Seller Reality Check</h2>
       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16,flexWrap:'wrap'}}>
-        <span style={{fontSize:11,color:'#64748b'}}>SDE Basis:</span>
-        <div style={{display:'flex',borderRadius:4,overflow:'hidden',border:'1px solid #334155'}}>
+        <span style={{fontSize:11,color:'#57534e'}}>SDE Basis:</span>
+        <div style={{display:'flex',borderRadius:4,overflow:'hidden',border:'1px solid #e4dcd2'}}>
           {['weighted','recent'].map(b=>(
             <button key={b} onClick={()=>set({...state,sdeBasis:b})}
-              style={{padding:'2px 10px',fontSize:11,cursor:'pointer',background:sdeBasis===b?'#1d4ed8':'#0f172a',color:sdeBasis===b?'#fff':'#94a3b8',border:'none'}}>
+              style={{padding:'2px 10px',fontSize:11,cursor:'pointer',background:sdeBasis===b?'#1d4ed8':'#f7f3ee',color:sdeBasis===b?'#fff':'#57534e',border:'none'}}>
               {b==='weighted'?'Weighted Avg':'Most Recent'}
             </button>
           ))}
         </div>
-        <span style={{fontSize:11,color:'#60a5fa',fontFamily:'monospace'}}>{basisLabel} — {fmtD(sde)}</span>
-        {advisorPrice>0&&<span style={{fontSize:11,color:'#64748b'}}>· Advisor: <span style={{color:'#60a5fa'}}>{fmtD(advisorPrice)}</span></span>}
-        <span style={{fontSize:11,color:'#475569'}}>· {loanRate||10.75}% / {(loanStructure||'7a')==='504'?`7(a)+504`:`${blendedAmortS}yr`} / {dpPct||10}% down</span>
+        <span style={{fontSize:11,color:'#1d4ed8',fontFamily:'monospace'}}>{basisLabel} — {fmtD(sde)}</span>
+        {advisorPrice>0&&<span style={{fontSize:11,color:'#57534e'}}>· Advisor: <span style={{color:'#1d4ed8'}}>{fmtD(advisorPrice)}</span></span>}
+        <span style={{fontSize:11,color:'#44403c'}}>· {loanRate||10.75}% / {(loanStructure||'7a')==='504'?`7(a)+504`:`${blendedAmortS}yr`} / {dpPct||10}% down</span>
       </div>
 
       {/* Section 1 — Inputs */}
@@ -2027,7 +2027,7 @@ const TSeller = ({state, set}) => {
               onChange={e=>setSeller('contingencyPct',e.target.value)} placeholder="10"/>
           </div>
         </div>
-        <div style={{fontSize:10,color:'#334155',marginTop:8}}>
+        <div style={{fontSize:10,color:'#44403c',marginTop:8}}>
           Buyer's Salary is set globally on the Income Statement tab's normalization section — editing it here updates it everywhere. Loan terms (rate, amortization, down payment %) are pulled from Sources & Uses / DSCR tab. Advisor's recommended price is pulled from Sources & Uses.
         </div>
       </div>
@@ -2036,58 +2036,58 @@ const TSeller = ({state, set}) => {
       <div className="card p-4 mb-4">
         <h3 className="text-sm font-bold text-gray-300 mb-3">Price Comparison</h3>
         {sde===0 ? (
-          <div style={{color:'#475569',fontSize:13,textAlign:'center',padding:'20px 0'}}>
+          <div style={{color:'#44403c',fontSize:13,textAlign:'center',padding:'20px 0'}}>
             Enter financial data in the Income Statement tab to enable this analysis.
           </div>
         ) : (
           <div style={{overflowX:'auto'}}>
             <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
               <thead>
-                <tr style={{borderBottom:'2px solid #1e2d45'}}>
-                  <th style={{textAlign:'left',color:'#475569',fontSize:10,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.06em',padding:'6px 0',width:'36%'}}>Metric</th>
+                <tr style={{borderBottom:'2px solid #e6dfd6'}}>
+                  <th style={{textAlign:'left',color:'#44403c',fontSize:10,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.06em',padding:'6px 0',width:'36%'}}>Metric</th>
                   {colLabels.map((l,i)=>(
                     <th key={i} style={{textAlign:'right',color:colColors[i],fontSize:11,fontWeight:700,padding:'6px 12px',textTransform:'uppercase',letterSpacing:'0.04em'}}>{l}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {tRow('Asking Price', prices.map(p=>p>0?p:null), ()=>'#e2e8f0', true)}
-                {tRow(`Down Payment (${dpPct||10}%)`, prices.map(p=>p>0?p*dp:null), ()=>'#94a3b8')}
-                {tRow('SBA Loan', prices.map(p=>p>0?p*(1-dp):null), ()=>'#94a3b8')}
-                {tRow('Monthly Payment', mets.map(m=>m?m.monthlyPmt:null), ()=>'#fbbf24')}
-                <tr style={{borderBottom:'2px solid #1e2d45'}}>
-                  <td style={{padding:'5px 0',color:'#94a3b8',fontSize:11}}>Annual Debt Service</td>
+                {tRow('Asking Price', prices.map(p=>p>0?p:null), ()=>'#1c1917', true)}
+                {tRow(`Down Payment (${dpPct||10}%)`, prices.map(p=>p>0?p*dp:null), ()=>'#57534e')}
+                {tRow('SBA Loan', prices.map(p=>p>0?p*(1-dp):null), ()=>'#57534e')}
+                {tRow('Monthly Payment', mets.map(m=>m?m.monthlyPmt:null), ()=>'#b45309')}
+                <tr style={{borderBottom:'2px solid #e6dfd6'}}>
+                  <td style={{padding:'5px 0',color:'#57534e',fontSize:11}}>Annual Debt Service</td>
                   {mets.map((m,i)=> m
-                    ? <td key={i} style={{textAlign:'right',fontFamily:'monospace',fontSize:11,color:'#f87171',padding:'5px 12px'}}>{fmtD(m.annualDS)}</td>
-                    : <td key={i} style={{textAlign:'right',color:'#475569',padding:'5px 12px'}}>—</td>
+                    ? <td key={i} style={{textAlign:'right',fontFamily:'monospace',fontSize:11,color:'#dc2626',padding:'5px 12px'}}>{fmtD(m.annualDS)}</td>
+                    : <td key={i} style={{textAlign:'right',color:'#44403c',padding:'5px 12px'}}>—</td>
                   )}
                 </tr>
-                {tRow('SDE Available', prices.map(()=>sde), ()=>'#2eb860', true)}
-                {tRow('− Buyer Salary', prices.map(()=>buyerSalary>0?buyerSalary:0), ()=>'#94a3b8')}
-                <tr style={{borderBottom:'2px solid #1e2d45', background:'#071a0b'}}>
-                  <td style={{padding:'5px 0',color:'#94a3b8',fontSize:11,fontWeight:700}}>= Adjusted SDE</td>
+                {tRow('SDE Available', prices.map(()=>sde), ()=>'#C4592F', true)}
+                {tRow('− Buyer Salary', prices.map(()=>buyerSalary>0?buyerSalary:0), ()=>'#57534e')}
+                <tr style={{borderBottom:'2px solid #e6dfd6', background:'#f8efe8'}}>
+                  <td style={{padding:'5px 0',color:'#57534e',fontSize:11,fontWeight:700}}>= Adjusted SDE</td>
                   {prices.map((_,i)=>(
-                    <td key={i} style={{textAlign:'right',fontFamily:'monospace',fontSize:11,fontWeight:700,color:adjSDE>=0?'#2eb860':'#f87171',padding:'5px 12px'}}>{fmtD(adjSDE)}</td>
+                    <td key={i} style={{textAlign:'right',fontFamily:'monospace',fontSize:11,fontWeight:700,color:adjSDE>=0?'#C4592F':'#dc2626',padding:'5px 12px'}}>{fmtD(adjSDE)}</td>
                   ))}
                 </tr>
                 {tRow('Raw DSCR', mets.map(m=>m?m.rawDSCR:null), (v)=>dscrColor(v), false, true)}
-                <tr style={{borderBottom:'2px solid #1e2d45'}}>
-                  <td style={{padding:'5px 0',color:'#94a3b8',fontSize:11,fontWeight:700}}>Adj. DSCR (salary-adjusted)</td>
+                <tr style={{borderBottom:'2px solid #e6dfd6'}}>
+                  <td style={{padding:'5px 0',color:'#57534e',fontSize:11,fontWeight:700}}>Adj. DSCR (salary-adjusted)</td>
                   {mets.map((m,i)=> m
                     ? <td key={i} style={{textAlign:'right',fontFamily:'monospace',fontSize:14,fontWeight:800,color:dscrColor(m.adjDSCR),padding:'5px 12px'}}>{m.adjDSCR.toFixed(2)}</td>
-                    : <td key={i} style={{textAlign:'right',color:'#475569',padding:'5px 12px'}}>—</td>
+                    : <td key={i} style={{textAlign:'right',color:'#44403c',padding:'5px 12px'}}>—</td>
                   )}
                 </tr>
-                {tRow(`− Contingency Reserve (${contingencyPct}%)`, prices.map(()=>contAmt), ()=>'#94a3b8')}
-                <tr style={{borderBottom:'1px solid #1e2d45', background:'#071a0b'}}>
-                  <td style={{padding:'5px 0',color:'#94a3b8',fontSize:11,fontWeight:700}}>= Cash Left Over</td>
+                {tRow(`− Contingency Reserve (${contingencyPct}%)`, prices.map(()=>contAmt), ()=>'#57534e')}
+                <tr style={{borderBottom:'1px solid #e6dfd6', background:'#f8efe8'}}>
+                  <td style={{padding:'5px 0',color:'#57534e',fontSize:11,fontWeight:700}}>= Cash Left Over</td>
                   {mets.map((m,i)=> m
                     ? <td key={i} style={{textAlign:'right',fontFamily:'monospace',fontSize:14,fontWeight:800,color:cashColor(m.cashLeft),padding:'5px 12px'}}>{fmtD(m.cashLeft)}</td>
-                    : <td key={i} style={{textAlign:'right',color:'#475569',padding:'5px 12px'}}>—</td>
+                    : <td key={i} style={{textAlign:'right',color:'#44403c',padding:'5px 12px'}}>—</td>
                   )}
                 </tr>
                 <tr>
-                  <td style={{padding:'7px 0',color:'#94a3b8',fontSize:11,fontWeight:700}}>Lender Status</td>
+                  <td style={{padding:'7px 0',color:'#57534e',fontSize:11,fontWeight:700}}>Lender Status</td>
                   {mets.map((m,i)=>(
                     <td key={i} style={{textAlign:'right',padding:'7px 12px'}}>{statusBadge(m)}</td>
                   ))}
@@ -2101,34 +2101,34 @@ const TSeller = ({state, set}) => {
       {/* Section 3 — What Price Works? */}
       <div className="card p-4 mb-4">
         <h3 className="text-sm font-bold text-gray-300 mb-1">What Price Works?</h3>
-        <p style={{fontSize:11,color:'#64748b',marginBottom:12}}>Maximum supportable price at each DSCR target, with and without buyer salary</p>
+        <p style={{fontSize:11,color:'#57534e',marginBottom:12}}>Maximum supportable price at each DSCR target, with and without buyer salary</p>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
           {dscrTargets.map(t=>(
             <React.Fragment key={t.value}>
-              <div style={{background:'#0f1623',border:'1px solid #1e2d45',borderRadius:8,padding:'12px 14px'}}>
-                <div style={{fontSize:9,color:'#64748b',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:4}}>
+              <div style={{background:'#f7f3ee',border:'1px solid #e6dfd6',borderRadius:8,padding:'12px 14px'}}>
+                <div style={{fontSize:9,color:'#57534e',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:4}}>
                   {t.label} {t.sub} — No Salary
                 </div>
-                <div style={{fontFamily:'monospace',fontWeight:800,fontSize:18,color:sde>0?'#2eb860':'#475569'}}>
+                <div style={{fontFamily:'monospace',fontWeight:800,fontSize:18,color:sde>0?'#C4592F':'#44403c'}}>
                   {sde>0 ? fmtD(maxSupportable(t.value,0)) : '—'}
                 </div>
-                <div style={{fontSize:10,color:'#475569',marginTop:3}}>without buyer salary</div>
+                <div style={{fontSize:10,color:'#44403c',marginTop:3}}>without buyer salary</div>
               </div>
-              <div style={{background:buyerSalary>0?'#071a0b':'#0d1117',border:`1px solid ${buyerSalary>0?'#1a5e35':'#1e2d45'}`,borderRadius:8,padding:'12px 14px'}}>
-                <div style={{fontSize:9,color:'#64748b',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:4}}>
+              <div style={{background:buyerSalary>0?'#f8efe8':'#ffffff',border:`1px solid ${buyerSalary>0?'#e8cfc3':'#e6dfd6'}`,borderRadius:8,padding:'12px 14px'}}>
+                <div style={{fontSize:9,color:'#57534e',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:4}}>
                   {t.label} {t.sub} — With Salary
                 </div>
-                <div style={{fontFamily:'monospace',fontWeight:800,fontSize:18,color:sde>0&&buyerSalary>0?'#60a5fa':'#475569'}}>
+                <div style={{fontFamily:'monospace',fontWeight:800,fontSize:18,color:sde>0&&buyerSalary>0?'#1d4ed8':'#44403c'}}>
                   {sde>0 ? fmtD(maxSupportable(t.value,buyerSalary)) : '—'}
                 </div>
-                <div style={{fontSize:10,color:'#475569',marginTop:3}}>
+                <div style={{fontSize:10,color:'#44403c',marginTop:3}}>
                   {buyerSalary>0 ? `after ${fmtD(buyerSalary)}/yr salary` : 'enter salary above'}
                 </div>
               </div>
             </React.Fragment>
           ))}
         </div>
-        <div style={{marginTop:8,fontSize:10,color:'#334155'}}>
+        <div style={{marginTop:8,fontSize:10,color:'#44403c'}}>
           Based on {basisLabel} SDE of {fmtD(sde)} · {loanRate||10.75}% / {loanAmort||10}yr / {dpPct||10}% down
         </div>
       </div>
@@ -2138,11 +2138,11 @@ const TSeller = ({state, set}) => {
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
           <h3 className="text-sm font-bold text-gray-300">Advisor Talking Points</h3>
           <button onClick={copyTP}
-            style={{fontSize:11,background:'#1a3a1a',color:'#6de09a',border:'1px solid #1a5e35',borderRadius:5,padding:'5px 12px',cursor:'pointer'}}>
+            style={{fontSize:11,background:'#C4592F',color:'#ffffff',border:'1px solid #e8cfc3',borderRadius:5,padding:'5px 12px',cursor:'pointer'}}>
             {copied ? '✓ Copied!' : ' Copy'}
           </button>
         </div>
-        <div style={{background:'#071a07',border:'1px solid #1a5e35',borderRadius:7,padding:'14px 16px',fontSize:13,color:'#94a3b8',lineHeight:1.9,fontStyle:'italic'}}>
+        <div style={{background:'#fff7f3',border:'1px solid #e8cfc3',borderRadius:7,padding:'14px 16px',fontSize:13,color:'#57534e',lineHeight:1.9,fontStyle:'italic'}}>
           {talkingPoints()}
         </div>
       </div>
@@ -2199,21 +2199,21 @@ const T7 = ({state,set}) => {
 
   // Waterfall rows for right panel
   const wf=[
-    {l:'Gross Sale Price',v:gross,c:'#2eb860',sign:'+'},
-    ...(cashAdj>0?[{l:'Cash (Balance Sheet)',v:cashAdj,c:'#2eb860',sign:'+'}]:[]),
-    ...(mort>0?[{l:'Less: Mortgage / Debt Payoff',v:mort,c:'#f87171',sign:'-'}]:[]),
-    ...(apDeduct>0?[{l:'Less: Accounts Payable',v:apDeduct,c:'#f87171',sign:'-'}]:[]),
-    ...(ltdDeduct>0?[{l:'Less: Long-Term Debt',v:ltdDeduct,c:'#f87171',sign:'-'}]:[]),
-    ...(commAmt>0?[{l:`Less: Commission (${(commPct*100).toFixed(0)}%)`,v:commAmt,c:'#f87171',sign:'-'}]:[]),
-    ...(legal>0?[{l:'Less: Legal / Attorney Fees',v:legal,c:'#f87171',sign:'-'}]:[]),
-    ...(sbaFeeVal>0?[{l:`Less: SBA Fee${sbaIsAuto?' (auto)':''}`,v:sbaFeeVal,c:'#f87171',sign:'-'}]:[]),
-    ...(closingVal>0?[{l:`Less: Closing Costs${closingIsAuto?' (auto)':''}`,v:closingVal,c:'#f87171',sign:'-'}]:[]),
-    ...customDeds.filter(d=>pn(d.amount)>0).map(d=>({l:`Less: ${d.label||'Custom'}`,v:pn(d.amount),c:'#f87171',sign:'-'})),
-    {l:'Pre-Tax Proceeds',v:preTax,c:preTax>=0?'#fbbf24':'#f87171',sign:'+',bold:true},
-    ...(taxAmt>0?[{l:`Less: Tax on Gain (${(taxRate*100).toFixed(0)}%)`,v:taxAmt,c:'#f87171',sign:'-'}]:[]),
+    {l:'Gross Sale Price',v:gross,c:'#C4592F',sign:'+'},
+    ...(cashAdj>0?[{l:'Cash (Balance Sheet)',v:cashAdj,c:'#C4592F',sign:'+'}]:[]),
+    ...(mort>0?[{l:'Less: Mortgage / Debt Payoff',v:mort,c:'#dc2626',sign:'-'}]:[]),
+    ...(apDeduct>0?[{l:'Less: Accounts Payable',v:apDeduct,c:'#dc2626',sign:'-'}]:[]),
+    ...(ltdDeduct>0?[{l:'Less: Long-Term Debt',v:ltdDeduct,c:'#dc2626',sign:'-'}]:[]),
+    ...(commAmt>0?[{l:`Less: Commission (${(commPct*100).toFixed(0)}%)`,v:commAmt,c:'#dc2626',sign:'-'}]:[]),
+    ...(legal>0?[{l:'Less: Legal / Attorney Fees',v:legal,c:'#dc2626',sign:'-'}]:[]),
+    ...(sbaFeeVal>0?[{l:`Less: SBA Fee${sbaIsAuto?' (auto)':''}`,v:sbaFeeVal,c:'#dc2626',sign:'-'}]:[]),
+    ...(closingVal>0?[{l:`Less: Closing Costs${closingIsAuto?' (auto)':''}`,v:closingVal,c:'#dc2626',sign:'-'}]:[]),
+    ...customDeds.filter(d=>pn(d.amount)>0).map(d=>({l:`Less: ${d.label||'Custom'}`,v:pn(d.amount),c:'#dc2626',sign:'-'})),
+    {l:'Pre-Tax Proceeds',v:preTax,c:preTax>=0?'#b45309':'#dc2626',sign:'+',bold:true},
+    ...(taxAmt>0?[{l:`Less: Tax on Gain (${(taxRate*100).toFixed(0)}%)`,v:taxAmt,c:'#dc2626',sign:'-'}]:[]),
   ];
 
-  const Sec=({label,color='#2eb860',children})=>(
+  const Sec=({label,color='#C4592F',children})=>(
     <div className="card p-4">
       <div className="text-xs font-bold uppercase tracking-wider mb-3" style={{color}}>{label}</div>
       {children}
@@ -2230,7 +2230,7 @@ const T7 = ({state,set}) => {
         <div className="space-y-3">
 
           {/* Gross Sale Price */}
-          <Sec label="Gross Sale Price" color="#2eb860">
+          <Sec label="Gross Sale Price" color="#C4592F">
             {grossIsAuto
               ?<><div className="calc-field font-bold text-green-400">{fmtD(gross)}</div>
                  <div className="text-xs text-gray-500 mt-1">{grossLabel}</div></>
@@ -2240,7 +2240,7 @@ const T7 = ({state,set}) => {
           </Sec>
 
           {/* Working Capital Add-back */}
-          <Sec label="Working Capital Additions" color="#2eb860">
+          <Sec label="Working Capital Additions" color="#C4592F">
             <div>
               <span className="lbl">Cash — Most Recent Balance Sheet</span>
               <NI value={np.cash} onChange={v=>setNP('cash',v)} placeholder="0"/>
@@ -2249,7 +2249,7 @@ const T7 = ({state,set}) => {
           </Sec>
 
           {/* Deductions */}
-          <Sec label="Deductions at Closing" color="#f87171">
+          <Sec label="Deductions at Closing" color="#dc2626">
             <div className="space-y-3">
               <div>
                 <span className="lbl">Accounts Payable</span>
@@ -2296,7 +2296,7 @@ const T7 = ({state,set}) => {
           </Sec>
 
           {/* Custom Deductions */}
-          <Sec label="Additional Deductions" color="#94a3b8">
+          <Sec label="Additional Deductions" color="#57534e">
             <div className="space-y-2">
               {customDeds.map(d=>(
                 <div key={d.id} className="flex gap-2 items-end">
@@ -2312,14 +2312,14 @@ const T7 = ({state,set}) => {
                 </div>
               ))}
               <button onClick={addDed}
-                style={{display:'block',width:'100%',marginTop:4,padding:'6px',fontSize:11,background:'#0d1117',color:'#64748b',border:'1px dashed #334155',borderRadius:5,cursor:'pointer'}}>
+                style={{display:'block',width:'100%',marginTop:4,padding:'6px',fontSize:11,background:'#ffffff',color:'#57534e',border:'1px dashed #e4dcd2',borderRadius:5,cursor:'pointer'}}>
                 + Add Deduction Field
               </button>
             </div>
           </Sec>
 
           {/* Tax */}
-          <Sec label="Tax on Gain" color="#f87171">
+          <Sec label="Tax on Gain" color="#dc2626">
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <span className="lbl">Tax Rate (%)</span>
@@ -2337,7 +2337,7 @@ const T7 = ({state,set}) => {
         {/* ── Right: Waterfall Summary ── */}
         <div>
           <div className="card p-4" style={{position:'sticky',top:0}}>
-            <div className="text-xs font-bold uppercase tracking-wider mb-3" style={{color:'#2eb860'}}>Proceeds Waterfall</div>
+            <div className="text-xs font-bold uppercase tracking-wider mb-3" style={{color:'#C4592F'}}>Proceeds Waterfall</div>
             <div className="space-y-1">
               {wf.map((item,i)=>(
                 <div key={i} className={`flex justify-between items-baseline text-xs${item.bold?' border-t border-gray-700 pt-2 mt-1':''}`}>
@@ -2348,7 +2348,7 @@ const T7 = ({state,set}) => {
                 </div>
               ))}
             </div>
-            <div className="border-t-2 mt-3 pt-3" style={{borderColor:'#1a5e35'}}>
+            <div className="border-t-2 mt-3 pt-3" style={{borderColor:'#e8cfc3'}}>
               <div className="flex justify-between items-center">
                 <span className="text-sm font-bold text-white">Net Proceeds to Seller</span>
                 <span className={`mono text-2xl font-bold ${net>=0?'text-green-400':'text-red-400'}`}>{fmtD(net)}</span>
@@ -2401,7 +2401,7 @@ const T8 = ({state,set}) => {
               <div className={`mono text-xl font-bold ${curSDE>=0?'text-green-400':'text-red-400'}`}>{fmtD(curSDE)}</div>
               <div className="text-xs text-gray-500 mt-1">Most recent year</div>
             </div>
-            <div className="rounded p-3 text-center border border-blue-700/50" style={{background:'rgba(46,184,96,0.15)'}}>
+            <div className="rounded p-3 text-center border border-blue-700/50" style={{background:'rgba(196,89,47,0.15)'}}>
               <div className="text-xs text-blue-300 mb-2">Next Business SDE</div>
               <div className="mono text-xl font-bold text-blue-400">{fmtD(nextSDE)}</div>
               <div className="text-xs text-gray-500 mt-1">Estimated</div>
@@ -2427,10 +2427,10 @@ const T8 = ({state,set}) => {
 /* ── Narrative text renderer (shared by TNarrative + T9) ── */
 const renderNarrative=text=>text.split('\n').map((line,i)=>{
   const bold=line.match(/^\*\*(.+?)\*\*$/);
-  if(bold) return <div key={i} style={{fontSize:13,fontWeight:800,color:'#e2e8f0',marginTop:i>0?18:0,marginBottom:6,borderBottom:'1px solid #1e2d45',paddingBottom:4}}>{bold[1]}</div>;
+  if(bold) return <div key={i} style={{fontSize:13,fontWeight:800,color:'#1c1917',marginTop:i>0?18:0,marginBottom:6,borderBottom:'1px solid #e6dfd6',paddingBottom:4}}>{bold[1]}</div>;
   const mixed=line.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
   if(!line.trim()) return <div key={i} style={{height:6}}/>;
-  return <div key={i} style={{fontSize:12,color:'#94a3b8',lineHeight:1.8}} dangerouslySetInnerHTML={{__html:mixed}}/>;
+  return <div key={i} style={{fontSize:12,color:'#57534e',lineHeight:1.8}} dangerouslySetInnerHTML={{__html:mixed}}/>;
 });
 
 /* ── Waterfall (Revenue → SDE Bridge) ─────────────── */
@@ -2455,25 +2455,25 @@ const WaterfallChart = ({steps}) => {
   const gap=innerW/steps.length;
   const barColor=s=>{
     if(s.type==='total'){
-      if(s.label==='SDE') return '#2eb860';
-      if(s.label==='EBITDA') return '#a78bfa';
-      if(s.label.includes('Profit')) return '#3b82f6';
-      return '#60a5fa';
+      if(s.label==='SDE') return '#C4592F';
+      if(s.label==='EBITDA') return '#6d28d9';
+      if(s.label.includes('Profit')) return '#1d4ed8';
+      return '#1d4ed8';
     }
-    if(s.val<0) return '#ef4444';
-    if(s.label.includes('OC')||s.label.includes('Owner')) return '#3b82f6';
-    if(s.label.includes('Add')) return '#f59e0b';
-    return '#22d3ee';
+    if(s.val<0) return '#dc2626';
+    if(s.label.includes('OC')||s.label.includes('Owner')) return '#1d4ed8';
+    if(s.label.includes('Add')) return '#b45309';
+    return '#44403c';
   };
   const ticks=4;
   return (
     <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{overflow:'visible'}}>
-      {Array.from({length:ticks+1},(_,i)=>{const v=minV+(range/ticks)*i;const y=PAD.t+sy(v);return(<g key={i}><line x1={PAD.l} x2={PAD.l+innerW} y1={y} y2={y} stroke="#1e2d45" strokeDasharray="3 3"/><text x={PAD.l-5} y={y+4} textAnchor="end" fontSize="9" fill="#64748b">{fk(v)}</text></g>);})}
+      {Array.from({length:ticks+1},(_,i)=>{const v=minV+(range/ticks)*i;const y=PAD.t+sy(v);return(<g key={i}><line x1={PAD.l} x2={PAD.l+innerW} y1={y} y2={y} stroke="#e6dfd6" strokeDasharray="3 3"/><text x={PAD.l-5} y={y+4} textAnchor="end" fontSize="9" fill="#57534e">{fk(v)}</text></g>);})}
       {/* Connector dashes between bars */}
       {bars.slice(0,-1).map((b,i)=>{
         const x1=PAD.l+gap*i+gap/2+bw/2, x2=PAD.l+gap*(i+1)+gap/2-bw/2;
         const cy=PAD.t+sy(b.running);
-        return <line key={i} x1={x1} x2={x2} y1={cy} y2={cy} stroke="#334155" strokeWidth="1" strokeDasharray="4 2"/>;
+        return <line key={i} x1={x1} x2={x2} y1={cy} y2={cy} stroke="#44403c" strokeWidth="1" strokeDasharray="4 2"/>;
       })}
       {bars.map((b,i)=>{
         const x=PAD.l+gap*i+gap/2-bw/2;
@@ -2485,11 +2485,11 @@ const WaterfallChart = ({steps}) => {
         return (<g key={i}>
           <rect x={x} y={yTop} width={bw} height={bh} fill={col} rx="2" opacity={isTotal?1:0.8}/>
           <text x={x+bw/2} y={yTop-4} textAnchor="middle" fontSize="9" fill={col} fontWeight={isTotal?700:400}>{fk(dispVal)}</text>
-          <text x={x+bw/2} y={PAD.t+innerH+14} textAnchor="middle" fontSize="9" fill={isTotal?'#94a3b8':'#64748b'}>{b.label}</text>
+          <text x={x+bw/2} y={PAD.t+innerH+14} textAnchor="middle" fontSize="9" fill={isTotal?'#57534e':'#44403c'}>{b.label}</text>
         </g>);
       })}
-      <line x1={PAD.l} x2={PAD.l} y1={PAD.t} y2={PAD.t+innerH} stroke="#374151"/>
-      <line x1={PAD.l} x2={PAD.l+innerW} y1={PAD.t+sy(0)} y2={PAD.t+sy(0)} stroke="#374151"/>
+      <line x1={PAD.l} x2={PAD.l} y1={PAD.t} y2={PAD.t+innerH} stroke="#44403c"/>
+      <line x1={PAD.l} x2={PAD.l+innerW} y1={PAD.t+sy(0)} y2={PAD.t+sy(0)} stroke="#44403c"/>
     </svg>
   );
 };
@@ -2553,15 +2553,15 @@ const TNarrative = ({state,narrative,setNarrative,narrativeStatus,setNarrativeSt
   const btnStyle=(bg,c)=>({padding:'8px 16px',background:bg,color:c,border:'none',borderRadius:6,fontSize:12,cursor:'pointer',fontWeight:600});
 
   // KPI card
-  const KpiCard=({label,value,pctOfRev,yoyPct,color='#e2e8f0'})=>{
+  const KpiCard=({label,value,pctOfRev,yoyPct,color='#1c1917'})=>{
     const up=yoyPct!=null&&yoyPct>=0;
     return (
       <div className="card p-4" style={{flex:1}}>
-        <div style={{fontSize:10,color:'#475569',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>{label}</div>
+        <div style={{fontSize:10,color:'#44403c',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>{label}</div>
         <div style={{fontFamily:'monospace',fontSize:18,fontWeight:800,color,marginBottom:4}}>{value}</div>
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-          {pctOfRev!=null&&<span style={{fontSize:10,color:'#64748b'}}>{pctOfRev.toFixed(1)}% of rev</span>}
-          {yoyPct!=null&&<span style={{fontSize:10,color:up?'#2eb860':'#ef4444',fontWeight:600}}>{up?'▲':'▼'}{Math.abs(yoyPct).toFixed(1)}% YoY</span>}
+          {pctOfRev!=null&&<span style={{fontSize:10,color:'#57534e'}}>{pctOfRev.toFixed(1)}% of rev</span>}
+          {yoyPct!=null&&<span style={{fontSize:10,color:up?'#C4592F':'#dc2626',fontWeight:600}}>{up?'▲':'▼'}{Math.abs(yoyPct).toFixed(1)}% YoY</span>}
         </div>
       </div>
     );
@@ -2570,49 +2570,49 @@ const TNarrative = ({state,narrative,setNarrative,narrativeStatus,setNarrativeSt
   return (
     <div>
       <h2 className="text-lg font-bold text-white mb-1">Financial Narrative Report</h2>
-      <p style={{fontSize:12,color:'#475569',marginBottom:16}}>Visual performance summary + AI-generated analysis — suitable for inclusion in a CBR or deal package.</p>
+      <p style={{fontSize:12,color:'#44403c',marginBottom:16}}>Visual performance summary + AI-generated analysis — suitable for inclusion in a CBR or deal package.</p>
 
       {/* ── Visual Dashboard (always visible when data exists) ── */}
       {hasData&&(
         <>
           {/* KPI Cards */}
           <div style={{display:'flex',gap:12,marginBottom:16}}>
-            <KpiCard label="Revenue" value={fmtD(c0.rev)} yoyPct={yoy(c0.rev,c1?.rev)} color="#e2e8f0"/>
-            <KpiCard label="Gross Profit" value={fmtD(c0.gp)} pctOfRev={c0.rev>0?c0.gp/c0.rev*100:null} yoyPct={yoy(c0.gp,c1?.gp)} color="#60a5fa"/>
-            <KpiCard label="EBITDA" value={fmtD(c0.ebitda)} pctOfRev={c0.rev>0?c0.ebitda/c0.rev*100:null} yoyPct={yoy(c0.ebitda,c1?.ebitda)} color="#a78bfa"/>
-            <KpiCard label="SDE" value={fmtD(c0.sde)} pctOfRev={c0.rev>0?c0.sde/c0.rev*100:null} yoyPct={yoy(c0.sde,c1?.sde)} color="#2eb860"/>
+            <KpiCard label="Revenue" value={fmtD(c0.rev)} yoyPct={yoy(c0.rev,c1?.rev)} color="#1c1917"/>
+            <KpiCard label="Gross Profit" value={fmtD(c0.gp)} pctOfRev={c0.rev>0?c0.gp/c0.rev*100:null} yoyPct={yoy(c0.gp,c1?.gp)} color="#1d4ed8"/>
+            <KpiCard label="EBITDA" value={fmtD(c0.ebitda)} pctOfRev={c0.rev>0?c0.ebitda/c0.rev*100:null} yoyPct={yoy(c0.ebitda,c1?.ebitda)} color="#6d28d9"/>
+            <KpiCard label="SDE" value={fmtD(c0.sde)} pctOfRev={c0.rev>0?c0.sde/c0.rev*100:null} yoyPct={yoy(c0.sde,c1?.sde)} color="#C4592F"/>
           </div>
 
           {/* Trend Charts */}
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:12,marginBottom:12}}>
             <div className="card p-4">
-              <div style={{fontSize:11,color:'#94a3b8',fontWeight:600,marginBottom:8}}>Revenue Trend</div>
-              <BarChart data={chartData} dataKey="revenue" color="#60a5fa"/>
+              <div style={{fontSize:11,color:'#57534e',fontWeight:600,marginBottom:8}}>Revenue Trend</div>
+              <BarChart data={chartData} dataKey="revenue" color="#1d4ed8"/>
             </div>
             <div className="card p-4">
-              <div style={{fontSize:11,color:'#94a3b8',fontWeight:600,marginBottom:8}}>Gross Margin %</div>
-              <BarChart data={chartData} dataKey="gm" color="#3b82f6" fmtAxis={pctFmt}/>
+              <div style={{fontSize:11,color:'#57534e',fontWeight:600,marginBottom:8}}>Gross Margin %</div>
+              <BarChart data={chartData} dataKey="gm" color="#1d4ed8" fmtAxis={pctFmt}/>
             </div>
             <div className="card p-4">
-              <div style={{fontSize:11,color:'#94a3b8',fontWeight:600,marginBottom:8}}>EBITDA Margin %</div>
-              <BarChart data={chartData} dataKey="em" color="#a78bfa" fmtAxis={pctFmt}/>
+              <div style={{fontSize:11,color:'#57534e',fontWeight:600,marginBottom:8}}>EBITDA Margin %</div>
+              <BarChart data={chartData} dataKey="em" color="#6d28d9" fmtAxis={pctFmt}/>
             </div>
             <div className="card p-4">
-              <div style={{fontSize:11,color:'#94a3b8',fontWeight:600,marginBottom:8}}>SDE Trend</div>
-              <BarChart data={chartData} dataKey="sde" color="#2eb860"/>
+              <div style={{fontSize:11,color:'#57534e',fontWeight:600,marginBottom:8}}>SDE Trend</div>
+              <BarChart data={chartData} dataKey="sde" color="#C4592F"/>
             </div>
           </div>
 
           {/* SDE Waterfall */}
           {wfSteps.length>0&&(
             <div className="card p-5" style={{marginBottom:20}}>
-              <div style={{fontSize:11,color:'#94a3b8',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:12}}>
+              <div style={{fontSize:11,color:'#57534e',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:12}}>
                 Revenue → SDE Bridge — {withData[0]?.year}
               </div>
               <WaterfallChart steps={wfSteps}/>
               <div style={{display:'flex',gap:16,marginTop:10,flexWrap:'wrap'}}>
-                {[['#ef4444','Subtraction'],['#22d3ee','I/T/D&A Addbacks'],['#3b82f6','Owner Comp'],['#f59e0b','Other Add-Backs'],['#a78bfa','EBITDA'],['#2eb860','SDE']].map(([c,l])=>(
-                  <span key={l} style={{fontSize:10,color:'#64748b',display:'flex',alignItems:'center',gap:5}}>
+                {[['#dc2626','Subtraction'],['#44403c','I/T/D&A Addbacks'],['#1d4ed8','Owner Comp'],['#b45309','Other Add-Backs'],['#6d28d9','EBITDA'],['#C4592F','SDE']].map(([c,l])=>(
+                  <span key={l} style={{fontSize:10,color:'#57534e',display:'flex',alignItems:'center',gap:5}}>
                     <span style={{width:10,height:10,borderRadius:2,background:c,display:'inline-block'}}/>
                     {l}
                   </span>
@@ -2624,28 +2624,28 @@ const TNarrative = ({state,narrative,setNarrative,narrativeStatus,setNarrativeSt
       )}
 
       {/* ── AI Narrative ── */}
-      <div style={{borderTop:'1px solid #1e2d45',paddingTop:20,marginTop:4}}>
-        <div style={{fontSize:11,color:'#475569',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:12}}>AI Narrative Analysis</div>
+      <div style={{borderTop:'1px solid #e6dfd6',paddingTop:20,marginTop:4}}>
+        <div style={{fontSize:11,color:'#44403c',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:12}}>AI Narrative Analysis</div>
         {status==='idle'&&(
-          <button onClick={generate} style={{...btnStyle('#1a5e35','#6de09a'),fontSize:13,padding:'10px 24px'}}>{hasData?'Generate Narrative Report':'Enter income statement data first'}</button>
+          <button onClick={generate} style={{...btnStyle('#C4592F','#ffffff'),fontSize:13,padding:'10px 24px'}}>{hasData?'Generate Narrative Report':'Enter income statement data first'}</button>
         )}
         {status==='loading'&&(
           <div style={{padding:32,textAlign:'center'}}>
-            <div style={{color:'#2eb860',fontSize:13,marginBottom:6}}>Generating narrative…</div>
-            <div style={{color:'#475569',fontSize:11}}>Claude is analyzing the financials. This takes 15–25 seconds.</div>
+            <div style={{color:'#C4592F',fontSize:13,marginBottom:6}}>Generating narrative…</div>
+            <div style={{color:'#44403c',fontSize:11}}>Claude is analyzing the financials. This takes 15–25 seconds.</div>
           </div>
         )}
         {status==='error'&&(
           <div>
-            <div style={{color:'#ef4444',marginBottom:12,fontSize:13}}>Generation failed. Check that income statement data is entered and try again.</div>
-            <button onClick={generate} style={btnStyle('#1a5e35','#6de09a')}>Retry</button>
+            <div style={{color:'#dc2626',marginBottom:12,fontSize:13}}>Generation failed. Check that income statement data is entered and try again.</div>
+            <button onClick={generate} style={btnStyle('#C4592F','#ffffff')}>Retry</button>
           </div>
         )}
         {status==='done'&&(
           <div>
             <div style={{display:'flex',gap:8,marginBottom:14,justifyContent:'flex-end'}}>
-              <button onClick={()=>setStatus('idle')} style={btnStyle('#1e293b','#94a3b8')}>Regenerate</button>
-              <button onClick={copy} style={btnStyle(copied?'#1a5e35':'#1e3a5f',copied?'#6de09a':'#60a5fa')}>{copied?'✓ Copied':'Copy Text'}</button>
+              <button onClick={()=>setStatus('idle')} style={btnStyle('#44403c','#57534e')}>Regenerate</button>
+              <button onClick={copy} style={btnStyle(copied?'#C4592F':'#f4efe9',copied?'#ffffff':'#1c1917')}>{copied?'✓ Copied':'Copy Text'}</button>
             </div>
             <div className="card p-6">{renderNarrative(narrative)}</div>
           </div>
@@ -2739,8 +2739,8 @@ const T9 = ({state,narrative,narrativeStatus}) => {
     return(lo+hi)/2;
   })();
   const sAskM=sDscrM(sellerAskP),sAdvM=sDscrM(mp),sMaxM=sDscrM(sMax125);
-  const sDC=d=>d>=1.5?'#059669':d>=dscrMin?'#d97706':'#dc2626';
-  const sCC=v=>v>0?'#059669':'#dc2626';
+  const sDC=d=>d>=1.5?'#A34826':d>=dscrMin?'#b45309':'#dc2626';
+  const sCC=v=>v>0?'#A34826':'#dc2626';
   const sStatus=m=>!m?'—':m.adjD>=1.5?'✅ Strong':m.adjD>=dscrMin?'⚠ Marginal':'❌ Below Min';
   const sfAnn=sfPmt*12;
 
@@ -2757,21 +2757,21 @@ const T9 = ({state,narrative,narrativeStatus}) => {
 
   const allYears=ytdEnabled?[...years,{...ytdData,year:'YTD'}]:years;
 
-  const SH=({n,title,color='#059669'})=>(
+  const SH=({n,title,color='#A34826'})=>(
     <div style={{borderLeft:`4px solid ${color}`,paddingLeft:12,marginBottom:14}}>
-      <div className="rpt-muted" style={{fontSize:9,textTransform:'uppercase',letterSpacing:'0.1em',fontWeight:600,color:'#64748b'}}>Section {n}</div>
-      <div style={{fontSize:15,fontWeight:800,color:'#f1f5f9',marginTop:2}}>{title}</div>
+      <div className="rpt-muted" style={{fontSize:9,textTransform:'uppercase',letterSpacing:'0.1em',fontWeight:600,color:'#57534e'}}>Section {n}</div>
+      <div style={{fontSize:15,fontWeight:800,color:'#292524',marginTop:2}}>{title}</div>
     </div>
   );
-  const Row=({label,val,color='#94a3b8',bold=false,top=false})=>{
-    const isGreen=color==='#2eb860'||color==='#059669';
-    const isRed=color==='#f87171'||color==='#dc2626'||color==='#ef4444';
-    const isAmber=color==='#fbbf24'||color==='#d97706';
-    const isPurple=color==='#a78bfa'||color==='#8b5cf6';
+  const Row=({label,val,color='#57534e',bold=false,top=false})=>{
+    const isGreen=color==='#C4592F'||color==='#A34826';
+    const isRed=color==='#dc2626'||color==='#dc2626'||color==='#dc2626';
+    const isAmber=color==='#b45309'||color==='#b45309';
+    const isPurple=color==='#6d28d9'||color==='#6d28d9';
     const cls=isGreen?'rpt-green':isRed?'rpt-red':isAmber?'rpt-amber':isPurple?'rpt-purple':'rpt-muted';
     return (
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'5px 0',borderTop:top?'1px solid #1e2d45':'none',borderBottom:'1px solid #0d1117'}}>
-        <span style={{color:'#94a3b8',fontSize:11,fontWeight:bold?700:400}}>{label}</span>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'5px 0',borderTop:top?'1px solid #e6dfd6':'none',borderBottom:'1px solid #efe8e0'}}>
+        <span style={{color:'#57534e',fontSize:11,fontWeight:bold?700:400}}>{label}</span>
         <span className={`mono ${cls}`} style={{fontSize:11,fontWeight:bold?700:400,color}}>{val}</span>
       </div>
     );
@@ -2780,12 +2780,12 @@ const T9 = ({state,narrative,narrativeStatus}) => {
   return (
     <div>
       {/* Controls — hidden on print */}
-      <div className="no-print card p-4 mb-4" style={{borderColor:'#1a5e35'}}>
+      <div className="no-print card p-4 mb-4" style={{borderColor:'#e8cfc3'}}>
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-semibold" style={{color:'#2eb860'}}>Report Sections</span>
+          <span className="text-xs font-semibold" style={{color:'#C4592F'}}>Report Sections</span>
           <div className="flex gap-2">
             <button onClick={setBuyer} className="text-xs px-3 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300">Buyer Report</button>
-            <button onClick={setSeller} className="text-xs px-3 py-1 rounded text-white" style={{background:'#1a5e35'}}>Seller Report</button>
+            <button onClick={setSeller} className="text-xs px-3 py-1 rounded text-white" style={{background:'#C4592F'}}>Seller Report</button>
           </div>
         </div>
         <div className="flex flex-wrap gap-x-6 gap-y-2">
@@ -2802,27 +2802,27 @@ const T9 = ({state,narrative,narrativeStatus}) => {
       {/* ── Printable Report ───────────────────────── */}
       <div className="report-body">
         {/* Header */}
-        <div style={{borderBottom:'3px solid #059669',paddingBottom:16,marginBottom:24,display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+        <div style={{borderBottom:'3px solid #A34826',paddingBottom:16,marginBottom:24,display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
           <div>
-            <div style={{fontSize:22,fontWeight:900,color:'#f1f5f9',letterSpacing:'-0.02em'}}>{state.dealName||'Business Acquisition Analysis'}</div>
-            <div style={{fontSize:13,color:'#64748b',marginTop:4}}>
-              {state.advisorName?<span>Prepared by <strong style={{color:'#94a3b8'}}>{state.advisorName}</strong> &nbsp;·&nbsp; </span>:null}
+            <div style={{fontSize:22,fontWeight:900,color:'#292524',letterSpacing:'-0.02em'}}>{state.dealName||'Business Acquisition Analysis'}</div>
+            <div style={{fontSize:13,color:'#57534e',marginTop:4}}>
+              {state.advisorName?<span>Prepared by <strong style={{color:'#57534e'}}>{state.advisorName}</strong> &nbsp;·&nbsp; </span>:null}
               {new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}
             </div>
-            <div style={{fontSize:10,color:'#334155',marginTop:4,letterSpacing:'0.05em'}}>CONFIDENTIAL &nbsp;·&nbsp; QSI™ MARKET PRICE ANALYZER</div>
+            <div style={{fontSize:10,color:'#44403c',marginTop:4,letterSpacing:'0.05em'}}>CONFIDENTIAL &nbsp;·&nbsp; QSI™ MARKET PRICE ANALYZER</div>
           </div>
           <button className="no-print" onClick={()=>window.print()}
-            style={{background:'#1a5e35',color:'#6ee7b7',border:'none',borderRadius:6,padding:'9px 18px',cursor:'pointer',fontSize:13,fontWeight:600}}>
+            style={{background:'#C4592F',color:'#ffffff',border:'none',borderRadius:6,padding:'9px 18px',cursor:'pointer',fontSize:13,fontWeight:600}}>
              Print / Export PDF
           </button>
         </div>
 
         {/* Intro banner */}
-        <div className="card p-4 mb-5" style={{borderColor:'#1a5e35',background:'#0a1f05'}}>
-          <div style={{fontSize:12,lineHeight:1.75,color:'#94a3b8'}}>
-            <strong style={{color:'#2eb860'}}>About This Report — </strong>
+        <div className="card p-4 mb-5" style={{borderColor:'#e8cfc3',background:'#f8efe8'}}>
+          <div style={{fontSize:12,lineHeight:1.75,color:'#57534e'}}>
+            <strong style={{color:'#C4592F'}}>About This Report — </strong>
             This analysis was prepared using the QSI™ Market Price Analyzer to evaluate the financial performance, fair market value,
-            and SBA acquisition feasibility of <strong style={{color:'#e2e8f0'}}>{state.dealName||'this business'}</strong>.
+            and SBA acquisition feasibility of <strong style={{color:'#1c1917'}}>{state.dealName||'this business'}</strong>.
             All figures are derived from the financial data provided and are intended as a guide for discussion.
             Actual transaction terms, tax consequences, and lender requirements may vary.
           </div>
@@ -2831,8 +2831,8 @@ const T9 = ({state,narrative,narrativeStatus}) => {
         {/* Section 1 — Financial Performance */}
         {vis.spread&&<div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
           <SH n={1} title="Financial Performance & Seller's Discretionary Earnings"/>
-          <p style={{fontSize:12,lineHeight:1.75,color:'#94a3b8',marginBottom:16}}>
-            <strong style={{color:'#e2e8f0'}}>Seller's Discretionary Earnings (SDE)</strong> is the standard measure of cash flow used to value small businesses.
+          <p style={{fontSize:12,lineHeight:1.75,color:'#57534e',marginBottom:16}}>
+            <strong style={{color:'#1c1917'}}>Seller's Discretionary Earnings (SDE)</strong> is the standard measure of cash flow used to value small businesses.
             It represents the total financial benefit available to a full-time working owner — calculated as the business's net income,
             plus the owner's salary, non-cash charges (depreciation and amortization), interest expense, taxes, and any legitimate
             personal or non-recurring expenses run through the business known as "add-backs."
@@ -2840,13 +2840,13 @@ const T9 = ({state,narrative,narrativeStatus}) => {
             A consistent or growing SDE trend signals a healthy, transferable business; a declining trend warrants further investigation.
           </p>
           <FinancialSpreadTable years={allYears} ytdThrough={ytdEnabled?state.ytdThrough:''}/>
-          <div style={{marginTop:14,paddingTop:10,borderTop:'1px solid #1e2d45',display:'flex',gap:28,fontSize:11,flexWrap:'wrap'}}>
-            <div><span style={{color:'#64748b'}}>Weighted Avg SDE: </span><span style={{fontFamily:'monospace',color:'#2eb860',fontWeight:700}}>{fmtD(rawWt)}</span></div>
-            <div><span style={{color:'#64748b'}}>Most Recent SDE: </span><span style={{fontFamily:'monospace',color:'#2eb860',fontWeight:700}}>{fmtD(rawRec)}</span></div>
-            {ann>0&&<div><span style={{color:'#64748b'}}>Ann. YTD SDE: </span><span style={{fontFamily:'monospace',color:'#a78bfa',fontWeight:700}}>{fmtD(ann)}</span></div>}
-            <div style={{marginLeft:'auto'}}><span style={{color:'#64748b'}}>Valuation Basis: </span><span style={{fontFamily:'monospace',color:'#2eb860',fontWeight:700}}>{basisLabel} — {fmtD(marketSde)}</span></div>
+          <div style={{marginTop:14,paddingTop:10,borderTop:'1px solid #e6dfd6',display:'flex',gap:28,fontSize:11,flexWrap:'wrap'}}>
+            <div><span style={{color:'#57534e'}}>Weighted Avg SDE: </span><span style={{fontFamily:'monospace',color:'#C4592F',fontWeight:700}}>{fmtD(rawWt)}</span></div>
+            <div><span style={{color:'#57534e'}}>Most Recent SDE: </span><span style={{fontFamily:'monospace',color:'#C4592F',fontWeight:700}}>{fmtD(rawRec)}</span></div>
+            {ann>0&&<div><span style={{color:'#57534e'}}>Ann. YTD SDE: </span><span style={{fontFamily:'monospace',color:'#6d28d9',fontWeight:700}}>{fmtD(ann)}</span></div>}
+            <div style={{marginLeft:'auto'}}><span style={{color:'#57534e'}}>Valuation Basis: </span><span style={{fontFamily:'monospace',color:'#C4592F',fontWeight:700}}>{basisLabel} — {fmtD(marketSde)}</span></div>
           </div>
-          {buyerSalary>0&&<div style={{marginTop:8,fontSize:10,color:'#334155'}}>
+          {buyerSalary>0&&<div style={{marginTop:8,fontSize:10,color:'#44403c'}}>
             Most Recent SDE is the latest year column above, before the {fmtD(buyerSalary)} buyer's salary. That salary is subtracted in the DSCR and cash-flow sections ({fmtD(rec)} after salary).
           </div>}
         </div>}
@@ -2854,28 +2854,28 @@ const T9 = ({state,narrative,narrativeStatus}) => {
         {/* Section 2 — Fair Market Value */}
         {vis.fmv&&<div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
           <SH n={2} title="Fair Market Value Range"/>
-          <p style={{fontSize:12,lineHeight:1.75,color:'#94a3b8',marginBottom:16}}>
-            Small businesses are valued as a <strong style={{color:'#e2e8f0'}}>multiple of SDE</strong> — essentially, how many years of earnings a buyer
-            is willing to pay. A <strong style={{color:'#e2e8f0'}}>3.0× multiple</strong> means the buyer pays three times the annual earnings,
+          <p style={{fontSize:12,lineHeight:1.75,color:'#57534e',marginBottom:16}}>
+            Small businesses are valued as a <strong style={{color:'#1c1917'}}>multiple of SDE</strong> — essentially, how many years of earnings a buyer
+            is willing to pay. A <strong style={{color:'#1c1917'}}>3.0× multiple</strong> means the buyer pays three times the annual earnings,
             which is the most common benchmark for stable, owner-operated businesses.
             Higher multiples (3.5×–4.0×) reflect favorable factors such as strong growth, recurring revenue, or proprietary systems.
             Lower multiples (2.0×–2.5×) may reflect elevated risk, owner dependency, or declining revenue.
-            The range below is based on the <strong style={{color:'#2eb860'}}>{basisLabel} SDE of {fmtD(marketSde)}</strong>.
+            The range below is based on the <strong style={{color:'#C4592F'}}>{basisLabel} SDE of {fmtD(marketSde)}</strong>.
           </p>
           <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
             {mults.map(m=>{
               const price=marketSde*m, sel=mp>0&&Math.abs(mp-price)<1;
               return (
-                <div key={m} style={{background:sel?'#071a0b':'#0d1117',border:`1px solid ${sel?'#2eb860':'#1e2d45'}`,borderRadius:8,padding:'12px 16px',textAlign:'center',minWidth:110,flex:'1'}}>
-                  <div style={{fontSize:10,color:sel?'#2eb860':'#475569',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em'}}>{m.toFixed(1)}× SDE</div>
-                  <div style={{fontFamily:'monospace',fontWeight:800,fontSize:15,color:sel?'#2eb860':'#cbd5e1',marginTop:6}}>{fmtD(price)}</div>
-                  {sel&&<div style={{fontSize:9,color:'#2eb860',marginTop:4,fontWeight:600}}>★ SELECTED</div>}
+                <div key={m} style={{background:sel?'#f8efe8':'#ffffff',border:`1px solid ${sel?'#C4592F':'#e6dfd6'}`,borderRadius:8,padding:'12px 16px',textAlign:'center',minWidth:110,flex:'1'}}>
+                  <div style={{fontSize:10,color:sel?'#C4592F':'#44403c',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em'}}>{m.toFixed(1)}× SDE</div>
+                  <div style={{fontFamily:'monospace',fontWeight:800,fontSize:15,color:sel?'#C4592F':'#44403c',marginTop:6}}>{fmtD(price)}</div>
+                  {sel&&<div style={{fontSize:9,color:'#C4592F',marginTop:4,fontWeight:600}}>★ SELECTED</div>}
                 </div>
               );
             })}
           </div>
-          {mp>0&&<div style={{marginTop:10,fontSize:11,color:'#64748b'}}>
-            Market price selected: <strong style={{fontFamily:'monospace',color:'#2eb860'}}>{fmtD(mp)}</strong>
+          {mp>0&&<div style={{marginTop:10,fontSize:11,color:'#57534e'}}>
+            Market price selected: <strong style={{fontFamily:'monospace',color:'#C4592F'}}>{fmtD(mp)}</strong>
             {marketSde>0&&<span> ({(mp/marketSde).toFixed(2)}× {basisLabel} SDE)</span>}
           </div>}
         </div>}
@@ -2899,32 +2899,32 @@ const T9 = ({state,narrative,narrativeStatus}) => {
             <div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
               <SH n={3} title="Industry Comparison"/>
               {!ind.name?(
-                <p style={{fontSize:12,color:'#64748b',fontStyle:'italic'}}>No industry data imported. Upload an industry report in the Industry tab to enable this section.</p>
+                <p style={{fontSize:12,color:'#57534e',fontStyle:'italic'}}>No industry data imported. Upload an industry report in the Industry tab to enable this section.</p>
               ):(
                 <>
                   <div style={{marginBottom:12}}>
-                    <span style={{fontWeight:700,color:'#a78bfa',fontSize:13}}>{ind.name}</span>
-                    {ind.naics&&<span style={{color:'#64748b',fontSize:11,marginLeft:8}}>NAICS {ind.naics}</span>}
-                    {ind.source&&<span style={{color:'#64748b',fontSize:11,marginLeft:8}}>· {ind.source}{ind.reportYear?` ${ind.reportYear}`:''}</span>}
+                    <span style={{fontWeight:700,color:'#6d28d9',fontSize:13}}>{ind.name}</span>
+                    {ind.naics&&<span style={{color:'#57534e',fontSize:11,marginLeft:8}}>NAICS {ind.naics}</span>}
+                    {ind.source&&<span style={{color:'#57534e',fontSize:11,marginLeft:8}}>· {ind.source}{ind.reportYear?` ${ind.reportYear}`:''}</span>}
                   </div>
                   <div style={{marginBottom:16}}>
-                    <div style={{fontSize:11,fontWeight:700,color:'#94a3b8',marginBottom:8}}>INCOME BENCHMARKS</div>
+                    <div style={{fontSize:11,fontWeight:700,color:'#57534e',marginBottom:8}}>INCOME BENCHMARKS</div>
                     <table style={{width:'100%',borderCollapse:'collapse',fontSize:11}}>
-                      <thead><tr style={{borderBottom:'1px solid #1e2d45'}}>
-                        <th style={{textAlign:'left',color:'#475569',paddingBottom:5,width:'35%'}}>Metric</th>
-                        <th style={{textAlign:'right',color:'#a78bfa',paddingBottom:5,paddingLeft:8}}>Industry</th>
-                        {indYears.map((y,i)=><th key={i} style={{textAlign:'right',color:'#60a5fa',paddingBottom:5,paddingLeft:8}}>{y.year}</th>)}
+                      <thead><tr style={{borderBottom:'1px solid #e6dfd6'}}>
+                        <th style={{textAlign:'left',color:'#44403c',paddingBottom:5,width:'35%'}}>Metric</th>
+                        <th style={{textAlign:'right',color:'#6d28d9',paddingBottom:5,paddingLeft:8}}>Industry</th>
+                        {indYears.map((y,i)=><th key={i} style={{textAlign:'right',color:'#1d4ed8',paddingBottom:5,paddingLeft:8}}>{y.year}</th>)}
                       </tr></thead>
                       <tbody>
                         {[['Gross Margin %','grossMarginPct',ind.grossMarginPct,true],['EBITDA %','ebitdaPct',null,true],['Net Income %','netMarginPct',ind.netMarginPct,true]].map(([lbl,key,bench,hi])=>(
-                          <tr key={lbl} style={{borderBottom:'1px solid #0f1623'}}>
-                            <td style={{padding:'5px 0',color:'#94a3b8'}}>{lbl}</td>
-                            <td style={{textAlign:'right',fontFamily:'monospace',color:'#a78bfa',paddingLeft:8}}>{bench?pn(bench)+'%':'—'}</td>
+                          <tr key={lbl} style={{borderBottom:'1px solid #e6dfd6'}}>
+                            <td style={{padding:'5px 0',color:'#57534e'}}>{lbl}</td>
+                            <td style={{textAlign:'right',fontFamily:'monospace',color:'#6d28d9',paddingLeft:8}}>{bench?pn(bench)+'%':'—'}</td>
                             {indActuals.map((a,i)=>{
                               const v=a[key];
                               const better=bench&&v!==null?(hi?v>=pn(bench):v<=pn(bench)):null;
-                              return <td key={i} style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:v!==null?'#e2e8f0':'#475569'}}>
-                                {v!==null?v.toFixed(1)+'%':'—'}{better!==null&&<span style={{marginLeft:4,color:better?'#2eb860':'#f87171'}}>{better?'▲':'▼'}</span>}
+                              return <td key={i} style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:v!==null?'#1c1917':'#44403c'}}>
+                                {v!==null?v.toFixed(1)+'%':'—'}{better!==null&&<span style={{marginLeft:4,color:better?'#C4592F':'#dc2626'}}>{better?'▲':'▼'}</span>}
                               </td>;
                             })}
                           </tr>
@@ -2933,36 +2933,36 @@ const T9 = ({state,narrative,narrativeStatus}) => {
                     </table>
                   </div>
                   <div>
-                    <div style={{fontSize:11,fontWeight:700,color:'#94a3b8',marginBottom:8}}>VALUATION CHECK — {tierLbl2} REVENUE TIER</div>
+                    <div style={{fontSize:11,fontWeight:700,color:'#57534e',marginBottom:8}}>VALUATION CHECK — {tierLbl2} REVENUE TIER</div>
                     <table style={{width:'100%',borderCollapse:'collapse',fontSize:11}}>
-                      <thead><tr style={{borderBottom:'1px solid #1e2d45'}}>
-                        <th style={{textAlign:'left',color:'#475569',paddingBottom:5}}>Multiple</th>
-                        <th style={{textAlign:'right',color:'#a78bfa',paddingBottom:5,paddingLeft:8}}>Industry</th>
-                        <th style={{textAlign:'right',color:'#60a5fa',paddingBottom:5,paddingLeft:8}}>This Deal</th>
-                        <th style={{textAlign:'right',color:'#60a5fa',paddingBottom:5,paddingLeft:8}}>Implied Value</th>
+                      <thead><tr style={{borderBottom:'1px solid #e6dfd6'}}>
+                        <th style={{textAlign:'left',color:'#44403c',paddingBottom:5}}>Multiple</th>
+                        <th style={{textAlign:'right',color:'#6d28d9',paddingBottom:5,paddingLeft:8}}>Industry</th>
+                        <th style={{textAlign:'right',color:'#1d4ed8',paddingBottom:5,paddingLeft:8}}>This Deal</th>
+                        <th style={{textAlign:'right',color:'#1d4ed8',paddingBottom:5,paddingLeft:8}}>Implied Value</th>
                       </tr></thead>
                       <tbody>
-                        <tr style={{borderBottom:'1px solid #0f1623'}}>
-                          <td style={{padding:'5px 0',color:'#94a3b8'}}>MVIC/SDE ({tierLbl2})</td>
-                          <td style={{textAlign:'right',fontFamily:'monospace',color:'#a78bfa',paddingLeft:8}}>{tierSDE2>0?tierSDE2.toFixed(2)+'×':'—'}</td>
-                          <td style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:'#e2e8f0'}}>{askP>0&&recSDE2>0?(askP/recSDE2).toFixed(2)+'×':'—'}</td>
-                          <td style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:'#a78bfa'}}>{tierSDE2>0&&recSDE2>0?fmtD(recSDE2*tierSDE2):'—'}</td>
+                        <tr style={{borderBottom:'1px solid #e6dfd6'}}>
+                          <td style={{padding:'5px 0',color:'#57534e'}}>MVIC/SDE ({tierLbl2})</td>
+                          <td style={{textAlign:'right',fontFamily:'monospace',color:'#6d28d9',paddingLeft:8}}>{tierSDE2>0?tierSDE2.toFixed(2)+'×':'—'}</td>
+                          <td style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:'#1c1917'}}>{askP>0&&recSDE2>0?(askP/recSDE2).toFixed(2)+'×':'—'}</td>
+                          <td style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:'#6d28d9'}}>{tierSDE2>0&&recSDE2>0?fmtD(recSDE2*tierSDE2):'—'}</td>
                         </tr>
-                        <tr style={{borderBottom:'1px solid #0f1623'}}>
-                          <td style={{padding:'5px 0',color:'#94a3b8'}}>Rules of Thumb — x SDE</td>
-                          <td style={{textAlign:'right',fontFamily:'monospace',color:'#a78bfa',paddingLeft:8}}>{ind.sdeMult?pn(ind.sdeMult).toFixed(1)+'×':'—'}</td>
-                          <td style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:'#e2e8f0'}}>{askP>0&&recSDE2>0?(askP/recSDE2).toFixed(2)+'×':'—'}</td>
-                          <td style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:'#a78bfa'}}>{ind.sdeMult&&recSDE2>0?fmtD(recSDE2*pn(ind.sdeMult)):'—'}</td>
+                        <tr style={{borderBottom:'1px solid #e6dfd6'}}>
+                          <td style={{padding:'5px 0',color:'#57534e'}}>Rules of Thumb — x SDE</td>
+                          <td style={{textAlign:'right',fontFamily:'monospace',color:'#6d28d9',paddingLeft:8}}>{ind.sdeMult?pn(ind.sdeMult).toFixed(1)+'×':'—'}</td>
+                          <td style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:'#1c1917'}}>{askP>0&&recSDE2>0?(askP/recSDE2).toFixed(2)+'×':'—'}</td>
+                          <td style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:'#6d28d9'}}>{ind.sdeMult&&recSDE2>0?fmtD(recSDE2*pn(ind.sdeMult)):'—'}</td>
                         </tr>
-                        <tr style={{borderBottom:'1px solid #0f1623'}}>
-                          <td style={{padding:'5px 0',color:'#94a3b8'}}>Rules of Thumb — % of Revenue</td>
-                          <td style={{textAlign:'right',fontFamily:'monospace',color:'#a78bfa',paddingLeft:8}}>{ind.revenueMultPct?pn(ind.revenueMultPct)+'%':'—'}</td>
-                          <td style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:'#e2e8f0'}}>{askP>0&&recRev2>0?(askP/recRev2*100).toFixed(1)+'%':'—'}</td>
-                          <td style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:'#a78bfa'}}>{ind.revenueMultPct&&recRev2>0?fmtD(recRev2*pn(ind.revenueMultPct)/100):'—'}</td>
+                        <tr style={{borderBottom:'1px solid #e6dfd6'}}>
+                          <td style={{padding:'5px 0',color:'#57534e'}}>Rules of Thumb — % of Revenue</td>
+                          <td style={{textAlign:'right',fontFamily:'monospace',color:'#6d28d9',paddingLeft:8}}>{ind.revenueMultPct?pn(ind.revenueMultPct)+'%':'—'}</td>
+                          <td style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:'#1c1917'}}>{askP>0&&recRev2>0?(askP/recRev2*100).toFixed(1)+'%':'—'}</td>
+                          <td style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:'#6d28d9'}}>{ind.revenueMultPct&&recRev2>0?fmtD(recRev2*pn(ind.revenueMultPct)/100):'—'}</td>
                         </tr>
                       </tbody>
                     </table>
-                    {askP>0&&<div style={{marginTop:8,fontSize:11,color:'#64748b'}}>Asking price: <strong style={{fontFamily:'monospace',color:'#fbbf24'}}>{fmtD(askP)}</strong></div>}
+                    {askP>0&&<div style={{marginTop:8,fontSize:11,color:'#57534e'}}>Asking price: <strong style={{fontFamily:'monospace',color:'#b45309'}}>{fmtD(askP)}</strong></div>}
                   </div>
                 </>
               )}
@@ -2973,20 +2973,20 @@ const T9 = ({state,narrative,narrativeStatus}) => {
         {/* Section 4 — DSCR */}
         {vis.dscr&&<div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
           <SH n={4} title="Debt Service Coverage Ratio (DSCR)"/>
-          <p style={{fontSize:12,lineHeight:1.75,color:'#94a3b8',marginBottom:16}}>
-            The <strong style={{color:'#e2e8f0'}}>Debt Service Coverage Ratio (DSCR)</strong> is the lender's primary underwriting test:
+          <p style={{fontSize:12,lineHeight:1.75,color:'#57534e',marginBottom:16}}>
+            The <strong style={{color:'#1c1917'}}>Debt Service Coverage Ratio (DSCR)</strong> is the lender's primary underwriting test:
             does the business generate enough cash flow to comfortably make its own loan payments?
             It is calculated by dividing the business's SDE by the total annual loan payments.
-            A DSCR of <strong style={{color:'#e2e8f0'}}>1.00</strong> means the business exactly covers its debt — nothing left over.
-            <strong style={{color:'#e2e8f0'}}> {dscrMin}</strong> is the required minimum — {((dscrMin-1)*100).toFixed(0)} cents of cushion for every dollar of payment.
-            <strong style={{color:'#2eb860'}}> 2.00 or above</strong> is considered strong and signals that the buyer will have healthy cash flow after servicing the debt.
-            The loan modeled here assumes a <strong style={{color:'#e2e8f0'}}>3× SDE price{buyerSalary>0?' after buyer\'s salary':''} at {loanRate}% over {loanAmort} years with {dpPct}% down</strong>{reVal>0?<span> (real estate included — actual deal uses <strong style={{color:'#e2e8f0'}}>{(loanStructure||'7a')==='504'?`7(a)+504 structure`:`${blendedAmortR9}yr blended term`}</strong>)</span>:''}.
+            A DSCR of <strong style={{color:'#1c1917'}}>1.00</strong> means the business exactly covers its debt — nothing left over.
+            <strong style={{color:'#1c1917'}}> {dscrMin}</strong> is the required minimum — {((dscrMin-1)*100).toFixed(0)} cents of cushion for every dollar of payment.
+            <strong style={{color:'#C4592F'}}> 2.00 or above</strong> is considered strong and signals that the buyer will have healthy cash flow after servicing the debt.
+            The loan modeled here assumes a <strong style={{color:'#1c1917'}}>3× SDE price{buyerSalary>0?' after buyer\'s salary':''} at {loanRate}% over {loanAmort} years with {dpPct}% down</strong>{reVal>0?<span> (real estate included — actual deal uses <strong style={{color:'#1c1917'}}>{(loanStructure||'7a')==='504'?`7(a)+504 structure`:`${blendedAmortR9}yr blended term`}</strong>)</span>:''}.
           </p>
           <table style={{width:'100%',fontSize:11,borderCollapse:'collapse'}}>
             <thead>
-              <tr style={{borderBottom:'2px solid #1e2d45'}}>
+              <tr style={{borderBottom:'2px solid #e6dfd6'}}>
                 {['Year','SDE','SBA Annual DS',...(sfAnn>0?['Seller Note DS']:[]),'Total DS','DSCR','Assessment'].map((h,i)=>(
-                  <th key={h} style={{textAlign:i===0?'left':'right',padding:'6px '+(i===0?'0':'8px'),color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600}}>{h}</th>
+                  <th key={h} style={{textAlign:i===0?'left':'right',padding:'6px '+(i===0?'0':'8px'),color:'#44403c',fontSize:10,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600}}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -3000,15 +3000,15 @@ const T9 = ({state,narrative,narrativeStatus}) => {
                   ? [{g:1.5,y:dscrMin},{g:1.5,y:dscrMin},{g:1.5,y:dscrMin}]
                   : [{g:1.5,y:dscrMin},{g:1.7,y:dscrMin},{g:2.0,y:Math.max(1.8,dscrMin)}];
                 const t=thresholds[i]||thresholds[2];
-                const clr=d>=t.g?'#059669':d>=t.y?'#d97706':'#dc2626';
+                const clr=d>=t.g?'#A34826':d>=t.y?'#b45309':'#dc2626';
                 const lbl=d>=t.g?'✓ Strong':d>=t.y?'⚠ Marginal':'✗ Below Min';
                 return (
-                  <tr key={`nlb-${i}`} style={{borderBottom:'1px solid #1e2d45'}}>
-                    <td style={{padding:'7px 0',color:'#e2e8f0',fontWeight:700}}>{y.year}</td>
-                    <td className="rpt-green mono" style={{textAlign:'right',padding:'7px 8px',color:'#2eb860'}}>{fmtD(sde)}</td>
-                    <td className="rpt-red mono" style={{textAlign:'right',padding:'7px 8px',color:'#f87171'}}>{fmtD(dscrAnn)}</td>
-                    {sfAnn>0&&<td className="rpt-red mono" style={{textAlign:'right',padding:'7px 8px',color:'#f87171'}}>{fmtD(sfAnn)}</td>}
-                    <td className="rpt-red mono" style={{textAlign:'right',padding:'7px 8px',color:'#f87171',fontWeight:700}}>{fmtD(totalDscrAnn)}</td>
+                  <tr key={`nlb-${i}`} style={{borderBottom:'1px solid #e6dfd6'}}>
+                    <td style={{padding:'7px 0',color:'#1c1917',fontWeight:700}}>{y.year}</td>
+                    <td className="rpt-green mono" style={{textAlign:'right',padding:'7px 8px',color:'#C4592F'}}>{fmtD(sde)}</td>
+                    <td className="rpt-red mono" style={{textAlign:'right',padding:'7px 8px',color:'#dc2626'}}>{fmtD(dscrAnn)}</td>
+                    {sfAnn>0&&<td className="rpt-red mono" style={{textAlign:'right',padding:'7px 8px',color:'#dc2626'}}>{fmtD(sfAnn)}</td>}
+                    <td className="rpt-red mono" style={{textAlign:'right',padding:'7px 8px',color:'#dc2626',fontWeight:700}}>{fmtD(totalDscrAnn)}</td>
                     <td className={`mono ${d>=t.g?'rpt-green':d>=t.y?'rpt-amber':'rpt-red'}`} style={{textAlign:'right',padding:'7px 8px',fontWeight:800,fontSize:14,color:clr}}>{d>0?d.toFixed(2):'—'}</td>
                     <td className={d>=t.g?'rpt-green':d>=t.y?'rpt-amber':'rpt-red'} style={{textAlign:'right',padding:'7px 0',fontSize:11,color:clr,fontWeight:600}}>{lbl}</td>
                   </tr>
@@ -3016,7 +3016,7 @@ const T9 = ({state,narrative,narrativeStatus}) => {
               })}
             </tbody>
           </table>
-          {sfAnn>0&&<div style={{marginTop:8,fontSize:11,color:'#64748b'}}>
+          {sfAnn>0&&<div style={{marginTop:8,fontSize:11,color:'#57534e'}}>
             Seller note of {fmtD(sfAmt)} at {su?.sfRate}% / {su?.sfAmort}yr adds {fmtD(sfAnn)}/yr to total debt service.
           </div>}
         </div>}
@@ -3025,8 +3025,8 @@ const T9 = ({state,narrative,narrativeStatus}) => {
         {vis.seller&&sellerAskP>0&&(
           <div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
             <SH n={5} title="Seller Reality Check"/>
-            <p style={{fontSize:12,lineHeight:1.75,color:'#94a3b8',marginBottom:14}}>
-              This analysis requires a <strong style={{color:'#e2e8f0'}}>DSCR of at least {dscrMin}×</strong> — the business must generate
+            <p style={{fontSize:12,lineHeight:1.75,color:'#57534e',marginBottom:14}}>
+              This analysis requires a <strong style={{color:'#1c1917'}}>DSCR of at least {dscrMin}×</strong> — the business must generate
               ${dscrMin.toFixed(2)} of cash flow for every $1.00 of loan payment. After deducting a buyer salary and contingency reserve,
               the adjusted DSCR shows true borrower capacity. The table below compares the seller's asking price,
               the advisor's recommended price, and the maximum price the business can mathematically support.
@@ -3035,46 +3035,46 @@ const T9 = ({state,narrative,narrativeStatus}) => {
               const sprices=[sellerAskP,mp,sMax125];
               const slabels=["Seller's Price","Advisor's Price",`Max @ ${dscrMin}×`];
               const smets=[sAskM,sAdvM,sMaxM];
-              const shdrC=['#dc2626','#059669','#60a5fa'];
+              const shdrC=['#dc2626','#A34826','#1d4ed8'];
               const srow=(lbl,vals,colFn,bold)=>(
-                <tr style={{borderBottom:'1px solid #0f1623',background:bold?'#071a0b':'transparent'}}>
-                  <td style={{padding:'4px 0',color:'#94a3b8',fontSize:11,fontWeight:bold?700:400}}>{lbl}</td>
-                  {vals.map((v,i)=><td key={i} style={{textAlign:'right',fontFamily:'monospace',fontSize:11,padding:'4px 8px',color:typeof colFn==='function'?colFn(v,i):'#e2e8f0',fontWeight:bold?700:400}}>{v!=null?fmtD(v):'—'}</td>)}
+                <tr style={{borderBottom:'1px solid #e6dfd6',background:bold?'#f8efe8':'transparent'}}>
+                  <td style={{padding:'4px 0',color:'#57534e',fontSize:11,fontWeight:bold?700:400}}>{lbl}</td>
+                  {vals.map((v,i)=><td key={i} style={{textAlign:'right',fontFamily:'monospace',fontSize:11,padding:'4px 8px',color:typeof colFn==='function'?colFn(v,i):'#1c1917',fontWeight:bold?700:400}}>{v!=null?fmtD(v):'—'}</td>)}
                 </tr>
               );
               const sdRow=(lbl,vals)=>(
-                <tr style={{borderBottom:'1px solid #1e2d45'}}>
-                  <td style={{padding:'4px 0',color:'#94a3b8',fontSize:11,fontWeight:700}}>{lbl}</td>
-                  {vals.map((d,i)=><td key={i} style={{textAlign:'right',fontFamily:'monospace',fontSize:13,fontWeight:800,padding:'4px 8px',color:d!=null?sDC(d):'#475569'}}>{d!=null?d.toFixed(2):'—'}</td>)}
+                <tr style={{borderBottom:'1px solid #e6dfd6'}}>
+                  <td style={{padding:'4px 0',color:'#57534e',fontSize:11,fontWeight:700}}>{lbl}</td>
+                  {vals.map((d,i)=><td key={i} style={{textAlign:'right',fontFamily:'monospace',fontSize:13,fontWeight:800,padding:'4px 8px',color:d!=null?sDC(d):'#44403c'}}>{d!=null?d.toFixed(2):'—'}</td>)}
                 </tr>
               );
               return (
                 <table style={{width:'100%',borderCollapse:'collapse',marginBottom:14}}>
                   <thead>
-                    <tr style={{borderBottom:'2px solid #1e2d45'}}>
-                      <th style={{textAlign:'left',color:'#475569',fontSize:10,textTransform:'uppercase',padding:'4px 0',width:'35%'}}>Metric</th>
+                    <tr style={{borderBottom:'2px solid #e6dfd6'}}>
+                      <th style={{textAlign:'left',color:'#44403c',fontSize:10,textTransform:'uppercase',padding:'4px 0',width:'35%'}}>Metric</th>
                       {slabels.map((l,i)=><th key={i} style={{textAlign:'right',color:shdrC[i],fontSize:10,fontWeight:700,padding:'4px 8px',textTransform:'uppercase'}}>{l}</th>)}
                     </tr>
                   </thead>
                   <tbody>
-                    {srow('Asking Price',sprices.map(p=>p>0?p:null),()=>'#e2e8f0',true)}
-                    {srow(`Down Payment (${dpPct||10}%)`,sprices.map(p=>p>0?p*dp:null),()=>'#94a3b8')}
-                    {srow('SBA Loan',sprices.map(p=>p>0?p*(1-dp):null),()=>'#94a3b8')}
-                    {srow('Monthly Payment',smets.map(m=>m?m.mo:null),()=>'#fbbf24')}
-                    {srow('Annual Debt Service',smets.map(m=>m?m.ann:null),()=>'#f87171')}
-                    {srow('SDE Available',sprices.map(()=>baseRaw),()=>'#2eb860',true)}
-                    {srow('− Buyer Salary',sprices.map(()=>sellerSal||0),()=>'#94a3b8')}
-                    {srow('= Adjusted SDE',sprices.map(()=>baseRaw-sellerSal),(v)=>v>=0?'#2eb860':'#f87171',true)}
+                    {srow('Asking Price',sprices.map(p=>p>0?p:null),()=>'#1c1917',true)}
+                    {srow(`Down Payment (${dpPct||10}%)`,sprices.map(p=>p>0?p*dp:null),()=>'#57534e')}
+                    {srow('SBA Loan',sprices.map(p=>p>0?p*(1-dp):null),()=>'#57534e')}
+                    {srow('Monthly Payment',smets.map(m=>m?m.mo:null),()=>'#b45309')}
+                    {srow('Annual Debt Service',smets.map(m=>m?m.ann:null),()=>'#dc2626')}
+                    {srow('SDE Available',sprices.map(()=>baseRaw),()=>'#C4592F',true)}
+                    {srow('− Buyer Salary',sprices.map(()=>sellerSal||0),()=>'#57534e')}
+                    {srow('= Adjusted SDE',sprices.map(()=>baseRaw-sellerSal),(v)=>v>=0?'#C4592F':'#dc2626',true)}
                     {sdRow('Raw DSCR',smets.map(m=>m?m.rawD:null))}
                     {sdRow('Adj. DSCR',smets.map(m=>m?m.adjD:null))}
-                    {srow(`− Contingency (${sellerContP}%)`,sprices.map(()=>baseRaw*(sellerContP/100)),()=>'#94a3b8')}
-                    <tr style={{borderBottom:'1px solid #1e2d45',background:'#071a0b'}}>
-                      <td style={{padding:'4px 0',color:'#94a3b8',fontSize:11,fontWeight:700}}>= Cash Left Over</td>
-                      {smets.map((m,i)=><td key={i} style={{textAlign:'right',fontFamily:'monospace',fontSize:13,fontWeight:800,padding:'4px 8px',color:m?sCC(m.cash):'#475569'}}>{m?fmtD(m.cash):'—'}</td>)}
+                    {srow(`− Contingency (${sellerContP}%)`,sprices.map(()=>baseRaw*(sellerContP/100)),()=>'#57534e')}
+                    <tr style={{borderBottom:'1px solid #e6dfd6',background:'#f8efe8'}}>
+                      <td style={{padding:'4px 0',color:'#57534e',fontSize:11,fontWeight:700}}>= Cash Left Over</td>
+                      {smets.map((m,i)=><td key={i} style={{textAlign:'right',fontFamily:'monospace',fontSize:13,fontWeight:800,padding:'4px 8px',color:m?sCC(m.cash):'#44403c'}}>{m?fmtD(m.cash):'—'}</td>)}
                     </tr>
                     <tr>
-                      <td style={{padding:'5px 0',color:'#94a3b8',fontSize:11,fontWeight:700}}>Status</td>
-                      {smets.map((m,i)=><td key={i} style={{textAlign:'right',padding:'5px 8px',fontSize:11,fontWeight:700,color:m?(m.adjD>=1.5?'#059669':m.adjD>=dscrMin?'#d97706':'#dc2626'):'#475569'}}>{sStatus(m)}</td>)}
+                      <td style={{padding:'5px 0',color:'#57534e',fontSize:11,fontWeight:700}}>Status</td>
+                      {smets.map((m,i)=><td key={i} style={{textAlign:'right',padding:'5px 8px',fontSize:11,fontWeight:700,color:m?(m.adjD>=1.5?'#A34826':m.adjD>=dscrMin?'#b45309':'#dc2626'):'#44403c'}}>{sStatus(m)}</td>)}
                     </tr>
                   </tbody>
                 </table>
@@ -3088,7 +3088,7 @@ const T9 = ({state,narrative,narrativeStatus}) => {
               }
               if(sMax125>0)slines.push(`The maximum supportable price at ${dscrMin}× DSCR${sellerSal>0?` with a ${fmtD(sellerSal)} buyer salary`:''} is ${fmtD(sMax125)}.`);
               if(!slines.length)return null;
-              return <div style={{background:'#0a1f05',border:'1px solid #1a5e35',borderRadius:7,padding:'12px 14px',fontSize:12,color:'#94a3b8',lineHeight:1.8,fontStyle:'italic'}}>{slines.join(' ')}</div>;
+              return <div style={{background:'#f8efe8',border:'1px solid #e8cfc3',borderRadius:7,padding:'12px 14px',fontSize:12,color:'#57534e',lineHeight:1.8,fontStyle:'italic'}}>{slines.join(' ')}</div>;
             })()}
           </div>
         )}
@@ -3123,39 +3123,39 @@ const T9 = ({state,narrative,narrativeStatus}) => {
             <div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
               <SH n={6} title="Buyer ROI Summary"/>
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:14}}>
-                {[['Total Cash to Close',fmtD(rTotalCash),'#2eb860'],['Cash-on-Cash Return',rCoC.toFixed(1)+'%',rCoC>=15?'#2eb860':rCoC>=10?'#fbbf24':'#f87171'],['Leverage Ratio',`${(rmp/rTotalCash).toFixed(1)}:1`,'#60a5fa']].map(([l,v,c])=>(
-                  <div key={l} style={{textAlign:'center',padding:'10px',background:'#0f1623',borderRadius:6,border:'1px solid #1e2d45'}}>
-                    <div style={{fontSize:9,color:'#64748b',marginBottom:3,fontWeight:600,textTransform:'uppercase'}}>{l}</div>
+                {[['Total Cash to Close',fmtD(rTotalCash),'#C4592F'],['Cash-on-Cash Return',rCoC.toFixed(1)+'%',rCoC>=15?'#C4592F':rCoC>=10?'#b45309':'#dc2626'],['Leverage Ratio',`${(rmp/rTotalCash).toFixed(1)}:1`,'#1d4ed8']].map(([l,v,c])=>(
+                  <div key={l} style={{textAlign:'center',padding:'10px',background:'#f7f3ee',borderRadius:6,border:'1px solid #e6dfd6'}}>
+                    <div style={{fontSize:9,color:'#57534e',marginBottom:3,fontWeight:600,textTransform:'uppercase'}}>{l}</div>
                     <div style={{fontFamily:'monospace',fontWeight:800,fontSize:16,color:c}}>{v}</div>
                   </div>
                 ))}
               </div>
               <table style={{width:'100%',fontSize:11,borderCollapse:'collapse',marginBottom:14}}>
-                <thead><tr style={{borderBottom:'1px solid #1e2d45'}}>
-                  <th style={{textAlign:'left',color:'#475569',paddingBottom:5,fontSize:10,fontWeight:600}}>Year 1 Returns</th>
-                  <th style={{textAlign:'right',color:'#64748b',paddingBottom:5,fontSize:10}}>Annual</th>
-                  <th style={{textAlign:'right',color:'#64748b',paddingBottom:5,fontSize:10}}>Monthly</th>
+                <thead><tr style={{borderBottom:'1px solid #e6dfd6'}}>
+                  <th style={{textAlign:'left',color:'#44403c',paddingBottom:5,fontSize:10,fontWeight:600}}>Year 1 Returns</th>
+                  <th style={{textAlign:'right',color:'#57534e',paddingBottom:5,fontSize:10}}>Annual</th>
+                  <th style={{textAlign:'right',color:'#57534e',paddingBottom:5,fontSize:10}}>Monthly</th>
                 </tr></thead>
                 <tbody>
-                  {[['Seller\'s Discretionary Earnings',rsde,true,'#2eb860'],['− SBA Loan Payment',-rsbaAnn,false,'#f87171'],...(rsfAnn>0?[['− Seller Financing',-rsfAnn,false,'#f87171']]:[]),['Net Cash Flow',rNetCF,true,rNetCF>=0?'#2eb860':'#f87171']].map(([l,v,bold,c])=>(
-                    <tr key={l} style={{borderBottom:'1px solid #0f1623'}}>
-                      <td style={{padding:'5px 0',color:'#94a3b8',fontWeight:bold?700:400}}>{l}</td>
+                  {[['Seller\'s Discretionary Earnings',rsde,true,'#C4592F'],['− SBA Loan Payment',-rsbaAnn,false,'#dc2626'],...(rsfAnn>0?[['− Seller Financing',-rsfAnn,false,'#dc2626']]:[]),['Net Cash Flow',rNetCF,true,rNetCF>=0?'#C4592F':'#dc2626']].map(([l,v,bold,c])=>(
+                    <tr key={l} style={{borderBottom:'1px solid #e6dfd6'}}>
+                      <td style={{padding:'5px 0',color:'#57534e',fontWeight:bold?700:400}}>{l}</td>
                       <td style={{textAlign:'right',fontFamily:'monospace',color:c,fontWeight:bold?700:400,paddingLeft:8}}>{v>=0?fmtD(v):`(${fmtD(Math.abs(v))})`}</td>
                       <td style={{textAlign:'right',fontFamily:'monospace',color:c,fontWeight:bold?700:400,paddingLeft:8}}>{v>=0?fmtD(v/12):`(${fmtD(Math.abs(v)/12)})`}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <div style={{fontSize:10,fontWeight:700,color:'#94a3b8',marginBottom:6}}>EXIT SCENARIOS — YEAR {rExitYrs} (SDE: {fmtD(rExitSDE)} · Exit multiples based on {rExitMult.toFixed(1)}× market)</div>
+              <div style={{fontSize:10,fontWeight:700,color:'#57534e',marginBottom:6}}>EXIT SCENARIOS — YEAR {rExitYrs} (SDE: {fmtD(rExitSDE)} · Exit multiples based on {rExitMult.toFixed(1)}× market)</div>
               <table style={{width:'100%',fontSize:11,borderCollapse:'collapse'}}>
-                <thead><tr style={{borderBottom:'1px solid #1e2d45'}}>
-                  <th style={{textAlign:'left',color:'#475569',fontWeight:600,paddingBottom:4}}>Scenario</th>
-                  {[['Conservative',rExitMult-1],['Market',rExitMult],['Premium',rExitMult+1]].map(([l])=><th key={l} style={{textAlign:'right',color:l==='Market'?'#fbbf24':'#64748b',fontWeight:700,paddingBottom:4,paddingLeft:8}}>{l}</th>)}
+                <thead><tr style={{borderBottom:'1px solid #e6dfd6'}}>
+                  <th style={{textAlign:'left',color:'#44403c',fontWeight:600,paddingBottom:4}}>Scenario</th>
+                  {[['Conservative',rExitMult-1],['Market',rExitMult],['Premium',rExitMult+1]].map(([l])=><th key={l} style={{textAlign:'right',color:l==='Market'?'#b45309':'#57534e',fontWeight:700,paddingBottom:4,paddingLeft:8}}>{l}</th>)}
                 </tr></thead>
                 <tbody>
-                  {[['Multiple',m=>m.toFixed(1)+'×','#94a3b8'],['Total Return',m=>fmtD(rScen(m).tot),'#fbbf24'],['Total ROI',m=>rScen(m).roi.toFixed(0)+'%','#a78bfa'],['CAGR',m=>(rScen(m).cagr*100).toFixed(1)+'%','#34d399']].map(([l,fn,c])=>(
-                    <tr key={l} style={{borderBottom:'1px solid #0f1623'}}>
-                      <td style={{padding:'5px 0',color:'#94a3b8'}}>{l}</td>
+                  {[['Multiple',m=>m.toFixed(1)+'×','#57534e'],['Total Return',m=>fmtD(rScen(m).tot),'#b45309'],['Total ROI',m=>rScen(m).roi.toFixed(0)+'%','#6d28d9'],['CAGR',m=>(rScen(m).cagr*100).toFixed(1)+'%','#C4592F']].map(([l,fn,c])=>(
+                    <tr key={l} style={{borderBottom:'1px solid #e6dfd6'}}>
+                      <td style={{padding:'5px 0',color:'#57534e'}}>{l}</td>
                       {[rExitMult-1,rExitMult,rExitMult+1].map(m=><td key={m} style={{textAlign:'right',fontFamily:'monospace',color:c,paddingLeft:8}}>{fn(m)}</td>)}
                     </tr>
                   ))}
@@ -3168,10 +3168,10 @@ const T9 = ({state,narrative,narrativeStatus}) => {
         {/* Section 6 — Sources & Uses */}
         {vis.sources&&<div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
           <SH n={7} title="Sources & Uses of Funds"/>
-          <p style={{fontSize:12,lineHeight:1.75,color:'#94a3b8',marginBottom:16}}>
-            Every acquisition has two sides: <strong style={{color:'#e2e8f0'}}>Sources</strong> (where the money comes from)
-            and <strong style={{color:'#e2e8f0'}}>Uses</strong> (where every dollar goes).
-            The <strong style={{color:'#e2e8f0'}}>SBA 7(a) loan</strong> is the primary financing vehicle for acquisitions of this type,
+          <p style={{fontSize:12,lineHeight:1.75,color:'#57534e',marginBottom:16}}>
+            Every acquisition has two sides: <strong style={{color:'#1c1917'}}>Sources</strong> (where the money comes from)
+            and <strong style={{color:'#1c1917'}}>Uses</strong> (where every dollar goes).
+            The <strong style={{color:'#1c1917'}}>SBA 7(a) loan</strong> is the primary financing vehicle for acquisitions of this type,
             enabling buyers to acquire a business with as little as {dpPct}% down.
             The SBA guarantee fee — charged by the federal government for backing the loan — and closing costs
             are typically rolled into the loan amount, minimizing cash needed at closing.
@@ -3179,35 +3179,35 @@ const T9 = ({state,narrative,narrativeStatus}) => {
           </p>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
             <div>
-              <div style={{fontSize:10,fontWeight:700,color:'#2eb860',textTransform:'uppercase',letterSpacing:'0.08em',paddingBottom:8,marginBottom:8,borderBottom:'2px solid #1a5e35'}}>SOURCES — How It's Funded</div>
-              <Row label={`SBA Loan (${(100-dpPct)}% of project + fee + closing)`} val={fmtD(totalLoan)} color='#2eb860'/>
-              <Row label={`Buyer Down Payment (${dpPct}% of total project)`} val={fmtD(downAmt)} color='#cbd5e1'/>
-              {sfAmt>0&&<Row label="Seller Financing Note" val={fmtD(sfAmt)} color='#fbbf24'/>}
-              <Row label="Total Sources" val={fmtD(totalLoan+downAmt+sfAmt)} color='#2eb860' bold top/>
+              <div style={{fontSize:10,fontWeight:700,color:'#C4592F',textTransform:'uppercase',letterSpacing:'0.08em',paddingBottom:8,marginBottom:8,borderBottom:'2px solid #e8cfc3'}}>SOURCES — How It's Funded</div>
+              <Row label={`SBA Loan (${(100-dpPct)}% of project + fee + closing)`} val={fmtD(totalLoan)} color='#C4592F'/>
+              <Row label={`Buyer Down Payment (${dpPct}% of total project)`} val={fmtD(downAmt)} color='#44403c'/>
+              {sfAmt>0&&<Row label="Seller Financing Note" val={fmtD(sfAmt)} color='#b45309'/>}
+              <Row label="Total Sources" val={fmtD(totalLoan+downAmt+sfAmt)} color='#C4592F' bold top/>
             </div>
             <div>
-              <div style={{fontSize:10,fontWeight:700,color:'#f87171',textTransform:'uppercase',letterSpacing:'0.08em',paddingBottom:8,marginBottom:8,borderBottom:'2px solid #7f1d1d'}}>USES — Where It Goes</div>
-              <Row label="Market Price" val={fmtD(mp)} color='#cbd5e1'/>
-              {reVal>0&&<Row label="Real Estate" val={fmtD(reVal)} color='#cbd5e1'/>}
-              {wcVal>0&&<Row label="Working Capital" val={fmtD(wcVal)} color='#cbd5e1'/>}
-              {arVal>0&&<Row label="Accounts Receivable" val={fmtD(arVal)} color='#cbd5e1'/>}
-              {invVal>0&&<Row label="Inventory" val={fmtD(invVal)} color='#cbd5e1'/>}
-              <Row label="SBA Guarantee Fee (3.5% of 75% of loan)" val={fmtD(guarFee)} color='#94a3b8'/>
-              <Row label="Closing Costs" val={fmtD(closingAmt)} color='#94a3b8'/>
-              <Row label="Total Uses" val={fmtD(totalProject+guarFee+closingAmt)} color='#f87171' bold top/>
+              <div style={{fontSize:10,fontWeight:700,color:'#dc2626',textTransform:'uppercase',letterSpacing:'0.08em',paddingBottom:8,marginBottom:8,borderBottom:'2px solid #e6dfd6'}}>USES — Where It Goes</div>
+              <Row label="Market Price" val={fmtD(mp)} color='#44403c'/>
+              {reVal>0&&<Row label="Real Estate" val={fmtD(reVal)} color='#44403c'/>}
+              {wcVal>0&&<Row label="Working Capital" val={fmtD(wcVal)} color='#44403c'/>}
+              {arVal>0&&<Row label="Accounts Receivable" val={fmtD(arVal)} color='#44403c'/>}
+              {invVal>0&&<Row label="Inventory" val={fmtD(invVal)} color='#44403c'/>}
+              <Row label="SBA Guarantee Fee (3.5% of 75% of loan)" val={fmtD(guarFee)} color='#57534e'/>
+              <Row label="Closing Costs" val={fmtD(closingAmt)} color='#57534e'/>
+              <Row label="Total Uses" val={fmtD(totalProject+guarFee+closingAmt)} color='#dc2626' bold top/>
             </div>
           </div>
         </div>}
 
         {/* Section 5 — Net Proceeds */}
         {vis.proceeds&&<div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
-          <SH n={8} title="Net Proceeds to Seller" color='#f59e0b'/>
-          <p style={{fontSize:12,lineHeight:1.75,color:'#94a3b8',marginBottom:16}}>
+          <SH n={8} title="Net Proceeds to Seller" color='#b45309'/>
+          <p style={{fontSize:12,lineHeight:1.75,color:'#57534e',marginBottom:16}}>
             The gross sale price is rarely what a seller takes home. Several obligations are settled at closing before the seller receives their check.
-            Any outstanding <strong style={{color:'#e2e8f0'}}>business debt or mortgage</strong> is paid off first.
-            The <strong style={{color:'#e2e8f0'}}>broker's commission</strong> — typically 8–12% of the sale price — compensates the intermediary who brought the deal together.
-            <strong style={{color:'#e2e8f0'}}> Legal and closing fees</strong> cover attorney review, due diligence, and transaction costs.
-            Finally, <strong style={{color:'#e2e8f0'}}>capital gains taxes</strong> apply to any gain above the seller's adjusted cost basis in the business.
+            Any outstanding <strong style={{color:'#1c1917'}}>business debt or mortgage</strong> is paid off first.
+            The <strong style={{color:'#1c1917'}}>broker's commission</strong> — typically 8–12% of the sale price — compensates the intermediary who brought the deal together.
+            <strong style={{color:'#1c1917'}}> Legal and closing fees</strong> cover attorney review, due diligence, and transaction costs.
+            Finally, <strong style={{color:'#1c1917'}}>capital gains taxes</strong> apply to any gain above the seller's adjusted cost basis in the business.
             What remains after all deductions is the seller's <em>true</em> take-home amount.
           </p>
           {(()=>{
@@ -3222,16 +3222,16 @@ const T9 = ({state,narrative,narrativeStatus}) => {
             return (
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,alignItems:'center'}}>
                 <div>
-                  <Row label="Gross Sale Price" val={fmtD(gross)} color='#2eb860' bold/>
-                  <Row label="Less: Debt / Mortgage Payoff" val={`(${fmtD(mortgage)})`} color='#f87171'/>
-                  <Row label={`Less: Broker Commission (${(commPct*100).toFixed(0)}%)`} val={`(${fmtD(comm)})`} color='#f87171'/>
-                  <Row label="Less: Legal & Closing Fees" val={`(${fmtD(legal)})`} color='#f87171'/>
-                  <Row label={`Less: Estimated Tax (${(taxRate*100).toFixed(0)}%)`} val={`(${fmtD(tax)})`} color='#f87171'/>
+                  <Row label="Gross Sale Price" val={fmtD(gross)} color='#C4592F' bold/>
+                  <Row label="Less: Debt / Mortgage Payoff" val={`(${fmtD(mortgage)})`} color='#dc2626'/>
+                  <Row label={`Less: Broker Commission (${(commPct*100).toFixed(0)}%)`} val={`(${fmtD(comm)})`} color='#dc2626'/>
+                  <Row label="Less: Legal & Closing Fees" val={`(${fmtD(legal)})`} color='#dc2626'/>
+                  <Row label={`Less: Estimated Tax (${(taxRate*100).toFixed(0)}%)`} val={`(${fmtD(tax)})`} color='#dc2626'/>
                 </div>
-                <div style={{textAlign:'center',background:'#0a1f05',border:'1px solid #1a5e35',borderRadius:10,padding:'24px 16px'}}>
-                  <div style={{fontSize:11,color:'#64748b',marginBottom:6,textTransform:'uppercase',letterSpacing:'0.08em',fontWeight:600}}>Estimated Net Proceeds</div>
-                  <div style={{fontFamily:'monospace',fontWeight:900,fontSize:32,color:net>=0?'#2eb860':'#ef4444'}}>{fmtD(net)}</div>
-                  <div style={{fontSize:10,color:'#475569',marginTop:6}}>after all deductions at closing</div>
+                <div style={{textAlign:'center',background:'#f8efe8',border:'1px solid #e8cfc3',borderRadius:10,padding:'24px 16px'}}>
+                  <div style={{fontSize:11,color:'#57534e',marginBottom:6,textTransform:'uppercase',letterSpacing:'0.08em',fontWeight:600}}>Estimated Net Proceeds</div>
+                  <div style={{fontFamily:'monospace',fontWeight:900,fontSize:32,color:net>=0?'#C4592F':'#dc2626'}}>{fmtD(net)}</div>
+                  <div style={{fontSize:10,color:'#44403c',marginTop:6}}>after all deductions at closing</div>
                 </div>
               </div>
             );
@@ -3240,9 +3240,9 @@ const T9 = ({state,narrative,narrativeStatus}) => {
 
         {/* Section 6 — QSI NLB */}
         {vis.nlb&&<div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
-          <SH n={9} title="QSI™ Next Larger Business (NLB) Strategy" color='#8b5cf6'/>
-          <p style={{fontSize:12,lineHeight:1.75,color:'#94a3b8',marginBottom:16}}>
-            Rather than leaving sale proceeds in low-yield savings or investments, the <strong style={{color:'#e2e8f0'}}>QSI™ NLB Strategy</strong> shows
+          <SH n={9} title="QSI™ Next Larger Business (NLB) Strategy" color='#6d28d9'/>
+          <p style={{fontSize:12,lineHeight:1.75,color:'#57534e',marginBottom:16}}>
+            Rather than leaving sale proceeds in low-yield savings or investments, the <strong style={{color:'#1c1917'}}>QSI™ NLB Strategy</strong> shows
             how a seller can put their net proceeds to work by using them as a down payment on a <em>larger, more profitable business</em>.
             By leveraging the SBA's minimum 10% down payment requirement, even a modest set of proceeds can unlock access to a significantly
             larger acquisition — amplifying the seller's future income without requiring them to spend their entire liquidity.
@@ -3251,19 +3251,19 @@ const T9 = ({state,narrative,narrativeStatus}) => {
           </p>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
             <div>
-              <div style={{fontSize:10,fontWeight:700,color:'#8b5cf6',textTransform:'uppercase',letterSpacing:'0.08em',paddingBottom:8,marginBottom:8,borderBottom:'2px solid #4c1d95'}}>STRATEGY INPUTS</div>
-              <Row label="Net Proceeds from Sale" val={fmtD(net)} color='#2eb860'/>
-              <Row label={`Down Payment for Next Acquisition (${nlbPct}%)`} val={fmtD(nlbDp)} color='#fbbf24'/>
-              <Row label="Remaining Liquid Proceeds After DP" val={fmtD(net-nlbDp)} color='#94a3b8'/>
-              <Row label="Current Business SDE" val={fmtD(curSDE)} color='#2eb860'/>
+              <div style={{fontSize:10,fontWeight:700,color:'#6d28d9',textTransform:'uppercase',letterSpacing:'0.08em',paddingBottom:8,marginBottom:8,borderBottom:'2px solid #e6dfd6'}}>STRATEGY INPUTS</div>
+              <Row label="Net Proceeds from Sale" val={fmtD(net)} color='#C4592F'/>
+              <Row label={`Down Payment for Next Acquisition (${nlbPct}%)`} val={fmtD(nlbDp)} color='#b45309'/>
+              <Row label="Remaining Liquid Proceeds After DP" val={fmtD(net-nlbDp)} color='#57534e'/>
+              <Row label="Current Business SDE" val={fmtD(curSDE)} color='#C4592F'/>
             </div>
             <div>
-              <div style={{fontSize:10,fontWeight:700,color:'#8b5cf6',textTransform:'uppercase',letterSpacing:'0.08em',paddingBottom:8,marginBottom:8,borderBottom:'2px solid #4c1d95'}}>NEXT BUSINESS PROJECTION</div>
-              <Row label="Target Acquisition Price (10% down)" val={fmtD(nlbTarget)} color='#a78bfa'/>
-              <Row label="Estimated Next Business SDE (3× value)" val={fmtD(nextSDE)} color='#a78bfa'/>
-              <div style={{marginTop:10,padding:'10px 0',borderTop:'2px solid #4c1d95',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                <span style={{color:'#e2e8f0',fontWeight:700,fontSize:12}}>Estimated Annual Income Increase</span>
-                <span style={{fontFamily:'monospace',fontWeight:800,fontSize:14,color:nextSDE-curSDE>=0?'#2eb860':'#ef4444'}}>{fmtD(nextSDE-curSDE)}</span>
+              <div style={{fontSize:10,fontWeight:700,color:'#6d28d9',textTransform:'uppercase',letterSpacing:'0.08em',paddingBottom:8,marginBottom:8,borderBottom:'2px solid #e6dfd6'}}>NEXT BUSINESS PROJECTION</div>
+              <Row label="Target Acquisition Price (10% down)" val={fmtD(nlbTarget)} color='#6d28d9'/>
+              <Row label="Estimated Next Business SDE (3× value)" val={fmtD(nextSDE)} color='#6d28d9'/>
+              <div style={{marginTop:10,padding:'10px 0',borderTop:'2px solid #e6dfd6',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <span style={{color:'#1c1917',fontWeight:700,fontSize:12}}>Estimated Annual Income Increase</span>
+                <span style={{fontFamily:'monospace',fontWeight:800,fontSize:14,color:nextSDE-curSDE>=0?'#C4592F':'#dc2626'}}>{fmtD(nextSDE-curSDE)}</span>
               </div>
             </div>
           </div>
@@ -3278,38 +3278,38 @@ const T9 = ({state,narrative,narrativeStatus}) => {
           const chartData=[...withData].reverse().map(y=>{const c=calcSDE(y);return{year:String(y.year),revenue:c.rev,sde:c.sde,gm:c.rev>0?+(c.gp/c.rev*100).toFixed(1):0,em:c.rev>0?+(c.ebitda/c.rev*100).toFixed(1):0,sm:c.rev>0?+(c.sde/c.rev*100).toFixed(1):0};});
           const pctFmt=v=>v.toFixed(1)+'%';
           const wfSteps=c0?(()=>{const idao=c0.int+c0.taxes+c0.dep+c0.amor,ab=c0.ab+c0.rentAB,s=[{label:'Revenue',val:c0.rev,type:'start'},{label:'− COGS',val:-c0.cogs,type:'step'},{label:'Gr. Profit',val:c0.gp,type:'total'},{label:'− OpEx',val:-c0.opx,type:'step'},{label:'NOI',val:c0.noi,type:'total'}];if(idao>0)s.push({label:'+I/T/D&A',val:idao,type:'step'});s.push({label:'EBITDA',val:c0.ebitda,type:'total'});if(c0.oc>0)s.push({label:'+OC',val:c0.oc,type:'step'});if(ab>0)s.push({label:'+Add-Backs',val:ab,type:'step'});s.push({label:'SDE',val:c0.sde,type:'total'});return s;})():[];
-          const KpiCard=({label,value,pctOfRev,yoyPct,color='#e2e8f0'})=>{const up=yoyPct!=null&&yoyPct>=0;return(<div className="card p-4" style={{flex:1}}><div style={{fontSize:10,color:'#475569',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>{label}</div><div style={{fontFamily:'monospace',fontSize:16,fontWeight:800,color,marginBottom:4}}>{value}</div><div style={{display:'flex',gap:8,flexWrap:'wrap'}}>{pctOfRev!=null&&<span style={{fontSize:10,color:'#64748b'}}>{pctOfRev.toFixed(1)}% of rev</span>}{yoyPct!=null&&<span style={{fontSize:10,color:up?'#2eb860':'#ef4444',fontWeight:600}}>{up?'▲':'▼'}{Math.abs(yoyPct).toFixed(1)}% YoY</span>}</div></div>);};
+          const KpiCard=({label,value,pctOfRev,yoyPct,color='#1c1917'})=>{const up=yoyPct!=null&&yoyPct>=0;return(<div className="card p-4" style={{flex:1}}><div style={{fontSize:10,color:'#44403c',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>{label}</div><div style={{fontFamily:'monospace',fontSize:16,fontWeight:800,color,marginBottom:4}}>{value}</div><div style={{display:'flex',gap:8,flexWrap:'wrap'}}>{pctOfRev!=null&&<span style={{fontSize:10,color:'#57534e'}}>{pctOfRev.toFixed(1)}% of rev</span>}{yoyPct!=null&&<span style={{fontSize:10,color:up?'#C4592F':'#dc2626',fontWeight:600}}>{up?'▲':'▼'}{Math.abs(yoyPct).toFixed(1)}% YoY</span>}</div></div>);};
           return (
             <div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
               <SH n={10} title="Financial Narrative Analysis"/>
               {c0&&(<>
                 {/* KPI cards */}
                 <div style={{display:'flex',gap:10,marginBottom:14}}>
-                  <KpiCard label="Revenue" value={fmtD(c0.rev)} yoyPct={yoy(c0.rev,c1?.rev)} color="#e2e8f0"/>
-                  <KpiCard label="Gross Profit" value={fmtD(c0.gp)} pctOfRev={c0.rev>0?c0.gp/c0.rev*100:null} yoyPct={yoy(c0.gp,c1?.gp)} color="#60a5fa"/>
-                  <KpiCard label="EBITDA" value={fmtD(c0.ebitda)} pctOfRev={c0.rev>0?c0.ebitda/c0.rev*100:null} yoyPct={yoy(c0.ebitda,c1?.ebitda)} color="#a78bfa"/>
-                  <KpiCard label="SDE" value={fmtD(c0.sde)} pctOfRev={c0.rev>0?c0.sde/c0.rev*100:null} yoyPct={yoy(c0.sde,c1?.sde)} color="#2eb860"/>
+                  <KpiCard label="Revenue" value={fmtD(c0.rev)} yoyPct={yoy(c0.rev,c1?.rev)} color="#1c1917"/>
+                  <KpiCard label="Gross Profit" value={fmtD(c0.gp)} pctOfRev={c0.rev>0?c0.gp/c0.rev*100:null} yoyPct={yoy(c0.gp,c1?.gp)} color="#1d4ed8"/>
+                  <KpiCard label="EBITDA" value={fmtD(c0.ebitda)} pctOfRev={c0.rev>0?c0.ebitda/c0.rev*100:null} yoyPct={yoy(c0.ebitda,c1?.ebitda)} color="#6d28d9"/>
+                  <KpiCard label="SDE" value={fmtD(c0.sde)} pctOfRev={c0.rev>0?c0.sde/c0.rev*100:null} yoyPct={yoy(c0.sde,c1?.sde)} color="#C4592F"/>
                 </div>
                 {/* Trend charts */}
                 <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:14}}>
-                  {[{l:'Revenue Trend',k:'revenue',c:'#60a5fa',f:undefined},{l:'Gross Margin %',k:'gm',c:'#3b82f6',f:pctFmt},{l:'EBITDA Margin %',k:'em',c:'#a78bfa',f:pctFmt},{l:'SDE Trend',k:'sde',c:'#2eb860',f:undefined}].map(ch=>(
+                  {[{l:'Revenue Trend',k:'revenue',c:'#1d4ed8',f:undefined},{l:'Gross Margin %',k:'gm',c:'#1d4ed8',f:pctFmt},{l:'EBITDA Margin %',k:'em',c:'#6d28d9',f:pctFmt},{l:'SDE Trend',k:'sde',c:'#C4592F',f:undefined}].map(ch=>(
                     <div key={ch.k} className="card p-3">
-                      <div style={{fontSize:10,color:'#64748b',fontWeight:600,marginBottom:6}}>{ch.l}</div>
+                      <div style={{fontSize:10,color:'#57534e',fontWeight:600,marginBottom:6}}>{ch.l}</div>
                       <BarChart data={chartData} dataKey={ch.k} color={ch.c} fmtAxis={ch.f}/>
                     </div>
                   ))}
                 </div>
                 {/* Waterfall */}
                 {wfSteps.length>0&&<div style={{marginBottom:14}}>
-                  <div style={{fontSize:10,color:'#475569',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>Revenue → SDE Bridge — {withData[0]?.year}</div>
+                  <div style={{fontSize:10,color:'#44403c',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>Revenue → SDE Bridge — {withData[0]?.year}</div>
                   <WaterfallChart steps={wfSteps}/>
                 </div>}
               </>)}
               {/* Narrative text */}
               {narrativeStatus==='done'
-                ? <div style={{borderTop:'1px solid #1e2d45',paddingTop:14,marginTop:4}}>{renderNarrative(narrative)}</div>
-                : <p className="no-print" style={{color:'#475569',fontSize:12,fontStyle:'italic',marginTop:8}}>
-                    Narrative text not yet generated — go to the <strong style={{color:'#94a3b8'}}>Narrative Report</strong> tab and click Generate to populate this section.
+                ? <div style={{borderTop:'1px solid #e6dfd6',paddingTop:14,marginTop:4}}>{renderNarrative(narrative)}</div>
+                : <p className="no-print" style={{color:'#44403c',fontSize:12,fontStyle:'italic',marginTop:8}}>
+                    Narrative text not yet generated — go to the <strong style={{color:'#57534e'}}>Narrative Report</strong> tab and click Generate to populate this section.
                   </p>
               }
             </div>
@@ -3317,7 +3317,7 @@ const T9 = ({state,narrative,narrativeStatus}) => {
         })()}
 
         {/* Footer */}
-        <div style={{marginTop:20,paddingTop:12,borderTop:'1px solid #1e2d45',display:'flex',justifyContent:'space-between',fontSize:10,color:'#334155'}}>
+        <div style={{marginTop:20,paddingTop:12,borderTop:'1px solid #e6dfd6',display:'flex',justifyContent:'space-between',fontSize:10,color:'#44403c'}}>
           <span>QSI™ Market Price Analyzer &nbsp;·&nbsp; Confidential &nbsp;·&nbsp; For Discussion Purposes Only</span>
           <span>{new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</span>
         </div>
@@ -3368,35 +3368,35 @@ const LoadModal = ({onClose, onLoad, user}) => {
   return (
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}}
          onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div style={{background:'#161b27',border:'1px solid #1e2d45',borderRadius:10,padding:24,width:560,maxHeight:'75vh',display:'flex',flexDirection:'column'}}>
+      <div style={{background:'rgba(255,255,255,0.92)',border:'1px solid #e6dfd6',borderRadius:10,padding:24,width:560,maxHeight:'75vh',display:'flex',flexDirection:'column'}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-          <span style={{fontWeight:700,fontSize:15,color:'#e2e8f0'}}>Shared Deal Library</span>
-          <button onClick={onClose} style={{background:'none',border:'none',color:'#64748b',fontSize:20,cursor:'pointer',lineHeight:1}}>&times;</button>
+          <span style={{fontWeight:700,fontSize:15,color:'#1c1917'}}>Shared Deal Library</span>
+          <button onClick={onClose} style={{background:'none',border:'none',color:'#57534e',fontSize:20,cursor:'pointer',lineHeight:1}}>&times;</button>
         </div>
         {loading ? (
-          <div style={{textAlign:'center',padding:32,color:'#64748b'}}>Loading deals...</div>
+          <div style={{textAlign:'center',padding:32,color:'#57534e'}}>Loading deals...</div>
         ) : deals.length===0 ? (
-          <div style={{textAlign:'center',padding:32,color:'#64748b'}}>No deals in shared library yet.</div>
+          <div style={{textAlign:'center',padding:32,color:'#57534e'}}>No deals in shared library yet.</div>
         ) : (
           <div style={{overflowY:'auto',flex:1}}>
             {deals.map(d=>(
-              <div key={d.id} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 6px',borderBottom:'1px solid #1e2d45'}}>
+              <div key={d.id} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 6px',borderBottom:'1px solid #e6dfd6'}}>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontWeight:600,fontSize:13,color:'#e2e8f0',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                  <div style={{fontWeight:600,fontSize:13,color:'#1c1917',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
                     {d.dealName||d.id}
                   </div>
-                  <div style={{fontSize:11,color:'#64748b',marginTop:2}}>
+                  <div style={{fontSize:11,color:'#57534e',marginTop:2}}>
                     {d._savedByName||d._savedBy||'Unknown'} &middot; {rel(d._savedAt)}
                   </div>
                 </div>
                 <button onClick={()=>onLoad(d)}
-                  style={{background:'#1a5e35',color:'#6de09a',border:'none',borderRadius:5,padding:'5px 12px',cursor:'pointer',fontSize:12,flexShrink:0}}>
+                  style={{background:'#C4592F',color:'#ffffff',border:'none',borderRadius:5,padding:'5px 12px',cursor:'pointer',fontSize:12,flexShrink:0}}>
                   Load
                 </button>
                 {(d._savedBy===user?.email) && (
                   <button onClick={()=>handleDelete(d.id, d.dealName||d.id)}
                     disabled={deleting===d.id}
-                    style={{background:'#3b0a0a',color:'#f87171',border:'none',borderRadius:5,padding:'5px 10px',cursor:'pointer',fontSize:12,flexShrink:0,opacity:deleting===d.id?0.5:1}}>
+                    style={{background:'#fef2f2',color:'#dc2626',border:'none',borderRadius:5,padding:'5px 10px',cursor:'pointer',fontSize:12,flexShrink:0,opacity:deleting===d.id?0.5:1}}>
                     {deleting===d.id?'...':'Delete'}
                   </button>
                 )}
@@ -3480,14 +3480,14 @@ const ReviewModal=({reviewData,onApply,onCancel})=>{
   const [bsVals,setBsVals]=useState(reviewData.balance||{});
   const [vals,setVals]=useState(isCombined?{}:{...(reviewData.data||{})});
   const overlay={position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:2000};
-  const modal={background:'#161b27',border:'1px solid #1e2d45',borderRadius:10,padding:24,width:480,maxHeight:'85vh',overflowY:'auto'};
+  const modal={background:'rgba(255,255,255,0.92)',border:'1px solid #e6dfd6',borderRadius:10,padding:24,width:480,maxHeight:'85vh',overflowY:'auto'};
   const btnBase={border:'none',borderRadius:5,padding:'7px 16px',fontSize:12,fontWeight:600,cursor:'pointer'};
   const renderField=(k,label,valObj,setValObj)=>(
     <div key={k} style={{marginBottom:10}}>
-      <div style={{fontSize:11,color:'#94a3b8',marginBottom:3}}>
-        {label}{valObj[k]===null&&<span style={{color:'#fbbf24'}}> — not found</span>}
+      <div style={{fontSize:11,color:'#57534e',marginBottom:3}}>
+        {label}{valObj[k]===null&&<span style={{color:'#b45309'}}> — not found</span>}
       </div>
-      <input className="input-field" style={{borderColor:valObj[k]===null?'#fbbf24':undefined}}
+      <input className="input-field" style={{borderColor:valObj[k]===null?'#b45309':undefined}}
         value={valObj[k]??''} onChange={e=>setValObj({...valObj,[k]:e.target.value})}/>
     </div>
   );
@@ -3497,42 +3497,42 @@ const ReviewModal=({reviewData,onApply,onCancel})=>{
   return (
     <div style={overlay}>
       <div style={modal}>
-        <div style={{fontWeight:700,fontSize:14,color:'#e2e8f0',marginBottom:4}}>{title}</div>
-        <div style={{fontSize:11,color:'#94a3b8',marginBottom:16}}>{subtitle} <span style={{color:'#fbbf24'}}>Yellow fields</span> were not found in the PDF.</div>
+        <div style={{fontWeight:700,fontSize:14,color:'#1c1917',marginBottom:4}}>{title}</div>
+        <div style={{fontSize:11,color:'#57534e',marginBottom:16}}>{subtitle} <span style={{color:'#b45309'}}>Yellow fields</span> were not found in the PDF.</div>
         {isCombined?(
           <>
-            <div style={{fontSize:12,fontWeight:700,color:'#60a5fa',marginBottom:10,paddingBottom:6,borderBottom:'1px solid #1e2d45'}}>Income Statement</div>
+            <div style={{fontSize:12,fontWeight:700,color:'#1d4ed8',marginBottom:10,paddingBottom:6,borderBottom:'1px solid #e6dfd6'}}>Income Statement</div>
             {incomeFields.map(([k,label])=>renderField(k,label,incVals,setIncVals))}
-            <div style={{fontSize:12,fontWeight:700,color:'#34d399',margin:'16px 0 10px',paddingBottom:6,borderBottom:'1px solid #1e2d45'}}>Balance Sheet</div>
+            <div style={{fontSize:12,fontWeight:700,color:'#C4592F',margin:'16px 0 10px',paddingBottom:6,borderBottom:'1px solid #e6dfd6'}}>Balance Sheet</div>
             {bsFields.map(([k,label])=>renderField(k,label,bsVals,setBsVals))}
           </>
         ):isIndustry?(
           <>
-            <div style={{fontSize:12,fontWeight:700,color:'#a78bfa',marginBottom:10,paddingBottom:6,borderBottom:'1px solid #1e2d45'}}>Industry Info</div>
+            <div style={{fontSize:12,fontWeight:700,color:'#6d28d9',marginBottom:10,paddingBottom:6,borderBottom:'1px solid #e6dfd6'}}>Industry Info</div>
             {industryFields.slice(0,4).map(([k,label])=>renderField(k,label,vals,setVals))}
-            <div style={{fontSize:12,fontWeight:700,color:'#60a5fa',margin:'16px 0 10px',paddingBottom:6,borderBottom:'1px solid #1e2d45'}}>Income Benchmarks</div>
+            <div style={{fontSize:12,fontWeight:700,color:'#1d4ed8',margin:'16px 0 10px',paddingBottom:6,borderBottom:'1px solid #e6dfd6'}}>Income Benchmarks</div>
             {industryFields.slice(4,8).map(([k,label])=>renderField(k,label,vals,setVals))}
-            <div style={{fontSize:12,fontWeight:700,color:'#fbbf24',margin:'16px 0 10px',paddingBottom:6,borderBottom:'1px solid #1e2d45'}}>Valuation — Rules of Thumb</div>
+            <div style={{fontSize:12,fontWeight:700,color:'#b45309',margin:'16px 0 10px',paddingBottom:6,borderBottom:'1px solid #e6dfd6'}}>Valuation — Rules of Thumb</div>
             {industryFields.slice(8,12).map(([k,label])=>renderField(k,label,vals,setVals))}
-            <div style={{fontSize:12,fontWeight:700,color:'#34d399',margin:'16px 0 10px',paddingBottom:6,borderBottom:'1px solid #1e2d45'}}>Valuation — MVIC/SDE by Revenue Tier</div>
+            <div style={{fontSize:12,fontWeight:700,color:'#C4592F',margin:'16px 0 10px',paddingBottom:6,borderBottom:'1px solid #e6dfd6'}}>Valuation — MVIC/SDE by Revenue Tier</div>
             {industryFields.slice(12,15).map(([k,label])=>renderField(k,label,vals,setVals))}
-            <div style={{fontSize:12,fontWeight:700,color:'#f87171',margin:'16px 0 10px',paddingBottom:6,borderBottom:'1px solid #1e2d45'}}>Valuation — MVIC/EBITDA by Revenue Tier</div>
+            <div style={{fontSize:12,fontWeight:700,color:'#dc2626',margin:'16px 0 10px',paddingBottom:6,borderBottom:'1px solid #e6dfd6'}}>Valuation — MVIC/EBITDA by Revenue Tier</div>
             {industryFields.slice(15).map(([k,label])=>renderField(k,label,vals,setVals))}
           </>
         ):(
           fields.map(([k,label])=>(
             <div key={k} style={{marginBottom:10}}>
-              <div style={{fontSize:11,color:'#94a3b8',marginBottom:3}}>
-                {label}{vals[k]===null&&<span style={{color:'#fbbf24'}}> — not found</span>}
+              <div style={{fontSize:11,color:'#57534e',marginBottom:3}}>
+                {label}{vals[k]===null&&<span style={{color:'#b45309'}}> — not found</span>}
               </div>
-              <input className="input-field" style={{borderColor:vals[k]===null?'#fbbf24':undefined}}
+              <input className="input-field" style={{borderColor:vals[k]===null?'#b45309':undefined}}
                 value={vals[k]??''} onChange={e=>setVals({...vals,[k]:e.target.value})}/>
             </div>
           ))
         )}
         <div style={{display:'flex',gap:8,marginTop:18}}>
-          <button style={{...btnBase,background:'#1a5e35',color:'#6de09a'}} onClick={handleApply}>Apply to Form</button>
-          <button style={{...btnBase,background:'#1e293b',color:'#94a3b8'}} onClick={onCancel}>Cancel</button>
+          <button style={{...btnBase,background:'#C4592F',color:'#ffffff'}} onClick={handleApply}>Apply to Form</button>
+          <button style={{...btnBase,background:'rgba(255,255,255,0.94)',color:'#57534e'}} onClick={onCancel}>Cancel</button>
         </div>
       </div>
     </div>
@@ -3549,17 +3549,17 @@ const SignInScreen = ({denied}) => {
     firebase.auth().signInWithPopup(p).catch(()=>{});
   };
   return (
-    <div style={{display:'flex',height:'100vh',alignItems:'center',justifyContent:'center',background:'#0f1117'}}>
+    <div style={{display:'flex',height:'100vh',alignItems:'center',justifyContent:'center',background:'transparent'}}>
       <div className="card p-10 text-center" style={{maxWidth:360,padding:40}}>
-        <div style={{fontSize:18,fontWeight:800,color:'#2eb860',marginBottom:4}}>QSI™ Market Price Analyzer</div>
-        <div style={{fontSize:12,color:'#475569',marginBottom:28}}>SBA Acquisition Tool</div>
+        <div style={{fontSize:18,fontWeight:800,color:'#C4592F',marginBottom:4}}>QSI™ Market Price Analyzer</div>
+        <div style={{fontSize:12,color:'#44403c',marginBottom:28}}>SBA Acquisition Tool</div>
         {denied && (
-          <div style={{background:'#3b0a0a',border:'1px solid #7f1d1d',borderRadius:6,padding:'8px 12px',fontSize:12,color:'#fca5a5',marginBottom:16}}>
+          <div style={{background:'#fef2f2',border:'1px solid #e6dfd6',borderRadius:6,padding:'8px 12px',fontSize:12,color:'#dc2626',marginBottom:16}}>
             Your Google account is not authorized.<br/>Contact your administrator.
           </div>
         )}
         <button onClick={signIn}
-          style={{display:'flex',alignItems:'center',gap:10,margin:'0 auto',background:'#fff',color:'#374151',border:'none',borderRadius:6,padding:'10px 20px',fontSize:13,fontWeight:600,cursor:'pointer',boxShadow:'0 1px 3px rgba(0,0,0,0.3)'}}>
+          style={{display:'flex',alignItems:'center',gap:10,margin:'0 auto',background:'#fff',color:'#44403c',border:'none',borderRadius:6,padding:'10px 20px',fontSize:13,fontWeight:600,cursor:'pointer',boxShadow:'0 1px 3px rgba(0,0,0,0.3)'}}>
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" height="18"/>
           Sign in with Google
         </button>
@@ -3632,37 +3632,37 @@ const TAcqCalc = ({state}) => {
   const btnBase = {border:'none',borderRadius:5,padding:'7px 16px',fontSize:13,fontWeight:600,cursor:'pointer',transition:'all 0.12s'};
   const modeBtn = (id,label) => (
     <button style={{...btnBase,
-      background: c.mode===id ? '#2eb860' : '#1e2d45',
-      color: c.mode===id ? '#fff' : '#94a3b8',
+      background: c.mode===id ? '#C4592F' : '#1e2d45',
+      color: c.mode===id ? '#fff' : '#57534e',
     }} onClick={()=>upd('mode',id)}>{label}</button>
   );
   const carryBtn = (id,label) => (
     <button style={{...btnBase,
-      background: c.carryMode===id ? '#2eb860' : '#1e2d45',
-      color: c.carryMode===id ? '#fff' : '#94a3b8',
+      background: c.carryMode===id ? '#C4592F' : '#1e2d45',
+      color: c.carryMode===id ? '#fff' : '#57534e',
       padding:'5px 12px', fontSize:12,
     }} onClick={()=>upd('carryMode',id)}>{label}</button>
   );
 
   const MetricTile = ({label,sub,value,isCFAD}) => (
-    <div className="card p-4" style={isCFAD ? {borderColor: cfPositive?'#2eb860':'#ef4444'} : {}}>
+    <div className="card p-4" style={isCFAD ? {borderColor: cfPositive?'#C4592F':'#dc2626'} : {}}>
       <div className="lbl" style={{marginBottom:3}}>{label}</div>
-      {sub&&<div style={{fontSize:11,color:'#64748b',marginBottom:6}}>{sub}</div>}
+      {sub&&<div style={{fontSize:11,color:'#57534e',marginBottom:6}}>{sub}</div>}
       <div className="calc-field mono" style={{
         fontSize:18,fontWeight:700,textAlign:'right',
-        color: isCFAD ? (cfPositive?'#2eb860':'#ef4444') : '#2eb860',
-        background: isCFAD && !cfPositive ? '#1a0505' : undefined,
+        color: isCFAD ? (cfPositive?'#C4592F':'#dc2626') : '#C4592F',
+        background: isCFAD && !cfPositive ? '#fef2f2' : undefined,
         borderColor: isCFAD && !cfPositive ? '#5e1a1a' : undefined,
       }}>{fmtD(value)}</div>
     </div>
   );
 
   return (
-    <div style={{color:'#e2e8f0'}}>
+    <div style={{color:'#1c1917'}}>
       {/* Header */}
       <div style={{marginBottom:20}}>
-        <div style={{fontSize:22,fontWeight:700,color:'#e2e8f0',marginBottom:4}}>Acquisition Calculator</div>
-        <div style={{fontSize:13,color:'#64748b'}}>
+        <div style={{fontSize:22,fontWeight:700,color:'#1c1917',marginBottom:4}}>Acquisition Calculator</div>
+        <div style={{fontSize:13,color:'#57534e'}}>
           SBA 7(a) — {c.sbaTerm}yr @ {c.sbaRate}% — {c.dpPct}% buyer down / {c.carryPct}% seller carry
         </div>
       </div>
@@ -3685,15 +3685,15 @@ const TAcqCalc = ({state}) => {
                 <input type="range" min={25000} max={500000} step={5000}
                   value={c.liquidity}
                   onChange={e=>upd('liquidity',+e.target.value)}
-                  style={{flex:1,accentColor:'#2eb860'}}
+                  style={{flex:1,accentColor:'#C4592F'}}
                 />
               )}
               {c.mode==='sde' && (
-                <div style={{fontSize:12,color:'#64748b',flex:1}}>Driven by MPA SDE × {c.multiple}× multiple</div>
+                <div style={{fontSize:12,color:'#57534e',flex:1}}>Driven by MPA SDE × {c.multiple}× multiple</div>
               )}
             </div>
             {c.mode==='liquidity' && (
-              <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#64748b',marginTop:4}}>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#57534e',marginTop:4}}>
                 <span>$25k</span><span>$500k</span>
               </div>
             )}
@@ -3710,7 +3710,7 @@ const TAcqCalc = ({state}) => {
 
       {/* Row 2 — Parameters */}
       <div className="card p-5" style={{marginBottom:12}}>
-        <div style={{fontSize:11,fontWeight:600,color:'#2eb860',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:12}}>Deal Parameters</div>
+        <div style={{fontSize:11,fontWeight:600,color:'#C4592F',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:12}}>Deal Parameters</div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16,marginBottom:14}}>
           <div>
             <span className="lbl">Buyer Down %</span>
@@ -3757,12 +3757,12 @@ const TAcqCalc = ({state}) => {
         <div className="card p-5">
           <div className="lbl" style={{marginBottom:6}}>Business Purchase Price</div>
           <div className="calc-field mono" style={{fontSize:24,fontWeight:800,textAlign:'right',marginBottom:6}}>{fmtD(price)}</div>
-          <div style={{fontSize:12,color:'#64748b'}}>Based on {c.dpPct}% buyer equity injection</div>
+          <div style={{fontSize:12,color:'#57534e'}}>Based on {c.dpPct}% buyer equity injection</div>
         </div>
-        <div className="card p-5" style={{borderColor:'#2eb860'}}>
+        <div className="card p-5" style={{borderColor:'#C4592F'}}>
           <div className="lbl" style={{marginBottom:6}}>Annual Cash Flow (SDE)</div>
-          <div className="calc-field mono" style={{fontSize:24,fontWeight:800,textAlign:'right',marginBottom:6,color:'#2eb860'}}>{fmtD(sde)}</div>
-          <div style={{fontSize:12,color:'#64748b'}}>Valued at {(c.multiple||3).toFixed(1)}× cash flow</div>
+          <div className="calc-field mono" style={{fontSize:24,fontWeight:800,textAlign:'right',marginBottom:6,color:'#C4592F'}}>{fmtD(sde)}</div>
+          <div style={{fontSize:12,color:'#57534e'}}>Valued at {(c.multiple||3).toFixed(1)}× cash flow</div>
         </div>
       </div>
 
@@ -3792,15 +3792,15 @@ const TAcqCalc = ({state}) => {
 
       {/* Row 5 — Equity buildup table */}
       <div className="card" style={{marginBottom:16}}>
-        <div style={{padding:'14px 16px 10px',borderBottom:'1px solid #1e2d45'}}>
-          <div style={{fontSize:11,fontWeight:600,color:'#2eb860',textTransform:'uppercase',letterSpacing:'0.08em'}}>5-Year Equity Buildup (SBA Loan Amortization)</div>
+        <div style={{padding:'14px 16px 10px',borderBottom:'1px solid #e6dfd6'}}>
+          <div style={{fontSize:11,fontWeight:600,color:'#C4592F',textTransform:'uppercase',letterSpacing:'0.08em'}}>5-Year Equity Buildup (SBA Loan Amortization)</div>
         </div>
         <div style={{overflowX:'auto'}}>
           <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
             <thead>
-              <tr style={{background:'#0a1628'}}>
+              <tr style={{background:'#f7f3ee'}}>
                 {['Year','Loan Bal Start','Interest Paid','Principal Paid','Loan Bal End','Total Equity Built'].map(h=>(
-                  <th key={h} style={{padding:'9px 14px',textAlign:'right',fontSize:11,fontWeight:600,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.06em',whiteSpace:'nowrap',borderBottom:'1px solid #1e2d45'}}>
+                  <th key={h} style={{padding:'9px 14px',textAlign:'right',fontSize:11,fontWeight:600,color:'#57534e',textTransform:'uppercase',letterSpacing:'0.06em',whiteSpace:'nowrap',borderBottom:'1px solid #e6dfd6'}}>
                     {h}
                   </th>
                 ))}
@@ -3808,17 +3808,17 @@ const TAcqCalc = ({state}) => {
             </thead>
             <tbody>
               {equityRows.map((row,i)=>(
-                <tr key={row.y} style={{background: i%2===0?'#161b27':'#0d1117'}}>
-                  <td style={{padding:'9px 14px',color:'#e2e8f0',fontWeight:600,textAlign:'right'}}>{row.y}</td>
-                  <td style={{padding:'9px 14px',color:'#e2e8f0',fontFamily:'monospace',textAlign:'right'}}>{fmtD(row.balStart)}</td>
-                  <td style={{padding:'9px 14px',color:'#94a3b8',fontFamily:'monospace',textAlign:'right'}}>{fmtD(row.intPaid)}</td>
-                  <td style={{padding:'9px 14px',color:'#2eb860',fontFamily:'monospace',textAlign:'right'}}>{fmtD(row.principal)}</td>
-                  <td style={{padding:'9px 14px',color:'#e2e8f0',fontFamily:'monospace',textAlign:'right'}}>{fmtD(row.balEnd)}</td>
-                  <td style={{padding:'9px 14px',color:'#2eb860',fontFamily:'monospace',fontWeight:700,textAlign:'right'}}>{fmtD(row.equity)}</td>
+                <tr key={row.y} style={{background: i%2===0?'rgba(255,255,255,0.92)':'#ffffff'}}>
+                  <td style={{padding:'9px 14px',color:'#1c1917',fontWeight:600,textAlign:'right'}}>{row.y}</td>
+                  <td style={{padding:'9px 14px',color:'#1c1917',fontFamily:'monospace',textAlign:'right'}}>{fmtD(row.balStart)}</td>
+                  <td style={{padding:'9px 14px',color:'#57534e',fontFamily:'monospace',textAlign:'right'}}>{fmtD(row.intPaid)}</td>
+                  <td style={{padding:'9px 14px',color:'#C4592F',fontFamily:'monospace',textAlign:'right'}}>{fmtD(row.principal)}</td>
+                  <td style={{padding:'9px 14px',color:'#1c1917',fontFamily:'monospace',textAlign:'right'}}>{fmtD(row.balEnd)}</td>
+                  <td style={{padding:'9px 14px',color:'#C4592F',fontFamily:'monospace',fontWeight:700,textAlign:'right'}}>{fmtD(row.equity)}</td>
                 </tr>
               ))}
-              <tr style={{background:'#0a1628',borderTop:'1px solid #1e2d45'}}>
-                <td colSpan={6} style={{padding:'9px 14px',fontSize:11,color:'#64748b',fontStyle:'italic'}}>
+              <tr style={{background:'#f7f3ee',borderTop:'1px solid #e6dfd6'}}>
+                <td colSpan={6} style={{padding:'9px 14px',fontSize:11,color:'#57534e',fontStyle:'italic'}}>
                   Illustrative only. Actual SBA terms, multiples, and cash flow vary by deal. Equity buildup includes buyer down payment of {fmtD(downAmt)}.
                 </td>
               </tr>
@@ -4106,20 +4106,20 @@ function App() {
     setReviewData(null);
   };
   if(authLoading) return (
-    <div style={{display:'flex',height:'100vh',alignItems:'center',justifyContent:'center',background:'#0f1117'}}>
-      <div style={{color:'#2eb860',fontSize:13}}>Loading…</div>
+    <div style={{display:'flex',height:'100vh',alignItems:'center',justifyContent:'center',background:'transparent'}}>
+      <div style={{color:'#C4592F',fontSize:13}}>Loading…</div>
     </div>
   );
   if(!user) return <SignInScreen denied={authDenied}/>;
   return (
-    <div className="az-shell" style={{display:'flex',height:'100vh',background:'#0f1117',overflow:'hidden'}}>
+    <div className="az-shell" style={{display:'flex',height:'100vh',background:'transparent',overflow:'hidden'}}>
       {/* Sidebar */}
-      <div className="no-print" style={{width:220,flexShrink:0,display:'flex',flexDirection:'column',background:'#0d1117',borderRight:'1px solid #1e293b',overflowY:'auto'}}>
-        <div style={{padding:'16px 16px 12px',borderBottom:'1px solid #1e293b'}}>
-          <div style={{fontSize:13,fontWeight:700,color:'#2eb860',letterSpacing:'.03em'}}>QSI™ Market Price Analyzer</div>
-          <div style={{fontSize:11,color:'#475569'}}>SBA Acquisition Tool</div>
+      <div className="no-print" style={{width:220,flexShrink:0,display:'flex',flexDirection:'column',background:'#ffffff',borderRight:'1px solid #e6dfd6',overflowY:'auto'}}>
+        <div style={{padding:'16px 16px 12px',borderBottom:'1px solid #e6dfd6'}}>
+          <div style={{fontSize:13,fontWeight:700,color:'#C4592F',letterSpacing:'.03em'}}>QSI™ Market Price Analyzer</div>
+          <div style={{fontSize:11,color:'#44403c'}}>SBA Acquisition Tool</div>
         </div>
-        <div style={{padding:'12px',borderBottom:'1px solid #1e293b'}}>
+        <div style={{padding:'12px',borderBottom:'1px solid #e6dfd6'}}>
           <div className="mb-2">
             <span className="lbl">Deal Name</span>
             <input className="input-field" value={state.dealName} onChange={e=>setState({...state,dealName:e.target.value})} placeholder="Enter deal name..."/>
@@ -4129,21 +4129,21 @@ function App() {
             <input className="input-field" value={state.advisorName} onChange={e=>setState({...state,advisorName:e.target.value})} placeholder="Advisor name..."/>
           </div>
         </div>
-        <div style={{padding:'8px 12px',borderBottom:'1px solid #1e293b'}}>
-          {[['+ New Deal',newDeal,'#1e293b','#94a3b8'],['Save Deal',save,'#1a5e35','#6de09a'],['Load Deal',()=>setShowLoad(true),'#1e293b','#94a3b8']].map(([l,fn,bg,c])=>(
+        <div style={{padding:'8px 12px',borderBottom:'1px solid #e6dfd6'}}>
+          {[['+ New Deal',newDeal,'#f4efe9','#1c1917'],['Save Deal',save,'#C4592F','#ffffff'],['Load Deal',()=>setShowLoad(true),'#f4efe9','#1c1917']].map(([l,fn,bg,c])=>(
             <button key={l} onClick={fn} style={{display:'block',width:'100%',marginBottom:4,fontSize:12,background:bg,color:c,border:'none',borderRadius:5,padding:'7px 8px',cursor:'pointer',textAlign:'center'}}
               onMouseEnter={e=>{e.target.style.filter='brightness(1.2)';}} onMouseLeave={e=>{e.target.style.filter='';}}>{l}</button>
           ))}
           {saveStatus!=='idle'&&(
             <div style={{fontSize:10,textAlign:'center',padding:'3px 0',marginTop:2,borderRadius:4,
-              background:saveStatus==='saving'?'#1e293b':saveStatus==='saved'?'#0a2416':'#3b0a0a',
-              color:saveStatus==='saving'?'#64748b':saveStatus==='saved'?'#2eb860':'#f87171'}}>
+              background:saveStatus==='saving'?'rgba(255,255,255,0.94)':saveStatus==='saved'?'rgba(196,89,47,0.12)':'#fef2f2',
+              color:saveStatus==='saving'?'#57534e':saveStatus==='saved'?'#C4592F':'#dc2626'}}>
               {saveStatus==='saving'?'Saving...':saveStatus==='saved'?'✓ Saved':'⚠ Save failed'}
             </div>
           )}
-          <div style={{borderTop:'1px solid #1e293b',marginTop:4,paddingTop:6}}>
-            {[['↓ Export Deal',exportDeal,'#14281a','#6ee7b7'],['↑ Import Deal',importDeal,'#14281a','#6ee7b7']].map(([l,fn,bg,c])=>(
-              <button key={l} onClick={fn} style={{display:'block',width:'100%',marginBottom:4,fontSize:12,background:bg,color:c,border:'1px solid #166534',borderRadius:5,padding:'7px 8px',cursor:'pointer',textAlign:'center'}}
+          <div style={{borderTop:'1px solid #e6dfd6',marginTop:4,paddingTop:6}}>
+            {[['↓ Export Deal',exportDeal,'#fff7f3','#9A4022'],['↑ Import Deal',importDeal,'#fff7f3','#9A4022']].map(([l,fn,bg,c])=>(
+              <button key={l} onClick={fn} style={{display:'block',width:'100%',marginBottom:4,fontSize:12,background:bg,color:c,border:'1px solid #e8cfc3',borderRadius:5,padding:'7px 8px',cursor:'pointer',textAlign:'center'}}
                 onMouseEnter={e=>{e.target.style.filter='brightness(1.2)';}} onMouseLeave={e=>{e.target.style.filter='';}}>{l}</button>
             ))}
           </div>
@@ -4152,19 +4152,19 @@ function App() {
           {TABS.map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)}
               className={`sidebar-btn w-full text-left`}
-              style={{display:'flex',alignItems:'center',gap:8,padding:'10px 14px',fontSize:13,background:tab===t.id?'#0a2416':'transparent',borderLeft:tab===t.id?'3px solid #2eb860':'3px solid transparent',color:tab===t.id?'#6de09a':'#94a3b8',cursor:'pointer',border:'none',outline:'none',width:'100%',borderRadius:0}}>
+              style={{display:'flex',alignItems:'center',gap:8,padding:'10px 14px',fontSize:13,background:tab===t.id?'rgba(196,89,47,0.10)':'transparent',borderLeft:tab===t.id?'3px solid #C4592F':'3px solid transparent',color:tab===t.id?'#C4592F':'#57534e',cursor:'pointer',border:'none',outline:'none',width:'100%',borderRadius:0}}>
               <span>{t.icon}</span><span>{t.label}</span>
             </button>
           ))}
         </nav>
-        <div style={{padding:'8px 12px',borderTop:'1px solid #1e293b'}}>
+        <div style={{padding:'8px 12px',borderTop:'1px solid #e6dfd6'}}>
           <button onClick={()=>firebase.auth().signOut()}
-            style={{display:'block',width:'100%',marginBottom:4,fontSize:10,background:'#1e293b',color:'#94a3b8',border:'none',borderRadius:5,padding:'6px 8px',cursor:'pointer',textAlign:'center'}}
+            style={{display:'block',width:'100%',marginBottom:4,fontSize:10,background:'rgba(255,255,255,0.94)',color:'#57534e',border:'none',borderRadius:5,padding:'6px 8px',cursor:'pointer',textAlign:'center'}}
             onMouseEnter={e=>{e.target.style.filter='brightness(1.2)';}} onMouseLeave={e=>{e.target.style.filter='';}}>
             Sign Out ({user?.email})
           </button>
         </div>
-        <div style={{padding:'6px 14px',fontSize:10,color:'#334155'}}>v1.0 — QSI™ Market Price Analyzer</div>
+        <div style={{padding:'6px 14px',fontSize:10,color:'#44403c'}}>v1.0 — QSI™ Market Price Analyzer</div>
       </div>
       {/* Content */}
       <div className="az-main" style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
@@ -4188,9 +4188,9 @@ function App() {
       {showLoad&&<LoadModal onClose={()=>setShowLoad(false)} onLoad={load} user={user}/>}
       {extracting&&(
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:2000}}>
-          <div style={{background:'#161b27',border:'1px solid #1e2d45',borderRadius:10,padding:32,textAlign:'center'}}>
-            <div style={{color:'#2eb860',fontSize:14,marginBottom:8}}>Extracting data from PDF…</div>
-            <div style={{color:'#475569',fontSize:11}}>Claude is reading your tax return. This takes 10–20 seconds.</div>
+          <div style={{background:'rgba(255,255,255,0.92)',border:'1px solid #e6dfd6',borderRadius:10,padding:32,textAlign:'center'}}>
+            <div style={{color:'#C4592F',fontSize:14,marginBottom:8}}>Extracting data from PDF…</div>
+            <div style={{color:'#44403c',fontSize:11}}>Claude is reading your tax return. This takes 10–20 seconds.</div>
           </div>
         </div>
       )}

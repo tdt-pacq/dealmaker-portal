@@ -70,8 +70,8 @@ export default function OnboardingModal({ onClose }) {
         style={{
           width: '100%',
           maxWidth: 520,
-          background: '#161b27',
-          border: '1px solid #1e2d45',
+          background: 'rgba(255,255,255,0.92)',
+          border: '1px solid #e6dfd6',
           borderRadius: 12,
           boxShadow: '0 24px 64px rgba(0,0,0,0.55)',
           overflow: 'hidden',
@@ -82,15 +82,15 @@ export default function OnboardingModal({ onClose }) {
       >
         <div style={{
           padding: '22px 24px 16px',
-          borderBottom: '1px solid #1e2d45',
-          background: 'linear-gradient(180deg, #1a2438 0%, #161b27 100%)',
+          borderBottom: '1px solid #e6dfd6',
+          background: 'linear-gradient(180deg, #faf8f5 0%, rgba(255,255,255,0.92) 100%)',
         }}>
           <div style={{
             fontSize: 10,
             fontWeight: 700,
             letterSpacing: 2,
             textTransform: 'uppercase',
-            color: '#2eb860',
+            color: '#C4592F',
             marginBottom: 8,
           }}>
             Welcome
@@ -100,7 +100,7 @@ export default function OnboardingModal({ onClose }) {
             fontFamily: 'Oswald, sans-serif',
             fontSize: 26,
             fontWeight: 700,
-            color: '#e2e8f0',
+            color: '#1c1917',
             letterSpacing: 0.5,
             lineHeight: 1.2,
           }}>
@@ -109,7 +109,7 @@ export default function OnboardingModal({ onClose }) {
           <p style={{
             margin: '10px 0 0',
             fontSize: 14,
-            color: '#94a3b8',
+            color: '#57534e',
             lineHeight: 1.5,
           }}>
             Three steps to market a listing. Everything else in the sidebar supports that workflow.
@@ -124,16 +124,16 @@ export default function OnboardingModal({ onClose }) {
                 display: 'flex',
                 gap: 14,
                 padding: '14px 0',
-                borderBottom: i < STEPS.length - 1 ? '1px solid #1e2d45' : 'none',
+                borderBottom: i < STEPS.length - 1 ? '1px solid #e6dfd6' : 'none',
               }}
             >
               <div style={{
                 width: 28,
                 height: 28,
                 borderRadius: 8,
-                background: 'rgba(46,184,96,0.12)',
-                border: '1px solid rgba(46,184,96,0.35)',
-                color: '#2eb860',
+                background: 'rgba(196,89,47,0.12)',
+                border: '1px solid rgba(196,89,47,0.35)',
+                color: '#C4592F',
                 fontWeight: 700,
                 fontSize: 13,
                 display: 'flex',
@@ -148,12 +148,12 @@ export default function OnboardingModal({ onClose }) {
                 <div style={{
                   fontSize: 15,
                   fontWeight: 700,
-                  color: '#e2e8f0',
+                  color: '#1c1917',
                   marginBottom: 4,
                 }}>
                   {s.title}
                 </div>
-                <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.5 }}>
+                <div style={{ fontSize: 13, color: '#57534e', lineHeight: 1.5 }}>
                   {s.body}
                 </div>
               </div>
@@ -166,17 +166,17 @@ export default function OnboardingModal({ onClose }) {
           gap: 10,
           justifyContent: 'flex-end',
           padding: '16px 24px 20px',
-          borderTop: '1px solid #1e2d45',
-          background: '#121722',
+          borderTop: '1px solid #e6dfd6',
+          background: '#f7f3ee',
         }}>
           <button
             type="button"
             onClick={() => dismiss(false)}
             style={{
               background: 'transparent',
-              border: '1px solid #2d3f57',
+              border: '1px solid #e6dfd6',
               borderRadius: 6,
-              color: '#94a3b8',
+              color: '#57534e',
               fontSize: 13,
               fontWeight: 600,
               padding: '9px 14px',
@@ -189,10 +189,10 @@ export default function OnboardingModal({ onClose }) {
             type="button"
             onClick={() => dismiss(true)}
             style={{
-              background: '#2eb860',
+              background: '#C4592F',
               border: 'none',
               borderRadius: 6,
-              color: '#0a1628',
+              color: '#ffffff',
               fontSize: 13,
               fontWeight: 700,
               padding: '9px 16px',

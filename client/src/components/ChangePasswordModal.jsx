@@ -54,10 +54,10 @@ export default function ChangePasswordModal({ onClose }) {
       <div className="modal" onClick={e => e.stopPropagation()} style={{ width: 420 }}>
         <div className="modal-title">Change Password</div>
         {done ? (
-          <p style={{ fontSize: 14, color: '#4ade80' }}>Password updated.</p>
+          <p style={{ fontSize: 14, color: '#A34826' }}>Password updated.</p>
         ) : (
           <form onSubmit={submit}>
-            <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 16, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 13, color: '#57534e', marginBottom: 16, lineHeight: 1.5 }}>
               Use a unique password (not your username). Minimum 8 characters.
             </p>
             {error && <div className="alert alert-error" style={{ marginBottom: 12 }}>{error}</div>}

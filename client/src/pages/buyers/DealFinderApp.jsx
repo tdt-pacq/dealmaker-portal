@@ -34,14 +34,14 @@ function Spinner({ size = 20 }) {
   return (
     <span style={{
       display: 'inline-block', width: size, height: size, borderRadius: '50%',
-      border: `${Math.max(2, size / 8)}px solid rgba(46,184,96,.2)`,
-      borderTopColor: '#2eb860', animation: 'df-spin .7s linear infinite',
+      border: `${Math.max(2, size / 8)}px solid rgba(196,89,47,.2)`,
+      borderTopColor: '#C4592F', animation: 'df-spin .7s linear infinite',
       verticalAlign: 'middle', flexShrink: 0,
     }} />
   );
 }
 
-function Badge({ children, color = '#2eb860', bg = 'rgba(46,184,96,.12)' }) {
+function Badge({ children, color = '#C4592F', bg = 'rgba(196,89,47,.12)' }) {
   return (
     <span style={{
       fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase',
@@ -81,12 +81,12 @@ function OnMarketCard({ listing: l }) {
     <div style={S.resultCard}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, gap: 12 }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: '#e2e8f0', marginBottom: 3 }}>{l.name || 'Confidential Listing'}</div>
-          <div style={{ fontSize: 12, color: '#64748b' }}>{l.location || ''}{l.location && l.source_platform ? ' · ' : ''}{l.source_platform || ''}</div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: '#1c1917', marginBottom: 3 }}>{l.name || 'Confidential Listing'}</div>
+          <div style={{ fontSize: 12, color: '#57534e' }}>{l.location || ''}{l.location && l.source_platform ? ' · ' : ''}{l.source_platform || ''}</div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#2eb860' }}>{l.asking_price || 'N/A'}</div>
-          <div style={{ fontSize: 11, color: '#64748b' }}>Asking Price</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: '#C4592F' }}>{l.asking_price || 'N/A'}</div>
+          <div style={{ fontSize: 11, color: '#57534e' }}>Asking Price</div>
         </div>
       </div>
 
@@ -99,7 +99,7 @@ function OnMarketCard({ listing: l }) {
         ) : null)}
       </div>
 
-      {l.description && <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.65, marginBottom: 12 }}>{l.description}</div>}
+      {l.description && <div style={{ fontSize: 13, color: '#57534e', lineHeight: 1.65, marginBottom: 12 }}>{l.description}</div>}
 
       {l.listing_url && l.listing_url !== 'N/A' && (
         <a href={l.listing_url} target="_blank" rel="noopener noreferrer" style={S.linkBtn}>
@@ -115,10 +115,10 @@ function OffMarketCard({ prospect: p }) {
     <div style={S.resultCard}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, gap: 12 }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: '#e2e8f0', marginBottom: 3 }}>{p.name || 'Unknown Business'}</div>
-          <div style={{ fontSize: 12, color: '#64748b' }}>{p.address || ''}</div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: '#1c1917', marginBottom: 3 }}>{p.name || 'Unknown Business'}</div>
+          <div style={{ fontSize: 12, color: '#57534e' }}>{p.address || ''}</div>
         </div>
-        <Badge color="#94a3b8" bg="rgba(148,163,184,.1)">Off-Market</Badge>
+        <Badge color="#57534e" bg="rgba(148,163,184,.1)">Off-Market</Badge>
       </div>
 
       <div style={{ display: 'flex', gap: 20, marginBottom: 10, flexWrap: 'wrap' }}>
@@ -137,15 +137,15 @@ function OffMarketCard({ prospect: p }) {
       </div>
 
       {p.why_good_prospect && (
-        <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.65, padding: '9px 13px', background: 'rgba(46,184,96,.06)', borderLeft: '3px solid #2eb860', borderRadius: '0 4px 4px 0', marginBottom: 10 }}>
+        <div style={{ fontSize: 13, color: '#57534e', lineHeight: 1.65, padding: '9px 13px', background: 'rgba(196,89,47,.06)', borderLeft: '3px solid #C4592F', borderRadius: '0 4px 4px 0', marginBottom: 10 }}>
           {p.why_good_prospect}
         </div>
       )}
 
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-        {p.phone && p.phone !== 'Not Found' && <span style={{ fontSize: 13, color: '#64748b' }}>📞 {p.phone}</span>}
+        {p.phone && p.phone !== 'Not Found' && <span style={{ fontSize: 13, color: '#57534e' }}>📞 {p.phone}</span>}
         {p.website && p.website !== 'Not Found' && (
-          <a href={p.website.startsWith('http') ? p.website : `https://${p.website}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#2eb860', textDecoration: 'none' }}>🌐 Website</a>
+          <a href={p.website.startsWith('http') ? p.website : `https://${p.website}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#C4592F', textDecoration: 'none' }}>🌐 Website</a>
         )}
       </div>
     </div>
@@ -162,8 +162,8 @@ function ResultsPanel({ results, profile, buyerEmail, emailStatus, emailError, o
     <div style={{ marginTop: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0' }}>Search Results</div>
-          <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#1c1917' }}>Search Results</div>
+          <div style={{ fontSize: 12, color: '#57534e', marginTop: 2 }}>
             {onMarket.length} on-market listing{onMarket.length !== 1 ? 's' : ''} · {offMarket.length} off-market prospect{offMarket.length !== 1 ? 's' : ''}
           </div>
         </div>
@@ -172,12 +172,12 @@ function ResultsPanel({ results, profile, buyerEmail, emailStatus, emailError, o
 
       {/* Email status banner */}
       {emailStatus === 'sent' && (
-        <div style={{ background: 'rgba(46,184,96,.08)', border: '1px solid rgba(46,184,96,.25)', borderRadius: 6, padding: '9px 14px', marginBottom: 14, fontSize: 13, color: '#2eb860' }}>
+        <div style={{ background: 'rgba(196,89,47,.08)', border: '1px solid rgba(196,89,47,.25)', borderRadius: 6, padding: '9px 14px', marginBottom: 14, fontSize: 13, color: '#C4592F' }}>
           ✓ Email delivered to <strong>{buyerEmail}</strong>
         </div>
       )}
       {emailStatus === 'failed' && (
-        <div style={{ background: 'rgba(220,38,38,.08)', border: '1px solid rgba(239,68,68,.3)', borderRadius: 6, padding: '9px 14px', marginBottom: 14, fontSize: 13, color: '#f87171' }}>
+        <div style={{ background: 'rgba(220,38,38,.08)', border: '1px solid rgba(239,68,68,.3)', borderRadius: 6, padding: '9px 14px', marginBottom: 14, fontSize: 13, color: '#dc2626' }}>
           ✗ Email not sent — {emailError || 'unknown error'}
         </div>
       )}
@@ -186,13 +186,13 @@ function ResultsPanel({ results, profile, buyerEmail, emailStatus, emailError, o
       <div style={{ marginBottom: 24 }}>
         <div style={S.sectionHd}>
           <span style={S.sectionNum}>01</span>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0' }}>On-Market Listings</span>
-          <span style={{ fontSize: 12, color: '#64748b', marginLeft: 8 }}>BizBuySell · BizQuest · Sunbelt · Murphy Business · more</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#1c1917' }}>On-Market Listings</span>
+          <span style={{ fontSize: 12, color: '#57534e', marginLeft: 8 }}>BizBuySell · BizQuest · Sunbelt · Murphy Business · more</span>
         </div>
         {onMarket.length ? (
           onMarket.map((l, i) => <OnMarketCard key={i} listing={l} />)
         ) : (
-          <div style={{ padding: '16px', background: '#161b27', border: '1px solid #1e2d45', borderRadius: 8 }}>
+          <div style={{ padding: '16px', background: 'rgba(255,255,255,0.92)', border: '1px solid #e6dfd6', borderRadius: 8 }}>
             <div style={S.emptyNote}>No on-market listings could be extracted for these criteria — listing sites require login for full details.</div>
             <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
               {[
@@ -201,7 +201,7 @@ function ResultsPanel({ results, profile, buyerEmail, emailStatus, emailError, o
                 { label: 'Search BusinessBroker.net', url: `https://www.businessbroker.net/businesses/for-sale/?q=${encodeURIComponent(profile?.industry || '')}` },
               ].map(({ label, url }) => (
                 <a key={label} href={url} target="_blank" rel="noopener noreferrer"
-                  style={{ fontSize: 12, color: '#2eb860', border: '1px solid rgba(46,184,96,.3)', borderRadius: 4, padding: '6px 12px', textDecoration: 'none' }}>
+                  style={{ fontSize: 12, color: '#C4592F', border: '1px solid rgba(196,89,47,.3)', borderRadius: 4, padding: '6px 12px', textDecoration: 'none' }}>
                   {label} →
                 </a>
               ))}
@@ -213,9 +213,9 @@ function ResultsPanel({ results, profile, buyerEmail, emailStatus, emailError, o
       {/* Off-Market */}
       <div>
         <div style={S.sectionHd}>
-          <span style={{ ...S.sectionNum, color: '#94a3b8', background: 'rgba(148,163,184,.1)' }}>02</span>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0' }}>Off-Market Prospects</span>
-          <span style={{ fontSize: 12, color: '#64748b', marginLeft: 8 }}>Outreach candidates — not currently listed for sale</span>
+          <span style={{ ...S.sectionNum, color: '#57534e', background: 'rgba(148,163,184,.1)' }}>02</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#1c1917' }}>Off-Market Prospects</span>
+          <span style={{ fontSize: 12, color: '#57534e', marginLeft: 8 }}>Outreach candidates — not currently listed for sale</span>
         </div>
         {offMarket.length ? (
           offMarket.map((p, i) => <OffMarketCard key={i} prospect={p} />)
@@ -280,22 +280,22 @@ function ProfileForm({ onSave, onCancel, profile }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
           <div>
-            <label style={S.label}>Buyer Name <span style={{ color: '#2eb860' }}>*</span></label>
+            <label style={S.label}>Buyer Name <span style={{ color: '#C4592F' }}>*</span></label>
             <input style={S.input} value={form.buyer_name} onChange={e => upd('buyer_name', e.target.value)} placeholder="e.g. Alex Johnson" />
           </div>
           <div>
-            <label style={S.label}>Buyer Email <span style={{ color: '#2eb860' }}>*</span></label>
+            <label style={S.label}>Buyer Email <span style={{ color: '#C4592F' }}>*</span></label>
             <input style={S.input} type="email" value={form.buyer_email} onChange={e => upd('buyer_email', e.target.value)} placeholder="alex@email.com" />
           </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
           <div>
-            <label style={S.label}>Industry / Keywords <span style={{ color: '#2eb860' }}>*</span></label>
+            <label style={S.label}>Industry / Keywords <span style={{ color: '#C4592F' }}>*</span></label>
             <input style={S.input} value={form.industry} onChange={e => upd('industry', e.target.value)} placeholder="e.g. HVAC contractors, auto repair shops" />
           </div>
           <div>
-            <label style={S.label}>Location <span style={{ color: '#2eb860' }}>*</span></label>
+            <label style={S.label}>Location <span style={{ color: '#C4592F' }}>*</span></label>
             <input style={S.input} value={form.location} onChange={e => upd('location', e.target.value)} placeholder="e.g. Phoenix, AZ metro" />
           </div>
         </div>
@@ -310,7 +310,7 @@ function ProfileForm({ onSave, onCancel, profile }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
           <label style={{ ...S.label, margin: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
             <input type="checkbox" checked={form.active} onChange={e => upd('active', e.target.checked)}
-              style={{ width: 15, height: 15, accentColor: '#2eb860', cursor: 'pointer' }} />
+              style={{ width: 15, height: 15, accentColor: '#C4592F', cursor: 'pointer' }} />
             Include in daily automated search (7am MT)
           </label>
         </div>
@@ -395,33 +395,33 @@ function ProfileCard({ profile, onDelete, onToggle, onRunResult, onEdit, onViewL
         <div style={{ flexShrink: 0, marginTop: 3 }}>
           <div style={{
             width: 10, height: 10, borderRadius: '50%',
-            background: profile.active ? '#2eb860' : '#334155',
-            boxShadow: profile.active ? '0 0 6px rgba(46,184,96,.5)' : 'none',
+            background: profile.active ? '#C4592F' : '#334155',
+            boxShadow: profile.active ? '0 0 6px rgba(196,89,47,.5)' : 'none',
           }} />
         </div>
 
         {/* Main info */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#e2e8f0' }}>{profile.buyer_name}</span>
-            <Badge color={profile.active ? '#2eb860' : '#64748b'} bg={profile.active ? 'rgba(46,184,96,.1)' : 'rgba(100,116,139,.1)'}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: '#1c1917' }}>{profile.buyer_name}</span>
+            <Badge color={profile.active ? '#C4592F' : '#57534e'} bg={profile.active ? 'rgba(196,89,47,.1)' : 'rgba(100,116,139,.1)'}>
               {profile.active ? 'Active — Daily 7am MT' : 'Paused'}
             </Badge>
           </div>
-          <div style={{ fontSize: 13, color: '#64748b', marginBottom: 2 }}>{profile.buyer_email}</div>
-          <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 6 }}>
-            <span style={{ color: '#2eb860', fontWeight: 600 }}>{profile.industry}</span>
-            <span style={{ color: '#334155', margin: '0 6px' }}>·</span>
+          <div style={{ fontSize: 13, color: '#57534e', marginBottom: 2 }}>{profile.buyer_email}</div>
+          <div style={{ fontSize: 13, color: '#57534e', marginTop: 6 }}>
+            <span style={{ color: '#C4592F', fontWeight: 600 }}>{profile.industry}</span>
+            <span style={{ color: '#44403c', margin: '0 6px' }}>·</span>
             {profile.location}
-            <span style={{ color: '#334155', margin: '0 6px' }}>·</span>
+            <span style={{ color: '#44403c', margin: '0 6px' }}>·</span>
             {priceRange}
           </div>
-          <div style={{ fontSize: 11, color: '#334155', marginTop: 6 }}>
+          <div style={{ fontSize: 11, color: '#44403c', marginTop: 6 }}>
             Last run: {lastRun}
             {profile.last_results && (
               <button
                 onClick={() => onViewLastResults(profile)}
-                style={{ marginLeft: 10, background: 'transparent', border: 'none', color: '#2eb860', fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                style={{ marginLeft: 10, background: 'transparent', border: 'none', color: '#C4592F', fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
               >
                 View Results
               </button>
@@ -466,22 +466,22 @@ function ProfileCard({ profile, onDelete, onToggle, onRunResult, onEdit, onViewL
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const S = {
-  card:      { background: '#1e293b', borderRadius: 8, border: '1px solid #2d3748', overflow: 'hidden' },
-  cardHd:    { padding: '13px 18px', borderBottom: '1px solid #1a2235', background: '#161f2e', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-  cardTitle: { fontFamily: 'Oswald, sans-serif', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: .5, color: '#e2e8f0' },
-  label:     { display: 'block', fontSize: 11, fontWeight: 500, color: '#94a3b8', marginBottom: 5, letterSpacing: .3 },
-  input:     { fontFamily: 'inherit', fontSize: 14, padding: '8px 11px', border: '1.5px solid #334155', borderRadius: 4, width: '100%', background: '#0d1117', color: '#e2e8f0', boxSizing: 'border-box', outline: 'none' },
-  primaryBtn: { background: '#2eb860', color: '#fff', border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600, padding: '8px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 },
-  ghostBtn:  { background: 'transparent', color: '#64748b', border: '1px solid #2d3748', borderRadius: 4, fontSize: 13, fontWeight: 500, padding: '7px 14px', cursor: 'pointer' },
-  dangerBtn: { background: 'transparent', color: '#ef4444', border: '1px solid rgba(239,68,68,.3)', borderRadius: 4, fontSize: 13, fontWeight: 500, padding: '7px 14px', cursor: 'pointer' },
-  linkBtn:   { display: 'inline-block', background: '#2eb860', color: '#fff', textDecoration: 'none', fontSize: 12, fontWeight: 600, padding: '6px 14px', borderRadius: 4 },
-  error:     { background: 'rgba(220,38,38,.1)', color: '#f87171', borderLeft: '4px solid #ef4444', padding: '10px 14px', borderRadius: '0 6px 6px 0', fontSize: 13, marginBottom: 14 },
-  resultCard: { background: '#161b27', border: '1px solid #1e2d45', borderRadius: 8, padding: '16px 18px', marginBottom: 10 },
-  sectionHd: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, paddingBottom: 10, borderBottom: '1px solid #1a2235' },
-  sectionNum: { fontFamily: 'Oswald, sans-serif', fontSize: 10, fontWeight: 700, color: '#2eb860', background: 'rgba(46,184,96,.1)', borderRadius: 3, padding: '2px 7px' },
-  metaLbl:   { fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 2 },
-  metaVal:   { fontSize: 13, color: '#94a3b8' },
-  emptyNote: { color: '#64748b', fontStyle: 'italic', fontSize: 13, padding: '18px 0', textAlign: 'center' },
+  card:      { background: 'rgba(255,255,255,0.94)', borderRadius: 8, border: '1px solid #e4dcd2', overflow: 'hidden' },
+  cardHd:    { padding: '13px 18px', borderBottom: '1px solid #e6dfd6', background: '#faf8f5', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+  cardTitle: { fontFamily: 'Oswald, sans-serif', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: .5, color: '#1c1917' },
+  label:     { display: 'block', fontSize: 11, fontWeight: 500, color: '#57534e', marginBottom: 5, letterSpacing: .3 },
+  input:     { fontFamily: 'inherit', fontSize: 14, padding: '8px 11px', border: '1.5px solid #e4dcd2', borderRadius: 4, width: '100%', background: '#ffffff', color: '#1c1917', boxSizing: 'border-box', outline: 'none' },
+  primaryBtn: { background: '#C4592F', color: '#fff', border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600, padding: '8px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 },
+  ghostBtn:  { background: 'transparent', color: '#57534e', border: '1px solid #e4dcd2', borderRadius: 4, fontSize: 13, fontWeight: 500, padding: '7px 14px', cursor: 'pointer' },
+  dangerBtn: { background: 'transparent', color: '#dc2626', border: '1px solid rgba(239,68,68,.3)', borderRadius: 4, fontSize: 13, fontWeight: 500, padding: '7px 14px', cursor: 'pointer' },
+  linkBtn:   { display: 'inline-block', background: '#C4592F', color: '#fff', textDecoration: 'none', fontSize: 12, fontWeight: 600, padding: '6px 14px', borderRadius: 4 },
+  error:     { background: 'rgba(220,38,38,.1)', color: '#dc2626', borderLeft: '4px solid #ef4444', padding: '10px 14px', borderRadius: '0 6px 6px 0', fontSize: 13, marginBottom: 14 },
+  resultCard: { background: 'rgba(255,255,255,0.92)', border: '1px solid #e6dfd6', borderRadius: 8, padding: '16px 18px', marginBottom: 10 },
+  sectionHd: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, paddingBottom: 10, borderBottom: '1px solid #e6dfd6' },
+  sectionNum: { fontFamily: 'Oswald, sans-serif', fontSize: 10, fontWeight: 700, color: '#C4592F', background: 'rgba(196,89,47,.1)', borderRadius: 3, padding: '2px 7px' },
+  metaLbl:   { fontSize: 10, color: '#57534e', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 2 },
+  metaVal:   { fontSize: 13, color: '#57534e' },
+  emptyNote: { color: '#57534e', fontStyle: 'italic', fontSize: 13, padding: '18px 0', textAlign: 'center' },
 };
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
@@ -551,23 +551,23 @@ export default function DealFinderApp() {
     <>
       <style>{`
         @keyframes df-spin { to { transform: rotate(360deg); } }
-        input:focus { border-color: #2eb860 !important; }
-        input::placeholder { color: #334155; }
+        input:focus { border-color: #C4592F !important; }
+        input::placeholder { color: #44403c; }
       `}</style>
 
       <div style={{ padding: 28, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: '#e2e8f0', marginBottom: 4 }}>Deal Finder</div>
-          <div style={{ fontSize: 13, color: '#64748b' }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#1c1917', marginBottom: 4 }}>Deal Finder</div>
+          <div style={{ fontSize: 13, color: '#57534e' }}>
             Buyer's Academy — automated deal search emailed daily to each buyer
           </div>
         </div>
 
         {/* Info banner */}
-        <div style={{ background: 'rgba(46,184,96,.07)', border: '1px solid rgba(46,184,96,.2)', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#94a3b8', lineHeight: 1.6 }}>
-          <strong style={{ color: '#2eb860' }}>How it works:</strong> Create a search profile for each Buyer's Academy member. The system runs every morning at 7am MT, searches on-market listings (BizBuySell, BizQuest, Sunbelt, Murphy Business, etc.) and off-market prospects, then emails a formatted report to the buyer. Use <strong style={{ color: '#e2e8f0' }}>Run Now</strong> to preview results immediately.
+        <div style={{ background: 'rgba(196,89,47,.07)', border: '1px solid rgba(196,89,47,.2)', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#57534e', lineHeight: 1.6 }}>
+          <strong style={{ color: '#C4592F' }}>How it works:</strong> Create a search profile for each Buyer's Academy member. The system runs every morning at 7am MT, searches on-market listings (BizBuySell, BizQuest, Sunbelt, Murphy Business, etc.) and off-market prospects, then emails a formatted report to the buyer. Use <strong style={{ color: '#1c1917' }}>Run Now</strong> to preview results immediately.
         </div>
 
         {/* Edit form — shown inline above the list when editing */}
@@ -592,13 +592,13 @@ export default function DealFinderApp() {
 
         {/* Profile list */}
         {loading ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#64748b', padding: '32px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#57534e', padding: '32px 0' }}>
             <Spinner /> Loading profiles…
           </div>
         ) : profiles.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: '#57534e' }}>
             <div style={{ fontSize: 36, marginBottom: 14 }}>🔍</div>
-            <div style={{ fontSize: 17, fontWeight: 600, color: '#94a3b8', marginBottom: 8 }}>No search profiles yet</div>
+            <div style={{ fontSize: 17, fontWeight: 600, color: '#57534e', marginBottom: 8 }}>No search profiles yet</div>
             <div style={{ fontSize: 13, marginBottom: 20 }}>Create your first profile to start finding deals for Buyer's Academy members.</div>
             <button onClick={() => setShowForm(true)} style={S.primaryBtn}>+ Create First Profile</button>
           </div>

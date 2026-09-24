@@ -91,23 +91,23 @@ function AnalogGauge({
         <svg className="cockpit-svg" viewBox="0 0 200 172" aria-hidden="true">
           <defs>
             <radialGradient id={`${uid}-face`} cx="50%" cy="38%" r="68%">
-              <stop offset="0%" stopColor="#243140" />
-              <stop offset="70%" stopColor="#121820" />
-              <stop offset="100%" stopColor="#07090d" />
+              <stop offset="0%" stopColor="#f6f1ea" />
+              <stop offset="70%" stopColor="#f3ece4" />
+              <stop offset="100%" stopColor="#efe8e0" />
             </radialGradient>
             <linearGradient id={`${uid}-bezel`} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#8b98a8" />
-              <stop offset="35%" stopColor="#2c3848" />
-              <stop offset="100%" stopColor="#121820" />
+              <stop offset="35%" stopColor="#e7e0d6" />
+              <stop offset="100%" stopColor="#f3ece4" />
             </linearGradient>
           </defs>
           <circle cx={cx} cy={cy} r="72" fill={`url(#${uid}-bezel)`} />
-          <circle cx={cx} cy={cy} r="66" fill="#0b0e13" stroke="#1c2633" strokeWidth="2" />
+          <circle cx={cx} cy={cy} r="66" fill="#f7f1ea" stroke="#e6dfd6" strokeWidth="2" />
           <circle cx={cx} cy={cy} r="62" fill={`url(#${uid}-face)`} />
           <path
             d={arcPath(cx, cy, r + 4, START, SWEEP)}
             fill="none"
-            stroke="#c1622f"
+            stroke="#C4592F"
             strokeWidth="3"
             strokeLinecap="butt"
             opacity="0.95"
@@ -115,14 +115,14 @@ function AnalogGauge({
           <path
             d={arcPath(cx, cy, r - 14, START, SWEEP)}
             fill="none"
-            stroke="#1e293b"
+            stroke="#a8a29e"
             strokeWidth="8"
             strokeLinecap="butt"
           />
           <path
             d={arcPath(cx, cy, r - 14, START, SWEEP * shown)}
             fill="none"
-            stroke="#2eb860"
+            stroke="#C4592F"
             strokeWidth="8"
             strokeLinecap="butt"
           />
@@ -133,22 +133,22 @@ function AnalogGauge({
               y1={tick.inner[1]}
               x2={tick.outer[0]}
               y2={tick.outer[1]}
-              stroke={tick.hot ? '#fca5a5' : '#cbd5e1'}
+              stroke={tick.hot ? '#C4592F' : '#a8a29e'}
               strokeWidth={tick.i % 5 === 0 ? 2 : 1}
               strokeLinecap="round"
             />
           ))}
           {markerPoint && (
-            <circle cx={markerPoint[0]} cy={markerPoint[1]} r="3.5" fill="#7dd3fc" stroke="#0b0e13" strokeWidth="1" />
+            <circle cx={markerPoint[0]} cy={markerPoint[1]} r="3.5" fill="#1c1917" stroke="#ffffff" strokeWidth="1" />
           )}
-          <path d={needlePath(cx, cy, angle, r - 16)} fill="#f8fafc" />
-          <circle cx={cx} cy={cy} r="7" fill="#c1622f" />
+          <path d={needlePath(cx, cy, angle, r - 16)} fill="#1c1917" />
+          <circle cx={cx} cy={cy} r="7" fill="#C4592F" />
           <circle cx={cx} cy={cy} r="3" fill="#1a120e" />
           {[330, 30, 150, 210].map((deg) => {
             const [x, y] = polar(cx, cy, 69, deg);
             return (
               <g key={deg}>
-                <circle cx={x} cy={y} r="3.1" fill="#0e141c" stroke="#8b98a8" strokeWidth="1" />
+                <circle cx={x} cy={y} r="3.1" fill="#efe8e0" stroke="#8b98a8" strokeWidth="1" />
                 <circle cx={x} cy={y} r="1" fill="#d5dee8" />
               </g>
             );
@@ -252,9 +252,9 @@ export default function CompanyCockpit({ year, people, kpis, onSelect }) {
 
       <div className="cockpit-key">
         <span><i className="cockpit-swatch cockpit-swatch-needle" aria-hidden="true" /> Needle is the reading</span>
-        <span><i className="cockpit-swatch cockpit-swatch-ring" aria-hidden="true" /> Copper ring is full scale</span>
-        <span><i className="cockpit-swatch cockpit-swatch-fill" aria-hidden="true" /> Green arc fills toward the target</span>
-        <span><i className="cockpit-swatch cockpit-swatch-clock" aria-hidden="true" /> Blue dot on Pace is the year elapsed</span>
+        <span><i className="cockpit-swatch cockpit-swatch-ring" aria-hidden="true" /> Orange ring is full scale</span>
+        <span><i className="cockpit-swatch cockpit-swatch-fill" aria-hidden="true" /> Orange arc fills toward the target</span>
+        <span><i className="cockpit-swatch cockpit-swatch-clock" aria-hidden="true" /> Mark on Pace is the year elapsed</span>
       </div>
 
       <div className="cockpit-gauges">

@@ -96,7 +96,7 @@ function Field({ label, hint, children }) {
     <div className="field-group" style={{ marginBottom: 0 }}>
       <label>{label}</label>
       {children}
-      {hint ? <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>{hint}</div> : null}
+      {hint ? <div style={{ fontSize: 11, color: '#57534e', marginTop: 4 }}>{hint}</div> : null}
     </div>
   );
 }
@@ -150,15 +150,15 @@ function ProgressRow({ label, actual, target, format }) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 13, marginBottom: 6 }}>
         <span>{label}</span>
-        <span style={{ color: '#94a3b8' }}>
+        <span style={{ color: '#57534e' }}>
           {t > 0 ? `${format(a)} of ${format(t)} · ${pct.toFixed(0)}%` : 'No target yet'}
         </span>
       </div>
-      <div style={{ height: 8, background: '#0d1117', borderRadius: 99, overflow: 'hidden' }}>
+      <div style={{ height: 8, background: '#ffffff', borderRadius: 99, overflow: 'hidden' }}>
         <div style={{
           width: `${pct}%`,
           height: '100%',
-          background: pct >= 100 ? '#2eb860' : '#C1622F',
+          background: pct >= 100 ? '#C4592F' : '#C4592F',
           borderRadius: 99,
         }} />
       </div>
@@ -169,13 +169,13 @@ function ProgressRow({ label, actual, target, format }) {
 function Kpi({ label, value, detail }) {
   return (
     <div className="card" style={{ padding: '16px 18px' }}>
-      <div style={{ fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', color: '#64748b', fontWeight: 700 }}>
+      <div style={{ fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', color: '#57534e', fontWeight: 700 }}>
         {label}
       </div>
-      <div style={{ fontFamily: 'Oswald, sans-serif', fontSize: 28, color: '#e2e8f0', marginTop: 6, lineHeight: 1.1 }}>
+      <div style={{ fontFamily: 'Oswald, sans-serif', fontSize: 28, color: '#1c1917', marginTop: 6, lineHeight: 1.1 }}>
         {value}
       </div>
-      <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>{detail}</div>
+      <div style={{ fontSize: 12, color: '#57534e', marginTop: 6 }}>{detail}</div>
     </div>
   );
 }
@@ -187,10 +187,10 @@ function CalcRow({ label, value, last }) {
       justifyContent: 'space-between',
       gap: 12,
       padding: '10px 0',
-      borderBottom: last ? 'none' : '1px solid #1e2d45',
+      borderBottom: last ? 'none' : '1px solid #e6dfd6',
     }}>
-      <span style={{ color: '#94a3b8', fontSize: 13 }}>{label}</span>
-      <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#4ade80' }}>{value}</span>
+      <span style={{ color: '#57534e', fontSize: 13 }}>{label}</span>
+      <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#A34826' }}>{value}</span>
     </div>
   );
 }
@@ -428,7 +428,7 @@ export default function SuccessPlansApp() {
 
   return (
     <div className="page-content" style={{ maxWidth: 1180 }}>
-      <div className="page-header" style={{ position: 'sticky', top: 0, zIndex: 4, background: '#0f1117', paddingTop: 4, paddingBottom: 12, alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
+      <div className="page-header" style={{ position: 'sticky', top: 0, zIndex: 4, background: 'rgba(244,241,236,0.92)', backdropFilter: 'blur(12px)', paddingTop: 4, paddingBottom: 12, alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
         <div>
           <div className="page-title">Annual Success Plans</div>
           <div className="page-subtitle">
@@ -460,7 +460,7 @@ export default function SuccessPlansApp() {
               <input type="number" value={yearInput} placeholder="2028" onChange={(e) => setYearInput(e.target.value)} style={{ width: 140 }} />
             </Field>
             <button type="button" className="btn-primary btn-sm" disabled={saving} onClick={addYear}>Open year</button>
-            <span style={{ fontSize: 12, color: '#64748b' }}>Copies the roster and assumptions. Income targets start blank.</span>
+            <span style={{ fontSize: 12, color: '#57534e' }}>Copies the roster and assumptions. Income targets start blank.</span>
           </div>
         </div>
       )}
@@ -484,7 +484,7 @@ export default function SuccessPlansApp() {
       {notice && <div className="alert alert-success">{notice}</div>}
 
       {loading && !data ? (
-        <div style={{ padding: 40, color: '#64748b' }}>
+        <div style={{ padding: 40, color: '#57534e' }}>
           <span className="spinner spinner-dark" style={{ width: 22, height: 22, borderWidth: 3 }} /> Loading plans…
         </div>
       ) : null}
@@ -503,7 +503,7 @@ export default function SuccessPlansApp() {
             <Kpi label="Deals to close" value={data.kpis.deals_to_close.toLocaleString('en-US')} detail="Rounded up from production math" />
             <Kpi label="Pipeline committed" value={money(data.kpis.pipeline_commission)} detail="Engagement pipeline, commission basis" />
           </div>
-          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 18 }}>
+          <div style={{ fontSize: 12, color: '#57534e', marginBottom: 18 }}>
             Target engagement pipeline (deal volume) {money(data.kpis.pipeline_deal_volume)}
             {' · '}
             Engagements needed {data.kpis.engagements_needed.toLocaleString('en-US')}
@@ -512,7 +512,7 @@ export default function SuccessPlansApp() {
           <div className="card" style={{ marginBottom: 16 }}>
             <div className="card-header">
               <span className="card-title">Roster</span>
-              <span style={{ fontSize: 12, color: '#64748b' }}>{people.length} active</span>
+              <span style={{ fontSize: 12, color: '#57534e' }}>{people.length} active</span>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table className="data-table">
@@ -529,8 +529,8 @@ export default function SuccessPlansApp() {
                 <tbody>
                   {ranked.map((person) => (
                     <tr key={person.id} onClick={() => setMode(person.id)} style={{ cursor: 'pointer' }}>
-                      <td style={{ color: '#4ade80', fontWeight: 600 }}>{person.name}</td>
-                      <td style={{ color: '#94a3b8' }}>{person.role || '—'}</td>
+                      <td style={{ color: '#A34826', fontWeight: 600 }}>{person.name}</td>
+                      <td style={{ color: '#57534e' }}>{person.role || '—'}</td>
                       <td style={{ textAlign: 'right' }}>{money(person.personal_income_target)}</td>
                       <td style={{ textAlign: 'right' }}>{money(person.gross_production)}</td>
                       <td style={{ textAlign: 'right' }}>{person.deals_to_close}</td>
@@ -557,7 +557,7 @@ export default function SuccessPlansApp() {
               </button>
             </div>
             <div className="card-body" style={{ display: 'grid', gap: 16 }}>
-              <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>
+              <p style={{ fontSize: 13, color: '#57534e', margin: 0 }}>
                 Five-year direction for {year}, plus this year&apos;s D.E.A.L. priorities. Individual plans roll up into this.
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
@@ -645,7 +645,7 @@ export default function SuccessPlansApp() {
                     </div>
                   ))}
                   {companyDraft.priorities.length === 0 && (
-                    <div style={{ fontSize: 13, color: '#64748b' }}>No company priorities yet. The workbook left these open.</div>
+                    <div style={{ fontSize: 13, color: '#57534e' }}>No company priorities yet. The workbook left these open.</div>
                   )}
                   <div>
                     <button
@@ -664,7 +664,7 @@ export default function SuccessPlansApp() {
 
               <div>
                 <div className="card-title" style={{ marginBottom: 10 }}>Five-year WTF goals</div>
-                <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 10px' }}>
+                <p style={{ fontSize: 12, color: '#57534e', margin: '0 0 10px' }}>
                   Years {companyDraft.five_year_goals[0]?.goal_year || year}–{companyDraft.five_year_goals.at(-1)?.goal_year || year} were listed in the workbook. Targets were not filled in.
                 </p>
                 <div style={{ overflowX: 'auto' }}>
@@ -761,11 +761,11 @@ export default function SuccessPlansApp() {
 
           {data.inactive.length > 0 && (
             <details className="card" style={{ marginBottom: 16, padding: '14px 18px' }}>
-              <summary style={{ cursor: 'pointer', color: '#94a3b8', fontSize: 13 }}>Archived ({data.inactive.length})</summary>
+              <summary style={{ cursor: 'pointer', color: '#57534e', fontSize: 13 }}>Archived ({data.inactive.length})</summary>
               <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
                 {data.inactive.map((person) => (
                   <div key={person.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-                    <span>{person.name} <span style={{ color: '#64748b' }}>{person.role}</span></span>
+                    <span>{person.name} <span style={{ color: '#57534e' }}>{person.role}</span></span>
                     <button type="button" className="btn-ghost btn-sm" disabled={saving} onClick={() => restorePerson(person.id)}>Restore</button>
                   </div>
                 ))}
@@ -785,7 +785,7 @@ export default function SuccessPlansApp() {
               <Field label="Role">
                 <input type="text" value={draft.role} onChange={(e) => patchPerson(selected.id, { role: e.target.value })} />
               </Field>
-              <div style={{ fontSize: 13, color: '#94a3b8', paddingBottom: 8 }}>
+              <div style={{ fontSize: 13, color: '#57534e', paddingBottom: 8 }}>
                 Commission split {pctLabel(draft.commission_split || 0)}
                 {selected.active ? '' : ' · Archived'}
               </div>
@@ -839,7 +839,7 @@ export default function SuccessPlansApp() {
                 <CalcRow label="Engagement Pipeline Needed (commission)" value={money(calc.pipelineCommission)} />
                 <CalcRow label="Target Engagement Pipeline (deal volume)" value={money(calc.pipelineDealVolume)} />
                 <CalcRow label="Engagements Needed" value={calc.engagementsNeeded ? String(calc.engagementsNeeded) : '—'} last />
-                <p style={{ fontSize: 11, color: '#64748b', margin: '12px 0 0' }}>
+                <p style={{ fontSize: 11, color: '#57534e', margin: '12px 0 0' }}>
                   Gross = income ÷ split. Deals round up from gross ÷ (deal size × commission rate). Pipeline and engagements use deals ÷ close ratio.
                 </p>
               </div>
@@ -904,7 +904,7 @@ export default function SuccessPlansApp() {
                 </div>
               ))}
               {draft.priorities.length === 0 && (
-                <div style={{ fontSize: 13, color: '#64748b' }}>No strategic priorities yet.</div>
+                <div style={{ fontSize: 13, color: '#57534e' }}>No strategic priorities yet.</div>
               )}
               <div>
                 <button

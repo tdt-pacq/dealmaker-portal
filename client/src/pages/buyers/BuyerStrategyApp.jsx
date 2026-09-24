@@ -56,7 +56,7 @@ const FRAMEWORK_STAGES = [
   { key: 'desire',   label: 'Desire',   emoji: '🔥', color: '#e05c5c' },
   { key: 'identity', label: 'Identity', emoji: '🪞', color: '#7b7fef' },
   { key: 'block',    label: 'Block',    emoji: '🧱', color: '#e09a2a' },
-  { key: 'capacity', label: 'Capacity', emoji: '💰', color: '#2eb860' },
+  { key: 'capacity', label: 'Capacity', emoji: '💰', color: '#C4592F' },
   { key: 'future',   label: 'Future',   emoji: '🚀', color: '#C9A84C' },
 ];
 
@@ -117,7 +117,7 @@ function FrameworkStage({ stage, data, open, onToggle }) {
           {/* Overview */}
           <div style={{ marginBottom: 18 }}>
             <div className="bs-label" style={{ color, marginBottom: 8 }}>Stage Overview</div>
-            <p style={{ margin: 0, color: '#cbd5e1', fontSize: 14, lineHeight: 1.75 }}>{data.overview}</p>
+            <p style={{ margin: 0, color: '#44403c', fontSize: 14, lineHeight: 1.75 }}>{data.overview}</p>
           </div>
 
           {/* Questions */}
@@ -135,7 +135,7 @@ function FrameworkStage({ stage, data, open, onToggle }) {
                     color, fontWeight: 700, fontSize: 11,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>{i + 1}</span>
-                  <span style={{ color: '#e2e8f0', fontSize: 14, lineHeight: 1.65, flex: 1, paddingTop: 2 }}>{q}</span>
+                  <span style={{ color: '#1c1917', fontSize: 14, lineHeight: 1.65, flex: 1, paddingTop: 2 }}>{q}</span>
                   <CopyBtn text={q} title="Copy question" />
                 </div>
               ))}
@@ -151,8 +151,8 @@ function FrameworkStage({ stage, data, open, onToggle }) {
               </div>
               {data.talking_points.map((tp, i) => (
                 <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 8, alignItems: 'flex-start' }}>
-                  <span style={{ color: '#2eb860', flexShrink: 0, fontSize: 16, lineHeight: 1, marginTop: 2 }}>◆</span>
-                  <span style={{ color: '#e2e8f0', fontSize: 14, lineHeight: 1.65, flex: 1 }}>{tp}</span>
+                  <span style={{ color: '#C4592F', flexShrink: 0, fontSize: 16, lineHeight: 1, marginTop: 2 }}>◆</span>
+                  <span style={{ color: '#1c1917', fontSize: 14, lineHeight: 1.65, flex: 1 }}>{tp}</span>
                   <CopyBtn text={tp} title="Copy talking point" />
                 </div>
               ))}
@@ -225,10 +225,10 @@ function ReportView({ report, onBack, onRerun }) {
       {/* Report top bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <div>
-          <div style={{ color: '#2eb860', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 3 }}>
+          <div style={{ color: '#C4592F', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 3 }}>
             Buyer Intelligence Report
           </div>
-          <div style={{ color: '#64748b', fontSize: 12 }}>
+          <div style={{ color: '#57534e', fontSize: 12 }}>
             Generated {new Date(report.generatedAt).toLocaleString()}
           </div>
         </div>
@@ -251,12 +251,12 @@ function ReportView({ report, onBack, onRerun }) {
           )}
         </div>
         <div className="bs-card-body">
-          <p style={{ margin: '0 0 14px', color: '#cbd5e1', fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+          <p style={{ margin: '0 0 14px', color: '#44403c', fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
             {report.summary}
           </p>
           {report.personality_rationale && (
             <div className="bs-prompt" style={{ margin: 0 }}>
-              <strong style={{ color: '#2eb860' }}>Why this archetype: </strong>
+              <strong style={{ color: '#C4592F' }}>Why this archetype: </strong>
               {report.personality_rationale}
             </div>
           )}
@@ -268,7 +268,7 @@ function ReportView({ report, onBack, onRerun }) {
         <div className="bs-card" style={{ marginBottom: 14 }}>
           <div className="bs-card-header"><span className="bs-card-title">🌐 Online Presence</span></div>
           <div className="bs-card-body">
-            <p style={{ margin: 0, color: '#cbd5e1', fontSize: 14, lineHeight: 1.7 }}>{report.online_presence}</p>
+            <p style={{ margin: 0, color: '#44403c', fontSize: 14, lineHeight: 1.7 }}>{report.online_presence}</p>
           </div>
         </div>
       )}
@@ -280,8 +280,8 @@ function ReportView({ report, onBack, onRerun }) {
           <div className="bs-card-body">
             {(report.hot_points || []).map((pt, i) => (
               <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
-                <span style={{ color: '#2eb860', fontWeight: 700, fontSize: 15, flexShrink: 0, lineHeight: 1, marginTop: 2 }}>✓</span>
-                <span style={{ color: '#e2e8f0', fontSize: 14, lineHeight: 1.65 }}>{pt}</span>
+                <span style={{ color: '#C4592F', fontWeight: 700, fontSize: 15, flexShrink: 0, lineHeight: 1, marginTop: 2 }}>✓</span>
+                <span style={{ color: '#1c1917', fontSize: 14, lineHeight: 1.65 }}>{pt}</span>
               </div>
             ))}
           </div>
@@ -291,8 +291,8 @@ function ReportView({ report, onBack, onRerun }) {
           <div className="bs-card-body">
             {(report.things_to_avoid || []).map((item, i) => (
               <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
-                <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 15, flexShrink: 0, lineHeight: 1, marginTop: 2 }}>✗</span>
-                <span style={{ color: '#e2e8f0', fontSize: 14, lineHeight: 1.65 }}>{item}</span>
+                <span style={{ color: '#dc2626', fontWeight: 700, fontSize: 15, flexShrink: 0, lineHeight: 1, marginTop: 2 }}>✗</span>
+                <span style={{ color: '#1c1917', fontSize: 14, lineHeight: 1.65 }}>{item}</span>
               </div>
             ))}
           </div>
@@ -304,7 +304,7 @@ function ReportView({ report, onBack, onRerun }) {
         <div className="bs-card-header">
           <span className="bs-card-title">📋 Call Prep Framework</span>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span style={{ fontSize: 12, color: '#64748b' }}>Click a stage to expand</span>
+            <span style={{ fontSize: 12, color: '#57534e' }}>Click a stage to expand</span>
             <button
               className="bs-btn bs-btn-secondary bs-btn-sm"
               style={{ fontSize: 10, padding: '3px 9px' }}
@@ -330,12 +330,12 @@ function ReportView({ report, onBack, onRerun }) {
       {/* Raw Research — collapsible */}
       {report.rawResearch && (
         <details style={{ marginBottom: 14 }}>
-          <summary style={{ cursor: 'pointer', color: '#64748b', fontSize: 12, userSelect: 'none', padding: '6px 0' }}>
+          <summary style={{ cursor: 'pointer', color: '#57534e', fontSize: 12, userSelect: 'none', padding: '6px 0' }}>
             📄 View Raw Research Data
           </summary>
           <div className="bs-card" style={{ marginTop: 8 }}>
             <div className="bs-card-body">
-              <pre style={{ margin: 0, color: '#94a3b8', fontSize: 12, lineHeight: 1.6, whiteSpace: 'pre-wrap', fontFamily: 'monospace', overflowX: 'auto' }}>
+              <pre style={{ margin: 0, color: '#57534e', fontSize: 12, lineHeight: 1.6, whiteSpace: 'pre-wrap', fontFamily: 'monospace', overflowX: 'auto' }}>
                 {report.rawResearch}
               </pre>
             </div>
@@ -352,12 +352,12 @@ function LoadingScreen({ msg }) {
   return (
     <div style={{ textAlign: 'center', padding: '80px 0' }}>
       <div style={{ fontSize: 40, marginBottom: 18 }}>🔍</div>
-      <div style={{ color: '#e2e8f0', fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{msg}</div>
-      <div style={{ color: '#64748b', fontSize: 13, marginBottom: 32 }}>This takes 60–120 seconds — Claude is searching the web and building your report</div>
+      <div style={{ color: '#1c1917', fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{msg}</div>
+      <div style={{ color: '#57534e', fontSize: 13, marginBottom: 32 }}>This takes 60–120 seconds — Claude is searching the web and building your report</div>
       <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
         {[0, 1, 2].map(i => (
           <div key={i} style={{
-            width: 10, height: 10, borderRadius: '50%', background: '#2eb860',
+            width: 10, height: 10, borderRadius: '50%', background: '#C4592F',
             animation: `bi-pulse 1.4s ${i * 0.22}s ease-in-out infinite`,
           }} />
         ))}
@@ -583,11 +583,11 @@ export default function BuyerStrategyApp() {
           {showBack && (
             <button className="bs-btn bs-btn-secondary bs-btn-sm" onClick={onBack}>← Back</button>
           )}
-          <h2 style={{ fontFamily: 'Playfair Display, serif', color: '#2eb860', margin: 0, fontSize: 24 }}>
+          <h2 style={{ fontFamily: 'Playfair Display, serif', color: '#C4592F', margin: 0, fontSize: 24 }}>
             Buyer Intelligence
           </h2>
         </div>
-        <p style={{ color: '#64748b', fontSize: 14, margin: 0, paddingLeft: showBack ? 70 : 0 }}>
+        <p style={{ color: '#57534e', fontSize: 14, margin: 0, paddingLeft: showBack ? 70 : 0 }}>
           AI-powered buyer research & call prep reports
         </p>
       </div>
@@ -641,10 +641,10 @@ export default function BuyerStrategyApp() {
     <div className="bs-root">
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h2 style={{ fontFamily: 'Playfair Display, serif', color: '#2eb860', margin: '0 0 4px', fontSize: 24 }}>
+          <h2 style={{ fontFamily: 'Playfair Display, serif', color: '#C4592F', margin: '0 0 4px', fontSize: 24 }}>
             Buyer Intelligence
           </h2>
-          <p style={{ color: '#64748b', fontSize: 14, margin: 0 }}>
+          <p style={{ color: '#57534e', fontSize: 14, margin: 0 }}>
             AI-powered buyer research & call prep reports
           </p>
         </div>
@@ -652,9 +652,9 @@ export default function BuyerStrategyApp() {
       </div>
 
       {buyers.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '70px 20px', color: '#64748b' }}>
+        <div style={{ textAlign: 'center', padding: '70px 20px', color: '#57534e' }}>
           <div style={{ fontSize: 44, marginBottom: 16 }}>🎯</div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: '#94a3b8', marginBottom: 8 }}>No buyer profiles yet</div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: '#57534e', marginBottom: 8 }}>No buyer profiles yet</div>
           <div style={{ fontSize: 13, marginBottom: 28, maxWidth: 340, margin: '0 auto 28px' }}>
             Add a buyer to generate an AI-powered intelligence report — personality type, hot points, objection prep, and customised call questions.
           </div>
@@ -668,7 +668,7 @@ export default function BuyerStrategyApp() {
                 {/* Avatar / icon */}
                 <div style={{
                   width: 42, height: 42, borderRadius: '50%',
-                  background: 'rgba(46,184,96,0.12)', border: '1px solid rgba(46,184,96,0.3)',
+                  background: 'rgba(196,89,47,0.12)', border: '1px solid rgba(196,89,47,0.3)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 18, flexShrink: 0,
                 }}>
@@ -679,15 +679,15 @@ export default function BuyerStrategyApp() {
 
                 {/* Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ color: '#e2e8f0', fontWeight: 600, fontSize: 15, marginBottom: 3 }}>
+                  <div style={{ color: '#1c1917', fontWeight: 600, fontSize: 15, marginBottom: 3 }}>
                     {buyer.displayName}
                   </div>
-                  <div style={{ color: '#64748b', fontSize: 12 }}>
+                  <div style={{ color: '#57534e', fontSize: 12 }}>
                     {[buyer.formData?.email, buyer.formData?.company].filter(Boolean).join(' · ')}
                     {buyer.lastReport && (
                       <>
                         {buyer.formData?.email || buyer.formData?.company ? ' · ' : ''}
-                        <span style={{ color: '#2eb860' }}>
+                        <span style={{ color: '#C4592F' }}>
                           ✓ Report {new Date(buyer.lastReport.generatedAt).toLocaleDateString()}
                         </span>
                       </>

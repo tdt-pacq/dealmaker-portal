@@ -74,7 +74,7 @@ export default function Home() {
         fontWeight: 700,
         letterSpacing: 2.5,
         textTransform: 'uppercase',
-        color: '#2d3f57',
+        color: '#57534e',
         marginBottom: 16,
         fontFamily: 'system-ui, sans-serif',
       }}>
@@ -92,8 +92,8 @@ export default function Home() {
             key={tool.id}
             onClick={() => handleLaunch(tool)}
             style={{
-              background: '#1e293b',
-              border: `1px solid ${tool.live ? '#2d3748' : '#1a2235'}`,
+              background: 'rgba(255,255,255,0.94)',
+              border: `1px solid ${tool.live ? '#e4dcd2' : '#e6dfd6'}`,
               borderRadius: 10,
               padding: '24px',
               cursor: tool.live ? 'pointer' : 'default',
@@ -106,13 +106,13 @@ export default function Home() {
             }}
             onMouseEnter={e => {
               if (!tool.live) return;
-              e.currentTarget.style.borderColor = '#2eb860';
+              e.currentTarget.style.borderColor = '#C4592F';
               e.currentTarget.style.transform = 'translateY(-2px)';
               e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.3)';
             }}
             onMouseLeave={e => {
               if (!tool.live) return;
-              e.currentTarget.style.borderColor = '#2d3748';
+              e.currentTarget.style.borderColor = '#e4dcd2';
               e.currentTarget.style.transform = 'translateY(0)';
               e.currentTarget.style.boxShadow = 'none';
             }}
@@ -126,9 +126,9 @@ export default function Home() {
                 fontWeight: 700,
                 letterSpacing: 1,
                 textTransform: 'uppercase',
-                color: '#2d3f57',
-                background: '#111827',
-                border: '1px solid #1a2235',
+                color: '#57534e',
+                background: '#f7f3ee',
+                border: '1px solid #e6dfd6',
                 borderRadius: 3,
                 padding: '2px 6px',
                 fontFamily: 'system-ui, sans-serif',
@@ -143,7 +143,7 @@ export default function Home() {
               fontFamily: 'Oswald, sans-serif',
               fontWeight: 600,
               fontSize: 15,
-              color: '#e2e8f0',
+              color: '#1c1917',
               letterSpacing: 0.5,
               textTransform: 'uppercase',
             }}>
@@ -152,7 +152,7 @@ export default function Home() {
 
             <div style={{
               fontSize: 13,
-              color: '#64748b',
+              color: '#57534e',
               lineHeight: 1.55,
               fontFamily: 'system-ui, sans-serif',
               flex: 1,
@@ -168,7 +168,7 @@ export default function Home() {
                 gap: 6,
                 fontSize: 12,
                 fontWeight: 600,
-                color: '#2eb860',
+                color: '#C4592F',
                 fontFamily: 'system-ui, sans-serif',
                 letterSpacing: 0.3,
               }}>

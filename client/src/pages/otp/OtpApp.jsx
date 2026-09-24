@@ -43,7 +43,7 @@ function FieldGroup({ label, children, hint }) {
         display: 'block',
         fontSize: 11,
         fontWeight: 600,
-        color: '#94a3b8',
+        color: '#57534e',
         textTransform: 'uppercase',
         letterSpacing: 0.8,
         marginBottom: 5,
@@ -53,7 +53,7 @@ function FieldGroup({ label, children, hint }) {
       </label>
       {children}
       {hint && (
-        <div style={{ fontSize: 10.5, color: '#475569', marginTop: 3, fontStyle: 'italic' }}>
+        <div style={{ fontSize: 10.5, color: '#44403c', marginTop: 3, fontStyle: 'italic' }}>
           {hint}
         </div>
       )}
@@ -63,10 +63,10 @@ function FieldGroup({ label, children, hint }) {
 
 const inputStyle = {
   width: '100%',
-  background: '#0f172a',
-  border: '1px solid #1e2d45',
+  background: '#f7f3ee',
+  border: '1px solid #e6dfd6',
   borderRadius: 5,
-  color: '#e2e8f0',
+  color: '#1c1917',
   padding: '8px 11px',
   fontSize: 13,
   fontFamily: 'system-ui, sans-serif',
@@ -82,7 +82,7 @@ function TextInput({ value, onChange, placeholder, type = 'text', onFocus, onBlu
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder || ''}
       style={inputStyle}
-      onFocus={e => { e.target.style.borderColor = '#2eb860'; if (onFocus) onFocus(e); }}
+      onFocus={e => { e.target.style.borderColor = '#C4592F'; if (onFocus) onFocus(e); }}
       onBlur={e => { e.target.style.borderColor = '#1e2d45'; if (onBlur) onBlur(e); }}
     />
   );
@@ -96,7 +96,7 @@ function TextArea({ value, onChange, placeholder, rows = 3 }) {
       placeholder={placeholder || ''}
       rows={rows}
       style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }}
-      onFocus={e => { e.target.style.borderColor = '#2eb860'; }}
+      onFocus={e => { e.target.style.borderColor = '#C4592F'; }}
       onBlur={e => { e.target.style.borderColor = '#1e2d45'; }}
     />
   );
@@ -115,7 +115,7 @@ function MoneyInput({ value, onChange, placeholder }) {
     <div style={{ position: 'relative' }}>
       <div style={{
         position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
-        color: '#64748b', fontSize: 13, pointerEvents: 'none',
+        color: '#57534e', fontSize: 13, pointerEvents: 'none',
       }}>$</div>
       <input
         type="text"
@@ -124,7 +124,7 @@ function MoneyInput({ value, onChange, placeholder }) {
         onChange={e => handleChange(e.target.value)}
         placeholder={placeholder || '0'}
         style={{ ...inputStyle, paddingLeft: 22 }}
-        onFocus={e => { e.target.style.borderColor = '#2eb860'; }}
+        onFocus={e => { e.target.style.borderColor = '#C4592F'; }}
         onBlur={e => { e.target.style.borderColor = '#1e2d45'; }}
       />
     </div>
@@ -146,8 +146,8 @@ function CheckToggle({ label, checked, onChange, hint }) {
           width: 18,
           height: 18,
           borderRadius: 3,
-          border: checked ? '2px solid #2eb860' : '2px solid #2d3f57',
-          background: checked ? '#2eb860' : 'transparent',
+          border: checked ? '2px solid #C4592F' : '2px solid #e6dfd6',
+          background: checked ? '#C4592F' : 'transparent',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -159,7 +159,7 @@ function CheckToggle({ label, checked, onChange, hint }) {
       >
         {checked && <span style={{ color: '#fff', fontSize: 11, lineHeight: 1 }}>✓</span>}
       </div>
-      <span style={{ fontSize: 12.5, color: '#94a3b8', fontFamily: 'system-ui, sans-serif' }}>
+      <span style={{ fontSize: 12.5, color: '#57534e', fontFamily: 'system-ui, sans-serif' }}>
         {label}
       </span>
     </label>
@@ -171,16 +171,16 @@ function CheckToggle({ label, checked, onChange, hint }) {
 function FormSection({ title, icon, children }) {
   return (
     <div style={{
-      background: '#111827',
-      border: '1px solid #1e2d45',
+      background: '#f7f3ee',
+      border: '1px solid #e6dfd6',
       borderRadius: 8,
       marginBottom: 16,
       overflow: 'hidden',
     }}>
       <div style={{
         padding: '10px 18px',
-        background: '#0d1526',
-        borderBottom: '1px solid #1e2d45',
+        background: '#fff7f3',
+        borderBottom: '1px solid #e6dfd6',
         display: 'flex',
         alignItems: 'center',
         gap: 8,
@@ -190,7 +190,7 @@ function FormSection({ title, icon, children }) {
           fontFamily: 'system-ui, sans-serif',
           fontWeight: 700,
           fontSize: 11.5,
-          color: '#cbd5e1',
+          color: '#44403c',
           textTransform: 'uppercase',
           letterSpacing: 1,
         }}>{title}</span>
@@ -234,8 +234,8 @@ function PriceSummary({ f }) {
       justifyContent: 'space-between',
       alignItems: 'center',
       padding: '4px 0',
-      borderBottom: '1px solid #1a2535',
-      color: accent ? '#2eb860' : bold ? '#e2e8f0' : '#94a3b8',
+      borderBottom: '1px solid #e6dfd6',
+      color: accent ? '#C4592F' : bold ? '#1c1917' : '#57534e',
       fontWeight: bold ? 700 : 400,
       fontSize: accent ? 13 : 12,
     }}>
@@ -246,13 +246,13 @@ function PriceSummary({ f }) {
 
   return (
     <div style={{
-      background: '#0a1220',
-      border: '1px solid #1e2d45',
+      background: '#f7f3ee',
+      border: '1px solid #e6dfd6',
       borderRadius: 6,
       padding: '12px 14px',
       marginTop: 8,
     }}>
-      <div style={{ fontSize: 10, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: '#44403c', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
         Price Structure Preview
       </div>
       {row('a. Initial Deposit', depInitial)}
@@ -268,8 +268,8 @@ function PriceSummary({ f }) {
         alignItems: 'center',
         padding: '6px 0 0',
         marginTop: 4,
-        borderTop: '2px solid #2eb860',
-        color: '#2eb860',
+        borderTop: '2px solid #C4592F',
+        color: '#C4592F',
         fontWeight: 700,
         fontSize: 13.5,
       }}>
@@ -363,12 +363,12 @@ function AddendumEditor({ items, onChange }) {
     <div>
       {items.length === 0 ? (
         <div style={{
-          background: '#0a1220',
-          border: '1px dashed #1e2d45',
+          background: '#f7f3ee',
+          border: '1px dashed #e6dfd6',
           borderRadius: 6,
           padding: '16px',
           textAlign: 'center',
-          color: '#475569',
+          color: '#44403c',
           fontSize: 12,
           marginBottom: 12,
         }}>
@@ -378,8 +378,8 @@ function AddendumEditor({ items, onChange }) {
         <div>
           {items.map((item, idx) => (
             <div key={item.id} style={{
-              background: '#0a1220',
-              border: '1px solid #1e2d45',
+              background: '#f7f3ee',
+              border: '1px solid #e6dfd6',
               borderRadius: 6,
               marginBottom: 10,
               overflow: 'hidden',
@@ -390,13 +390,13 @@ function AddendumEditor({ items, onChange }) {
                 alignItems: 'center',
                 gap: 8,
                 padding: '8px 12px',
-                background: '#0d1829',
-                borderBottom: '1px solid #1e2d45',
+                background: '#fff7f3',
+                borderBottom: '1px solid #e6dfd6',
               }}>
                 <span style={{
                   fontSize: 10,
                   fontWeight: 700,
-                  color: '#2eb860',
+                  color: '#C4592F',
                   textTransform: 'uppercase',
                   letterSpacing: 1,
                   minWidth: 60,
@@ -412,15 +412,15 @@ function AddendumEditor({ items, onChange }) {
                     flex: 1,
                     background: 'transparent',
                     border: 'none',
-                    borderBottom: '1px solid #1e2d45',
-                    color: '#e2e8f0',
+                    borderBottom: '1px solid #e6dfd6',
+                    color: '#1c1917',
                     fontSize: 12.5,
                     fontWeight: 600,
                     padding: '2px 6px',
                     outline: 'none',
                     fontFamily: 'system-ui, sans-serif',
                   }}
-                  onFocus={e => e.target.style.borderBottomColor = '#2eb860'}
+                  onFocus={e => e.target.style.borderBottomColor = '#C4592F'}
                   onBlur={e => e.target.style.borderBottomColor = '#1e2d45'}
                 />
                 {/* Move up/down */}
@@ -430,7 +430,7 @@ function AddendumEditor({ items, onChange }) {
                   title="Move up"
                   style={{
                     background: 'transparent', border: 'none',
-                    color: idx === 0 ? '#1e2d45' : '#64748b',
+                    color: idx === 0 ? '#1e2d45' : '#57534e',
                     cursor: idx === 0 ? 'default' : 'pointer',
                     fontSize: 13, padding: '2px 4px',
                   }}
@@ -441,7 +441,7 @@ function AddendumEditor({ items, onChange }) {
                   title="Move down"
                   style={{
                     background: 'transparent', border: 'none',
-                    color: idx === items.length - 1 ? '#1e2d45' : '#64748b',
+                    color: idx === items.length - 1 ? '#1e2d45' : '#57534e',
                     cursor: idx === items.length - 1 ? 'default' : 'pointer',
                     fontSize: 13, padding: '2px 4px',
                   }}
@@ -451,11 +451,11 @@ function AddendumEditor({ items, onChange }) {
                   title="Remove item"
                   style={{
                     background: 'transparent', border: 'none',
-                    color: '#ef4444', cursor: 'pointer',
+                    color: '#dc2626', cursor: 'pointer',
                     fontSize: 15, padding: '2px 4px', lineHeight: 1,
                   }}
-                  onMouseEnter={e => e.currentTarget.style.color = '#fca5a5'}
-                  onMouseLeave={e => e.currentTarget.style.color = '#ef4444'}
+                  onMouseEnter={e => e.currentTarget.style.color = '#dc2626'}
+                  onMouseLeave={e => e.currentTarget.style.color = '#dc2626'}
                 >✕</button>
               </div>
 
@@ -468,10 +468,10 @@ function AddendumEditor({ items, onChange }) {
                   rows={4}
                   style={{
                     width: '100%',
-                    background: '#0f172a',
-                    border: '1px solid #1e2d45',
+                    background: '#f7f3ee',
+                    border: '1px solid #e6dfd6',
                     borderRadius: 4,
-                    color: '#e2e8f0',
+                    color: '#1c1917',
                     fontSize: 12.5,
                     padding: '8px 10px',
                     resize: 'vertical',
@@ -479,7 +479,7 @@ function AddendumEditor({ items, onChange }) {
                     lineHeight: 1.55,
                     outline: 'none',
                   }}
-                  onFocus={e => e.target.style.borderColor = '#2eb860'}
+                  onFocus={e => e.target.style.borderColor = '#C4592F'}
                   onBlur={e => e.target.style.borderColor = '#1e2d45'}
                 />
               </div>
@@ -492,9 +492,9 @@ function AddendumEditor({ items, onChange }) {
         onClick={addItem}
         style={{
           background: 'transparent',
-          border: '1px dashed #2eb860',
+          border: '1px dashed #C4592F',
           borderRadius: 5,
-          color: '#2eb860',
+          color: '#C4592F',
           padding: '7px 16px',
           fontSize: 12.5,
           fontWeight: 600,
@@ -505,7 +505,7 @@ function AddendumEditor({ items, onChange }) {
           gap: 6,
           transition: 'background 0.15s',
         }}
-        onMouseEnter={e => e.currentTarget.style.background = 'rgba(46,184,96,0.07)'}
+        onMouseEnter={e => e.currentTarget.style.background = 'rgba(196,89,47,0.07)'}
         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
       >
         + Add Addendum Item
@@ -593,14 +593,14 @@ export default function OtpApp() {
               fontFamily: 'Oswald, sans-serif',
               fontWeight: 700,
               fontSize: 22,
-              color: '#e2e8f0',
+              color: '#1c1917',
               letterSpacing: 1.5,
               textTransform: 'uppercase',
               margin: 0,
             }}>
               Offer To Purchase
             </h1>
-            <p style={{ color: '#64748b', fontSize: 12.5, margin: '4px 0 0', letterSpacing: 0.3 }}>
+            <p style={{ color: '#57534e', fontSize: 12.5, margin: '4px 0 0', letterSpacing: 0.3 }}>
               Enter deal details below to generate a professional OTP PDF ready for DocuSign.
             </p>
           </div>
@@ -609,15 +609,15 @@ export default function OtpApp() {
               onClick={handleReset}
               style={{
                 background: 'transparent',
-                border: '1px solid #1e2d45',
+                border: '1px solid #e6dfd6',
                 borderRadius: 5,
-                color: '#64748b',
+                color: '#57534e',
                 padding: '7px 14px',
                 fontSize: 12,
                 cursor: 'pointer',
                 fontFamily: 'system-ui, sans-serif',
               }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = '#475569'}
+              onMouseEnter={e => e.currentTarget.style.borderColor = '#44403c'}
               onMouseLeave={e => e.currentTarget.style.borderColor = '#1e2d45'}
             >
               🔄 Reset
@@ -626,7 +626,7 @@ export default function OtpApp() {
               onClick={handleGenerate}
               disabled={generating}
               style={{
-                background: generating ? '#1e4530' : '#2eb860',
+                background: generating ? '#f3e0d6' : '#C4592F',
                 border: 'none',
                 borderRadius: 5,
                 color: '#fff',
@@ -641,8 +641,8 @@ export default function OtpApp() {
                 opacity: generating ? 0.7 : 1,
                 transition: 'opacity 0.15s, background 0.15s',
               }}
-              onMouseEnter={e => { if (!generating) e.currentTarget.style.background = '#25a050'; }}
-              onMouseLeave={e => { if (!generating) e.currentTarget.style.background = '#2eb860'; }}
+              onMouseEnter={e => { if (!generating) e.currentTarget.style.background = '#A34826'; }}
+              onMouseLeave={e => { if (!generating) e.currentTarget.style.background = '#C4592F'; }}
             >
               {generating ? (
                 <>
@@ -667,7 +667,7 @@ export default function OtpApp() {
             border: '1px solid rgba(239,68,68,0.3)',
             borderRadius: 5,
             padding: '8px 14px',
-            color: '#f87171',
+            color: '#dc2626',
             fontSize: 12.5,
           }}>
             ⚠ {error}
@@ -677,7 +677,7 @@ export default function OtpApp() {
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
-        input::placeholder, textarea::placeholder { color: #334155; }
+        input::placeholder, textarea::placeholder { color: #44403c; }
       `}</style>
 
       {/* ══════════════════════════════════════════════════════════
@@ -717,8 +717,8 @@ export default function OtpApp() {
           <MoneyInput value={form.purchasePrice} onChange={v => set('purchasePrice', v)} placeholder="1,500,000" />
         </FieldGroup>
 
-        <div style={{ marginBottom: 14, borderBottom: '1px solid #1a2535', paddingBottom: 14 }}>
-          <div style={{ fontSize: 10.5, color: '#64748b', marginBottom: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+        <div style={{ marginBottom: 14, borderBottom: '1px solid #e6dfd6', paddingBottom: 14 }}>
+          <div style={{ fontSize: 10.5, color: '#57534e', marginBottom: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8 }}>
             Payment Breakdown
           </div>
           <TwoCol>
@@ -801,16 +801,16 @@ export default function OtpApp() {
           ══════════════════════════════════════════════════════════ */}
       <FormSection title="Contingencies" icon="🔒">
         <div style={{
-          background: '#0a1220',
-          border: '1px solid #1e2d45',
+          background: '#f7f3ee',
+          border: '1px solid #e6dfd6',
           borderRadius: 5,
           padding: '10px 14px',
           marginBottom: 14,
           fontSize: 11.5,
-          color: '#64748b',
+          color: '#57534e',
           lineHeight: 1.6,
         }}>
-          <span style={{ color: '#2eb860', fontWeight: 700 }}>Standard contingencies a–j</span> are included automatically on every OTP: financial records review, lease review, Asset Purchase Agreement, pending contracts, equipment inspection, employee review, ATA earnest money, financing, non-compete, and training/transition.
+          <span style={{ color: '#C4592F', fontWeight: 700 }}>Standard contingencies a–j</span> are included automatically on every OTP: financial records review, lease review, Asset Purchase Agreement, pending contracts, equipment inspection, employee review, ATA earnest money, financing, non-compete, and training/transition.
         </div>
 
         <FieldGroup label="g. ATA Earnest Money Minimum" hint="Minimum deposit into ATA National Title Group LLC escrow account">
@@ -895,13 +895,13 @@ export default function OtpApp() {
           ══════════════════════════════════════════════════════════ */}
       <FormSection title="Release of Liability" icon="⚖️">
         <div style={{
-          background: '#0a1220',
-          border: '1px solid #1e2d45',
+          background: '#f7f3ee',
+          border: '1px solid #e6dfd6',
           borderRadius: 5,
           padding: '10px 14px',
           marginBottom: 14,
           fontSize: 11.5,
-          color: '#64748b',
+          color: '#57534e',
           lineHeight: 1.6,
         }}>
           The Release of Liability page acknowledges that Peterson Acquisitions acts solely as Buyer's agent and is not liable for Seller's representations. Two fields are required for the release language.
@@ -921,16 +921,16 @@ export default function OtpApp() {
           ══════════════════════════════════════════════════════════ */}
       <FormSection title="Addendum Items" icon="📎">
         <div style={{
-          background: '#0a1220',
-          border: '1px solid #1e2d45',
+          background: '#f7f3ee',
+          border: '1px solid #e6dfd6',
           borderRadius: 5,
           padding: '10px 14px',
           marginBottom: 14,
           fontSize: 11.5,
-          color: '#64748b',
+          color: '#57534e',
           lineHeight: 1.6,
         }}>
-          Add any additional terms, conditions, or disclosures that should appear as a <span style={{ color: '#94a3b8' }}>separate Addendum page</span> at the end of the OTP. Each item gets a numbered heading and its body text. Leave empty to generate a standard 4-page document.
+          Add any additional terms, conditions, or disclosures that should appear as a <span style={{ color: '#57534e' }}>separate Addendum page</span> at the end of the OTP. Each item gets a numbered heading and its body text. Leave empty to generate a standard 4-page document.
         </div>
         <AddendumEditor
           items={form.addendumItems}
@@ -947,13 +947,13 @@ export default function OtpApp() {
         paddingTop: 8,
       }}>
         {error && (
-          <span style={{ color: '#f87171', fontSize: 12 }}>⚠ {error}</span>
+          <span style={{ color: '#dc2626', fontSize: 12 }}>⚠ {error}</span>
         )}
         <button
           onClick={handleGenerate}
           disabled={generating}
           style={{
-            background: generating ? '#1e4530' : '#2eb860',
+            background: generating ? '#f3e0d6' : '#C4592F',
             border: 'none',
             borderRadius: 6,
             color: '#fff',
@@ -967,8 +967,8 @@ export default function OtpApp() {
             gap: 8,
             opacity: generating ? 0.7 : 1,
           }}
-          onMouseEnter={e => { if (!generating) e.currentTarget.style.background = '#25a050'; }}
-          onMouseLeave={e => { if (!generating) e.currentTarget.style.background = '#2eb860'; }}
+          onMouseEnter={e => { if (!generating) e.currentTarget.style.background = '#A34826'; }}
+          onMouseLeave={e => { if (!generating) e.currentTarget.style.background = '#C4592F'; }}
         >
           {generating ? (
             <>

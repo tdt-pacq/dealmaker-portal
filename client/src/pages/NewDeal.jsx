@@ -70,7 +70,7 @@ export default function NewDeal() {
     return (
       <div style={{ textAlign: 'center', padding: 60 }}>
         <div className="spinner spinner-dark" style={{ width: 32, height: 32, borderWidth: 4, display: 'inline-block' }} />
-        <div style={{ marginTop: 12, color: '#64748b' }}>Loading deal…</div>
+        <div style={{ marginTop: 12, color: '#57534e' }}>Loading deal…</div>
       </div>
     );
   }
@@ -98,7 +98,7 @@ export default function NewDeal() {
                   <label>Deal Name <span className="required">*</span></label>
                   <input type="text" value={dealName} onChange={e => setDealName(e.target.value)}
                     placeholder="e.g. Nursery - NC - 2025" autoFocus />
-                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 3 }}>
+                  <div style={{ fontSize: 11, color: '#57534e', marginTop: 3 }}>
                     Internal reference only. Not shown in any marketing outputs.
                   </div>
                 </div>
@@ -142,7 +142,7 @@ export default function NewDeal() {
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 4, flexWrap: 'wrap' }}>
             <span className={`badge badge-${deal?.status || status}`}>{deal?.status || status}</span>
-            {deal?.advisor_name && <span style={{ fontSize: 13, color: '#64748b' }}>Advisor: {deal.advisor_name}</span>}
+            {deal?.advisor_name && <span style={{ fontSize: 13, color: '#57534e' }}>Advisor: {deal.advisor_name}</span>}
           </div>
         </div>
         <div className="page-header-actions">
