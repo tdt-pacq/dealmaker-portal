@@ -95,6 +95,19 @@ export const extractInterview = (formData) =>
     timeout: 120000 // 2 min — Claude may take 20-30s for large docs
   });
 
+export const fetchDealDocuments = (dealId) => api.get(`/deals/${dealId}/documents`);
+export const uploadDealDocuments = (dealId, formData) =>
+  api.post(`/deals/${dealId}/documents`, formData, { timeout: 120000 });
+export const deleteDealDocument = (dealId, docId) =>
+  api.delete(`/deals/${dealId}/documents/${docId}`);
+export const extractStoredInterview = (dealId) =>
+  api.post(`/deals/${dealId}/documents/interview/extract`, {}, { timeout: 120000 });
+
+export async function fetchDealDocumentObjectUrl(dealId, docId) {
+  const res = await api.get(`/deals/${dealId}/documents/${docId}/file`, { responseType: 'blob' });
+  return URL.createObjectURL(res.data);
+}
+
 // Users
 export const fetchCurrentUser = () => api.get('/users/me');
 export const changePassword = (userId, password) =>

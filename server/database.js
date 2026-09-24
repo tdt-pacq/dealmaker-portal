@@ -65,6 +65,28 @@ function initSchema() {
     )
   `);
 
+  // Additive only: original uploads and extracted text live with the deal
+  // so a reload still has them. Rows are removed with the deal; nothing here
+  // drops or rewrites existing deal columns.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS deal_documents (
+      id TEXT PRIMARY KEY,
+      deal_id TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      filename TEXT,
+      mime TEXT,
+      size_bytes INTEGER,
+      text_extract TEXT,
+      file_blob BLOB,
+      sort_order INTEGER DEFAULT 0,
+      created_at TEXT,
+      updated_at TEXT
+    )
+  `);
+  try {
+    db.exec('CREATE INDEX IF NOT EXISTS idx_deal_documents_deal ON deal_documents (deal_id, kind, sort_order)');
+  } catch (_) { /* already exists */ }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS deal_events (
       id               TEXT PRIMARY KEY,

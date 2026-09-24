@@ -36,6 +36,7 @@ Messages.prototype.create = async function create(body) {
 
 const { getDb } = require('./database');
 const generateRouter = require('./routes/generate');
+const { replaceSingleDocument, addBusinessPhotos } = require('./dealDocuments');
 
 function app() {
   const server = express();
@@ -103,6 +104,48 @@ test('generate routes keep the text block and refuse a thinking-only reply', { c
   assert.equal(saved.blind_ad_text, blind.json.blind_ad_text);
   assert.match(saved.flyer_html, /One-page flyer/);
   assert.match(saved.cbr_html, /Confidential Business Review/);
+  });
+
+  await t.test('saved source documents and photos are fed into each output', async () => {
+    const server = app();
+    const id = insertDeal({ asking_price: '450000', business_description: 'Coffeehouse' });
+    replaceSingleDocument(id, 'ea', {
+      filename: 'ea.pdf',
+      mime: 'application/pdf',
+      buffer: Buffer.from('ea-bytes'),
+      text: 'Engagement agreement asking price is 450000 and rent is 3200.',
+    });
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64'
+    );
+    addBusinessPhotos(id, [{ filename: 'shop.png', mime: 'image/png', buffer: png, text: null }]);
+    replaceSingleDocument(id, 'advisor_photo', {
+      filename: 'advisor.png',
+      mime: 'image/png',
+      buffer: png,
+      text: null,
+    });
+
+    const blind = await post(server, '/api/generate/blind-ad', { deal_id: id });
+    assert.equal(blind.status, 200);
+    const blindPrompt = calls.at(-1).messages[0].content;
+    assert.match(blindPrompt, /Engagement Agreement is authoritative/);
+    assert.match(blindPrompt, /rent is 3200/);
+
+    const flyer = await post(server, '/api/generate/flyer', { deal_id: id });
+    assert.equal(flyer.status, 200);
+    assert.match(flyer.json.flyer_html, /data-pacq="biz-cover"/);
+    assert.match(flyer.json.flyer_html, /data-pacq="advisor-photo"/);
+    assert.match(flyer.json.flyer_html, /data:image\/png;base64,/);
+    assert.match(calls.at(-1).messages[0].content, /\{\{PACQ_BIZ_COVER\}\}/);
+    assert.doesNotMatch(flyer.json.flyer_html, /data-pacq="biz-sidebar"/);
+
+    const cbr = await post(server, '/api/generate/cbr', { deal_id: id });
+    assert.equal(cbr.status, 200);
+    assert.match(cbr.json.cbr_html, /data-pacq="biz-cover"/);
+    assert.match(cbr.json.cbr_html, /data-pacq="biz-sidebar"/);
+    assert.doesNotMatch(cbr.json.cbr_html, /data-pacq="advisor-photo"/);
   });
 
   await t.test('a thinking-only reply does not wipe a saved document', async () => {

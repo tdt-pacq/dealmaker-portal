@@ -2,6 +2,7 @@ const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
 const { getDb, logEvent } = require('../database');
 const { documentFromMessage, generationBody } = require('../marketingText');
+const { sourceBlockForDeal, loadPhotoAssets, stampMarketingHtml } = require('../dealDocuments');
 
 const router = express.Router();
 
@@ -18,6 +19,7 @@ router.post('/blind-ad', async (req, res) => {
 
   let interviewData;
   try { interviewData = JSON.parse(deal.interview_data || '{}'); } catch { interviewData = {}; }
+  const sources = sourceBlockForDeal(deal_id);
 
   const client = getClient();
   try {
@@ -33,6 +35,7 @@ CRITICAL RULES:
 - If a field is not provided, omit that line entirely rather than guessing.
 - Output must be plain text, copy-paste ready for BizBuySell. No markdown except bold headline (use ** for bold) and bullet points (use - for bullets).`,
       `Generate a BizBuySell blind ad using this business data: ${JSON.stringify(interviewData, null, 2)}
+${sources}
 
 Follow this EXACT structure and formatting. Do not add, remove, or reorder sections.
 
@@ -133,6 +136,8 @@ router.post('/flyer', async (req, res) => {
 
   let interviewData;
   try { interviewData = JSON.parse(deal.interview_data || '{}'); } catch { interviewData = {}; }
+  const sources = sourceBlockForDeal(deal_id);
+  const photos = loadPhotoAssets(deal_id);
 
   const client = getClient();
   try {
@@ -190,7 +195,9 @@ LEFT (padding 20px 16px 16px 20px, vertical flex):
   - Headline: Oswald bold, white, font-size 26px, line-height 1.15, max 2 lines, margin-top 8px. BLIND (industry + region only, no business name).
   - Tagline: #C1622F Oswald 12px uppercase letter-spacing 0.08em, margin-top 6px. Max 1 line, 10 words max.
   - Description: white Inter 11px, line-height 1.5, margin-top 8px. MAX 2 SENTENCES, 30 words total. Do not start with "This business".
-RIGHT: If a photo URL is available use it as a cover image (object-fit: cover, width/height 100%); otherwise fill with a gradient from #2a2a2a to #1a1a1a with a large centered copper "✦" symbol at 48px.
+RIGHT: ${photos.hasCover
+        ? 'Use exactly this cover image and nothing else: <img data-pacq="biz-cover" src="{{PACQ_BIZ_COVER}}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"/>'
+        : 'Fill with a gradient from #2a2a2a to #1a1a1a with a large centered copper "✦" symbol at 48px.'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ZONE 3 — METRICS STRIP  [height: 88px, flex-shrink: 0]
@@ -226,7 +233,9 @@ RIGHT COLUMN (padding 14px 18px 12px 14px, display flex flex-direction column ga
   CARD 3 — ADVISOR (same card style, background #fafafa):
     Header: "YOUR ADVISOR" Oswald 9px #888 uppercase.
     Flex row: advisor name Inter 11px bold #1A1A1A + title Inter 9px #C1622F + phone Inter 10px #111111 + email Inter 9px #444444 + "The Deal Team | Peterson Acquisitions" Inter 8px #888.
-    NO photo in the advisor card (photo assets are not available in server context).
+    ${photos.hasAdvisor
+      ? 'Start the advisor card with this circular headshot: <img data-pacq="advisor-photo" src="{{PACQ_ADVISOR_PHOTO}}" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2.5px solid #C1622F;flex-shrink:0"/>'
+      : 'No advisor headshot was uploaded, so do not invent a photo in the advisor card.'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ZONE 5 — FOOTER BAR  [height: 36px, flex-shrink: 0]
@@ -244,6 +253,8 @@ CONTENT RULES:
 - Do not add any section not listed above (no "Overview", no "Business Analysis", no "About", no second advisor block).
 - The advisor info is ONLY in Zone 4 Right Column Card 3. Nowhere else.
 
+${sources}
+
 Business data:
 ${JSON.stringify(interviewData, null, 2)}
 
@@ -252,7 +263,13 @@ Advisor name: ${deal.advisor_name || 'Your Advisor'}
 Output ONLY the complete HTML document starting with <!DOCTYPE html>. Nothing before or after.`
     ));
 
-    const flyerHtml = documentFromMessage(message, 'One-page flyer');
+    const flyerHtml = stampMarketingHtml(documentFromMessage(message, 'One-page flyer'), {
+      ...photos,
+      stampCover: true,
+      stampAdvisor: true,
+      stampSidebar: false,
+      stampGallery: false,
+    });
     getDb().prepare('UPDATE deals SET flyer_html = ?, updated_at = ? WHERE id = ?')
       .run(flyerHtml, new Date().toISOString(), deal_id);
     logEvent(deal_id, req.user, 'flyer_generated', 'One-page flyer generated');
@@ -274,6 +291,8 @@ router.post('/cbr', async (req, res) => {
   try { interviewData = JSON.parse(deal.interview_data || '{}'); } catch { interviewData = {}; }
 
   const brandColor = interviewData.seller_brand_color || '#2D5016';
+  const sources = sourceBlockForDeal(deal_id);
+  const photos = loadPhotoAssets(deal_id);
   const client = getClient();
 
   try {
@@ -358,6 +377,8 @@ Full-page dark background #1A1A1A. Center-aligned vertically and horizontally.
 - Separator: 3px line half copper half gray, 80px wide, margin 24px auto
 - Confidentiality notice: Inter 12px #888 italic
 - Bottom bar: #C1622F strip 60px tall — left: "PETERSON ACQUISITIONS | THE DEAL TEAM" Oswald 14px white; right: "Offered Exclusively · Strictly Confidential" Inter 11px white
+${photos.hasCover ? '- COVER IMAGE (required): at the top of the cover, full width, before the title, include exactly <img data-pacq="biz-cover" src="{{PACQ_BIZ_COVER}}" alt="" style="width:100%;height:420px;object-fit:cover;display:block"/>' : ''}
+${photos.hasGallery ? '- Immediately after the cover page, output this placeholder on its own line and do not modify it: {{PACQ_GALLERY}}' : ''}
 
 ━━━ PAGE 2: TABLE OF CONTENTS ━━━
 Class: content-page (page-break-before: always)
@@ -380,6 +401,7 @@ Left column:
   - section-block: sub-heading "BUSINESS DETAILS" — stat-row table: Industry, Founded, City/State, Hours, Entity Type, Licenses, Employees, Owner Tenure
   - section-block: sub-heading "KEY SYSTEMS & INFRASTRUCTURE" — bullet list of systems, SOPs, IP
 Right sidebar:
+  ${photos.hasSidebar ? '- First element: <img data-pacq="biz-sidebar" src="{{PACQ_CIM_SIDEBAR}}" alt="" style="width:100%;height:220px;object-fit:cover;display:block;border-radius:4px;margin-bottom:16px"/>' : ''}
   - callout-box: ASKING PRICE — value from listing_price or asking_price
   - callout-box: MOST RECENT REVENUE — fin_year1_revenue with year label caption
   - callout-box: CASH FLOW / SDE — fin_year1_sde with year label caption
@@ -560,6 +582,8 @@ Left: "© ${new Date().getFullYear()} Peterson Acquisitions"
 Center: "Confidential Business Review · [industry/type descriptor, no business name]"
 Right: "petersonacquisitions.com"
 
+${sources}
+
 Business data: ${JSON.stringify(interviewData, null, 2)}
 Advisor: ${deal.advisor_name}
 
@@ -567,7 +591,13 @@ IMPORTANT: Output ONLY the complete HTML document starting with <!DOCTYPE html>.
 IMPORTANT: Follow the PAGE BREAK RULES exactly — content pages use page-break-before: always and page-break-inside: avoid on blocks. NEVER use page-break-after on content blocks.`
     ));
 
-    const cbrHtml = documentFromMessage(message, 'CBR');
+    const cbrHtml = stampMarketingHtml(documentFromMessage(message, 'CBR'), {
+      ...photos,
+      stampCover: true,
+      stampAdvisor: false,
+      stampSidebar: true,
+      stampGallery: true,
+    });
     // Strip any accidental markdown fences
     const cleanHtml = cbrHtml.replace(/^```html\n?/, '').replace(/\n?```$/, '').trim();
     getDb().prepare('UPDATE deals SET cbr_html = ?, updated_at = ? WHERE id = ?')

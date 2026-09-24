@@ -84,6 +84,7 @@ router.patch('/:id', (req, res) => {
 router.delete('/:id', (req, res) => {
   const deal = getDb().prepare('SELECT id FROM deals WHERE id = ?').get(req.params.id);
   if (!deal) return res.status(404).json({ error: 'Deal not found' });
+  getDb().prepare('DELETE FROM deal_documents WHERE deal_id = ?').run(req.params.id);
   getDb().prepare('DELETE FROM deals WHERE id = ?').run(req.params.id);
   // Clean up output files
   const outputDir = path.join(OUTPUT_ROOT, req.params.id);

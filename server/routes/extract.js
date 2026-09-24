@@ -1,8 +1,9 @@
 const express = require('express');
 const multer = require('multer');
-const mammoth = require('mammoth');
 const Anthropic = require('@anthropic-ai/sdk');
 const pdfParse = require('pdf-parse/lib/pdf-parse.js');
+
+const { extractUploadText } = require('../dealDocuments');
 
 const router = express.Router();
 
@@ -10,11 +11,13 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
+    const name = (file.originalname || '').toLowerCase();
     const isDocx = file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      || file.originalname.endsWith('.docx');
-    const isTxt = file.mimetype === 'text/plain' || file.originalname.endsWith('.txt');
-    if (isDocx || isTxt) return cb(null, true);
-    cb(new Error('Only .docx and .txt files are supported. For PDFs or other formats, copy and paste the text instead.'));
+      || name.endsWith('.docx');
+    const isTxt = file.mimetype === 'text/plain' || name.endsWith('.txt');
+    const isPdf = file.mimetype === 'application/pdf' || name.endsWith('.pdf');
+    if (isDocx || isTxt || isPdf) return cb(null, true);
+    cb(new Error('Only .docx, .txt, and .pdf files are supported.'));
   }
 });
 
@@ -219,22 +222,68 @@ ${FIELD_DEFINITIONS}
 
 OUTPUT: A single valid JSON object where each key is exactly one of the field names defined above and each value is the extracted and polished string (or number as string for financial fields). Include only fields where content was found.`;
 
+async function extractInterviewFromText(rawText) {
+  if (!rawText || !String(rawText).trim()) {
+    throw Object.assign(new Error('No content provided. Upload a .docx, .txt, or .pdf file, or paste text.'), { statusCode: 400 });
+  }
+
+  let text = String(rawText);
+  if (text.length > 100000) {
+    text = text.slice(0, 100000) + '\n\n[Document truncated at 100,000 characters]';
+  }
+
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const message = await client.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 8000,
+    system: EXTRACTION_SYSTEM_PROMPT,
+    messages: [{
+      role: 'user',
+      content: `Extract structured business interview data from the following document and return a JSON object mapping field names to extracted values.\n\n<document>\n${text}\n</document>`
+    }]
+  });
+
+  const responseText = (message.content || [])
+    .filter(block => block.type === 'text' && block.text)
+    .map(block => block.text)
+    .join('\n')
+    .trim();
+  if (!responseText) {
+    throw Object.assign(new Error('Extraction returned no text. Try again.'), { statusCode: 502 });
+  }
+
+  const cleaned = responseText
+    .replace(/^```json\n?/, '')
+    .replace(/^```\n?/, '')
+    .replace(/\n?```$/, '')
+    .trim();
+
+  let extracted;
+  try {
+    extracted = JSON.parse(cleaned);
+  } catch {
+    const err = new Error('Claude returned malformed JSON. Try simplifying the document or pasting a smaller section.');
+    err.statusCode = 500;
+    err.debug = responseText.slice(0, 300);
+    throw err;
+  }
+
+  const clean = Object.fromEntries(
+    Object.entries(extracted).filter(([, v]) => v !== null && v !== '' && v !== undefined)
+  );
+  const fields_found = Object.keys(clean);
+  return { extracted: clean, field_count: fields_found.length, fields_found };
+}
+
 // POST /api/extract/interview
 router.post('/interview', upload.single('file'), async (req, res) => {
   let rawText = '';
 
   if (req.file) {
-    const isDocx = req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      || req.file.originalname.endsWith('.docx');
-    if (isDocx) {
-      try {
-        const result = await mammoth.extractRawText({ buffer: req.file.buffer });
-        rawText = result.value;
-      } catch (err) {
-        return res.status(422).json({ error: `Could not read .docx file: ${err.message}` });
-      }
-    } else {
-      rawText = req.file.buffer.toString('utf-8');
+    try {
+      rawText = await extractUploadText(req.file);
+    } catch (err) {
+      return res.status(err.statusCode || 422).json({ error: err.message });
     }
   }
 
@@ -244,56 +293,14 @@ router.post('/interview', upload.single('file'), async (req, res) => {
       : req.body.text.trim();
   }
 
-  if (!rawText.trim()) {
-    return res.status(400).json({ error: 'No content provided. Upload a .docx/.txt file or paste text.' });
-  }
-
-  // Truncate to ~100k chars to stay within model context
-  if (rawText.length > 100000) {
-    rawText = rawText.slice(0, 100000) + '\n\n[Document truncated at 100,000 characters]';
-  }
-
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
   try {
-    const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 8000,
-      system: EXTRACTION_SYSTEM_PROMPT,
-      messages: [{
-        role: 'user',
-        content: `Extract structured business interview data from the following document and return a JSON object mapping field names to extracted values.\n\n<document>\n${rawText}\n</document>`
-      }]
-    });
-
-    const responseText = message.content[0].text;
-    const cleaned = responseText
-      .replace(/^```json\n?/, '')
-      .replace(/^```\n?/, '')
-      .replace(/\n?```$/, '')
-      .trim();
-
-    let extracted;
-    try {
-      extracted = JSON.parse(cleaned);
-    } catch {
-      return res.status(500).json({
-        error: 'Claude returned malformed JSON. Try simplifying the document or pasting a smaller section.',
-        debug: responseText.slice(0, 300)
-      });
-    }
-
-    // Filter out any null/empty values Claude may have included despite instructions
-    const clean = Object.fromEntries(
-      Object.entries(extracted).filter(([, v]) => v !== null && v !== '' && v !== undefined)
-    );
-
-    const fields_found = Object.keys(clean);
-    res.json({ extracted: clean, field_count: fields_found.length, fields_found });
-
+    const result = await extractInterviewFromText(rawText);
+    res.json(result);
   } catch (err) {
     console.error('Extraction error:', err);
-    res.status(500).json({ error: err.message });
+    const body = { error: err.message };
+    if (err.debug) body.debug = err.debug;
+    res.status(err.statusCode || 500).json(body);
   }
 });
 
@@ -457,3 +464,4 @@ router.use((err, _req, res, _next) => {
 });
 
 module.exports = router;
+module.exports.extractInterviewFromText = extractInterviewFromText;

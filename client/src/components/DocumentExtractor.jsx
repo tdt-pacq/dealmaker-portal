@@ -1,5 +1,11 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { extractInterview } from '../api';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import {
+  fetchDealDocuments,
+  uploadDealDocuments,
+  deleteDealDocument,
+  extractStoredInterview,
+  fetchDealDocumentObjectUrl,
+} from '../api';
 
 // Human-readable labels for field names shown in the results preview
 const FIELD_LABELS = {
@@ -59,16 +65,47 @@ const FIELD_LABELS = {
   buyer_process_notes: 'Buyer Process Notes', seller_brand_color: 'Brand Color',
 };
 
+const PDF_SECTIONS = [
+  {
+    kind: 'ea',
+    label: 'Engagement Agreement',
+    icon: '📄',
+    sub: 'Engagement Agreement',
+    hint: 'Authoritative for asking price and deal terms when marketing is generated.',
+  },
+  {
+    kind: 'mpa',
+    label: 'QSI MPA Report',
+    icon: '📄',
+    sub: 'QSI MPA Report',
+    hint: 'Authoritative for financials, SDE, DSCR, and valuation.',
+  },
+  {
+    kind: 'termsheet',
+    label: 'Bank Term Sheet',
+    optional: '(optional — SBA bank name & loan terms)',
+    icon: '🏦',
+    sub: 'Bank Term Sheet',
+    hint: 'If uploaded, the bank name, rate, loan terms and payment will be extracted for the SBA section.',
+  },
+  {
+    kind: 'discovery',
+    label: 'Discovery Prep Report',
+    optional: '(optional — seller & industry intel)',
+    icon: '🔍',
+    sub: 'Discovery Prep Report',
+    hint: 'If uploaded, seller intel, industry context, and buyer profile will enrich outputs.',
+  },
+];
+
 function labelFor(key) {
   if (FIELD_LABELS[key]) return FIELD_LABELS[key];
-  // Financial year fields
   const finMatch = key.match(/^fin_year(\d)_(.+)$/);
   if (finMatch) {
     const yr = finMatch[1];
     const metric = finMatch[2].replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     return `Year ${yr} — ${metric}`;
   }
-  // Revenue segments
   const segMatch = key.match(/^rev_segment(\d)_(name|pct)$/);
   if (segMatch) return `Segment ${segMatch[1]} ${segMatch[2] === 'pct' ? '%' : 'Name'}`;
   return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -79,52 +116,183 @@ function truncate(val, max = 90) {
   return s.length > max ? s.slice(0, max) + '…' : s;
 }
 
+function fileMeta(doc) {
+  const kb = doc.size_bytes ? `${Math.max(1, Math.round(doc.size_bytes / 1024))} KB` : '';
+  const chars = doc.text_chars ? `${Number(doc.text_chars).toLocaleString()} chars` : '';
+  return [kb, chars, 'Saved to this deal'].filter(Boolean).join(' · ');
+}
+
+function SectionError({ message }) {
+  if (!message) return null;
+  return (
+    <div style={{
+      marginTop: 8, padding: '8px 10px', borderRadius: 6, fontSize: 12,
+      background: 'rgba(220,38,38,0.08)', color: '#dc2626', borderLeft: '3px solid #ef4444',
+    }}>{message}</div>
+  );
+}
+
+function DropZone({
+  section, doc, busy, error, accept, multiple, emptyIcon, emptyTitle, emptySub, onUpload, onRemove, children,
+}) {
+  const inputRef = useRef(null);
+  const [drag, setDrag] = useState(false);
+  const openPicker = () => inputRef.current?.click();
+
+  return (
+    <div data-doc-section={section}>
+      {children}
+      <div
+        className={`doc-drop${doc ? ' ready' : ''}${drag ? ' drag' : ''}${busy ? ' busy' : ''}`}
+        onDragOver={e => { e.preventDefault(); if (!busy) setDrag(true); }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={e => {
+          e.preventDefault();
+          setDrag(false);
+          if (!busy) onUpload(e.dataTransfer.files);
+        }}
+        onClick={() => { if (!doc && !busy) openPicker(); }}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          accept={accept}
+          multiple={multiple || undefined}
+          style={{ display: 'none' }}
+          onChange={e => {
+            const chosen = e.target.files;
+            e.target.value = '';
+            onUpload(chosen);
+          }}
+        />
+        {busy ? (
+          <div style={{ fontSize: 13, color: '#57534e', padding: '18px 0' }}>Saving…</div>
+        ) : doc ? (
+          <>
+            <div style={{ fontSize: 22, marginBottom: 4 }}>✅</div>
+            <div className="doc-file-name">{doc.filename}</div>
+            <div className="doc-file-meta">{fileMeta(doc)}</div>
+            <div className="doc-file-actions">
+              <button type="button" onClick={e => { e.stopPropagation(); openPicker(); }}>Replace</button>
+              <button type="button" onClick={e => { e.stopPropagation(); onRemove(doc); }}>Remove</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ fontSize: 26, marginBottom: 4 }}>{emptyIcon}</div>
+            <div style={{ fontWeight: 650, color: '#57534e', fontSize: 13 }}>{emptyTitle}</div>
+            <div className="doc-file-meta">{emptySub}</div>
+          </>
+        )}
+      </div>
+      <SectionError message={error} />
+    </div>
+  );
+}
+
 export default function DocumentExtractor({ deal, currentInterviewData, onApply }) {
   const [open, setOpen] = useState(true);
-  const [mode, setMode] = useState('upload'); // 'upload' | 'paste'
-  const [file, setFile] = useState(null);
+  const [docs, setDocs] = useState([]);
+  const [previews, setPreviews] = useState({});
+  const [busy, setBusy] = useState({});
+  const [sectionError, setSectionError] = useState({});
+  const [mode, setMode] = useState('upload');
   const [pastedText, setPastedText] = useState('');
-  const [dragging, setDragging] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState('');
-  const [result, setResult] = useState(null); // { extracted, field_count, fields_found }
+  const [result, setResult] = useState(null);
   const [deselected, setDeselected] = useState(new Set());
   const [overwrite, setOverwrite] = useState(false);
   const [applying, setApplying] = useState(false);
   const [applyMsg, setApplyMsg] = useState('');
-  const fileInputRef = useRef();
+  const previewsRef = useRef({});
+  const bizInputRef = useRef(null);
 
-  const canExtract = mode === 'upload' ? !!file : pastedText.trim().length > 20;
+  const interviewDoc = docs.find(d => d.kind === 'interview') || null;
+  const bizPhotos = docs.filter(d => d.kind === 'biz_photo');
+  const advisorDoc = docs.find(d => d.kind === 'advisor_photo') || null;
 
-  const handleFile = useCallback((f) => {
-    if (!f) return;
-    const ext = f.name.toLowerCase();
-    if (!ext.endsWith('.docx') && !ext.endsWith('.txt')) {
-      setError('Only .docx and .txt files are supported. For PDFs, copy and paste the text instead.');
-      return;
+  const refresh = useCallback(async () => {
+    const res = await fetchDealDocuments(deal.id);
+    const list = res.data.documents || [];
+    setDocs(list);
+    const imageDocs = list.filter(d => d.kind === 'biz_photo' || d.kind === 'advisor_photo');
+    const next = {};
+    for (const doc of imageDocs) {
+      next[doc.id] = previewsRef.current[doc.id] || await fetchDealDocumentObjectUrl(deal.id, doc.id);
     }
-    setError('');
-    setFile(f);
-    setResult(null);
-    setApplyMsg('');
-  }, []);
+    for (const [id, url] of Object.entries(previewsRef.current)) {
+      if (!next[id]) URL.revokeObjectURL(url);
+    }
+    previewsRef.current = next;
+    setPreviews(next);
+  }, [deal.id]);
 
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    setDragging(false);
-    handleFile(e.dataTransfer.files[0]);
-  }, [handleFile]);
+  useEffect(() => {
+    let cancelled = false;
+    refresh().catch(err => {
+      if (!cancelled) setError(err.response?.data?.error || 'Could not load saved documents.');
+    });
+    return () => {
+      cancelled = true;
+      Object.values(previewsRef.current).forEach(url => URL.revokeObjectURL(url));
+      previewsRef.current = {};
+    };
+  }, [refresh]);
+
+  const uploadFiles = async (kind, fileList) => {
+    const files = [...(fileList || [])].filter(Boolean);
+    if (!files.length) return;
+    setSectionError(prev => ({ ...prev, [kind]: '' }));
+    setBusy(prev => ({ ...prev, [kind]: true }));
+    try {
+      const fd = new FormData();
+      fd.append('kind', kind);
+      if (kind === 'biz_photo') files.forEach(file => fd.append('files', file));
+      else fd.append('file', files[0]);
+      await uploadDealDocuments(deal.id, fd);
+      await refresh();
+    } catch (err) {
+      setSectionError(prev => ({ ...prev, [kind]: err.response?.data?.error || 'Upload failed.' }));
+    } finally {
+      setBusy(prev => ({ ...prev, [kind]: false }));
+    }
+  };
+
+  const removeDoc = async (doc) => {
+    setSectionError(prev => ({ ...prev, [doc.kind]: '' }));
+    setBusy(prev => ({ ...prev, [doc.kind]: true }));
+    try {
+      await deleteDealDocument(deal.id, doc.id);
+      if (doc.kind === 'interview') {
+        setResult(null);
+        setApplyMsg('');
+        setPastedText('');
+      }
+      await refresh();
+    } catch (err) {
+      setSectionError(prev => ({ ...prev, [doc.kind]: err.response?.data?.error || 'Could not remove that file.' }));
+    } finally {
+      setBusy(prev => ({ ...prev, [doc.kind]: false }));
+    }
+  };
+
+  const canExtract = mode === 'upload' ? !!(interviewDoc && interviewDoc.text_chars > 0) : pastedText.trim().length > 20;
 
   const handleExtract = async () => {
     setExtracting(true);
     setError('');
     setResult(null);
     setApplyMsg('');
-    const fd = new FormData();
-    if (mode === 'upload' && file) fd.append('file', file);
-    if (mode === 'paste' && pastedText.trim()) fd.append('text', pastedText.trim());
     try {
-      const res = await extractInterview(fd);
+      if (mode === 'paste') {
+        const fd = new FormData();
+        fd.append('kind', 'interview');
+        fd.append('text', pastedText.trim());
+        await uploadDealDocuments(deal.id, fd);
+        await refresh();
+      }
+      const res = await extractStoredInterview(deal.id);
       setResult(res.data);
       setDeselected(new Set());
     } catch (err) {
@@ -170,18 +338,36 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
     }
   };
 
-  const handleReset = () => {
-    setResult(null);
-    setFile(null);
-    setPastedText('');
-    setError('');
-    setApplyMsg('');
-    setDeselected(new Set());
-  };
-
   const alreadyFilled = (key) => {
     const v = currentInterviewData[key];
     return v && String(v).trim().length > 0;
+  };
+
+  const pdfZone = (section) => {
+    const doc = docs.find(d => d.kind === section.kind) || null;
+    return (
+      <div key={section.kind}>
+        <label className="doc-section-label">
+          {section.label}{' '}
+          {section.optional
+            ? <span className="opt">{section.optional}</span>
+            : <span className="req">*</span>}
+        </label>
+        <DropZone
+          section={section.kind}
+          doc={doc}
+          busy={!!busy[section.kind]}
+          error={sectionError[section.kind]}
+          accept=".pdf,application/pdf"
+          emptyIcon={section.icon}
+          emptyTitle="Drop or click to upload"
+          emptySub={section.sub}
+          onUpload={files => uploadFiles(section.kind, files)}
+          onRemove={removeDoc}
+        />
+        {section.hint && <div className="doc-hint">{section.hint}</div>}
+      </div>
+    );
   };
 
   return (
@@ -189,7 +375,6 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
       background: 'rgba(255,255,255,0.94)', borderRadius: 8,
       marginBottom: 20, overflow: 'hidden', border: '1px solid #e4dcd2'
     }}>
-      {/* Header */}
       <div
         onClick={() => setOpen(o => !o)}
         style={{
@@ -203,10 +388,10 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
             fontFamily: 'Oswald, sans-serif', fontWeight: 700, fontSize: 14,
             textTransform: 'uppercase', letterSpacing: '.8px', color: '#1c1917'
           }}>
-            Step 1 — Upload Interview Notes
+            Step 1 — Source Documents
           </div>
           <div style={{ fontSize: 12, color: '#57534e', marginTop: 1 }}>
-            Upload your Google Doc (.docx) or paste notes → AI fills the form below → then Generate &amp; Download Marketing (blind ad, flyer, CBR/CIM)
+            Upload each document in its own section. Files are saved on this deal and included when you generate the blind ad, one-page, and CBR.
           </div>
         </div>
         <span style={{ color: '#C4592F', fontSize: 16, transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
@@ -214,118 +399,72 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
 
       {open && (
         <div style={{ padding: 20 }}>
-          {/* ── INPUT STATE ── */}
-          {!result && (
-            <>
-              {/* Mode tabs */}
-              <div style={{ display: 'flex', gap: 0, marginBottom: 16, borderRadius: 6, overflow: 'hidden', border: '1px solid #e4dcd2', width: 'fit-content' }}>
-                {[['upload', '📎 Upload File'], ['paste', '📋 Paste Text']].map(([m, label]) => (
+          <div className="doc-upload-grid">
+            <div>
+              <label className="doc-section-label">
+                Interview Doc <span className="req">*</span>
+              </label>
+              <div style={{ display: 'flex', marginBottom: 10, borderRadius: 6, overflow: 'hidden', border: '1px solid #e4dcd2', width: 'fit-content' }}>
+                {[['upload', 'Upload File'], ['paste', 'Paste Text']].map(([m, label]) => (
                   <button
                     key={m}
+                    type="button"
                     onClick={() => { setMode(m); setError(''); }}
                     style={{
-                      padding: '7px 18px', fontSize: 13, fontWeight: 600, border: 'none',
-                      borderRadius: 0, cursor: 'pointer',
+                      padding: '6px 12px', fontSize: 12, fontWeight: 650, border: 'none', cursor: 'pointer',
                       background: mode === m ? '#C4592F' : '#ffffff',
                       color: mode === m ? '#fff' : '#57534e',
-                      transition: 'background .15s, color .15s'
                     }}
                   >{label}</button>
                 ))}
               </div>
-
-              {/* Upload mode */}
-              {mode === 'upload' && (
-                <div
-                  onDragOver={e => { e.preventDefault(); setDragging(true); }}
-                  onDragLeave={() => setDragging(false)}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                  style={{
-                    border: `2px dashed ${dragging ? '#C4592F' : file ? '#C4592F' : '#44403c'}`,
-                    borderRadius: 8, padding: '28px 20px', textAlign: 'center',
-                    cursor: 'pointer',
-                    background: dragging ? 'rgba(196,89,47,0.08)' : file ? 'rgba(196,89,47,0.06)' : '#44403c',
-                    transition: 'all .15s', marginBottom: 12
-                  }}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".docx,.txt"
-                    style={{ display: 'none' }}
-                    onChange={e => handleFile(e.target.files[0])}
-                  />
-                  {file ? (
-                    <>
-                      <div style={{ fontSize: 28, marginBottom: 6 }}>✅</div>
-                      <div style={{ fontWeight: 600, color: '#C4592F', fontSize: 14 }}>{file.name}</div>
-                      <div style={{ fontSize: 12, color: '#57534e', marginTop: 3 }}>
-                        {(file.size / 1024).toFixed(0)} KB — click to change
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div style={{ fontSize: 32, marginBottom: 8 }}>📄</div>
-                      <div style={{ fontWeight: 600, color: '#57534e', fontSize: 14 }}>
-                        Drop your interview doc here, or click to browse
-                      </div>
-                      <div style={{ fontSize: 12, color: '#57534e', marginTop: 4 }}>
-                        Supports .docx (Google Doc export) and .txt · Max 20MB
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {/* Paste mode */}
-              {mode === 'paste' && (
+              {mode === 'upload' ? (
+                <DropZone
+                  section="interview"
+                  doc={interviewDoc}
+                  busy={!!busy.interview}
+                  error={sectionError.interview}
+                  accept=".pdf,.docx,.txt,application/pdf,text/plain"
+                  emptyIcon="📄"
+                  emptyTitle="Drop or click to upload"
+                  emptySub="PDF, .docx, or .txt"
+                  onUpload={files => uploadFiles('interview', files)}
+                  onRemove={removeDoc}
+                />
+              ) : (
                 <textarea
                   value={pastedText}
                   onChange={e => setPastedText(e.target.value)}
-                  placeholder="Paste your interview notes or Google Doc text here…&#10;&#10;The more complete the document, the more fields Claude can extract."
+                  placeholder="Paste your interview notes here. They are saved to this deal when you extract fields."
                   style={{
-                    width: '100%', minHeight: 180, fontFamily: 'system-ui, sans-serif',
+                    width: '100%', minHeight: 140, fontFamily: 'system-ui, sans-serif',
                     fontSize: 13, padding: 12, border: '1px solid #e4dcd2',
                     borderRadius: 6, resize: 'vertical', lineHeight: 1.6,
-                    marginBottom: 12, background: '#ffffff', color: '#1c1917',
-                    outline: 'none', boxSizing: 'border-box'
+                    background: '#ffffff', color: '#1c1917', outline: 'none', boxSizing: 'border-box'
                   }}
                 />
               )}
-
+              <div className="doc-hint">
+                Interview notes fill the form below. PDF, Word, text, and pasted notes all stay on this deal.
+              </div>
               {error && (
                 <div style={{
-                  padding: '10px 14px', borderRadius: 6, fontSize: 13,
-                  background: 'rgba(220,38,38,0.1)', color: '#dc2626', borderLeft: '4px solid #ef4444',
-                  marginBottom: 12
+                  marginTop: 8, padding: '8px 10px', borderRadius: 6, fontSize: 12,
+                  background: 'rgba(220,38,38,0.08)', color: '#dc2626', borderLeft: '3px solid #ef4444',
                 }}>{error}</div>
               )}
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <button
-                  className="btn-primary"
-                  onClick={handleExtract}
-                  disabled={!canExtract || extracting}
-                  style={{ minWidth: 160 }}
-                >
-                  {extracting
-                    ? <><span className="spinner" />Analyzing…</>
-                    : '⚡ Extract Fields →'}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+                <button className="btn-primary" type="button" onClick={handleExtract} disabled={!canExtract || extracting}>
+                  {extracting ? <><span className="spinner" />Analyzing…</> : 'Extract Fields'}
                 </button>
-                {extracting && (
-                  <span style={{ fontSize: 12, color: '#57534e' }}>
-                    Claude is reading the document — usually 10–30 seconds
-                  </span>
-                )}
               </div>
-            </>
-          )}
+            </div>
+            {pdfZone(PDF_SECTIONS[0])}
+            {pdfZone(PDF_SECTIONS[1])}
+          </div>
 
-          {/* ── RESULTS STATE ── */}
           {result && (
-            <>
-              {/* Summary bar */}
+            <div style={{ marginTop: 16 }}>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 16, marginBottom: 14,
                 padding: '10px 16px', background: 'rgba(196,89,47,0.1)', borderRadius: 6,
@@ -353,8 +492,6 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
                   Overwrite existing values
                 </label>
               </div>
-
-              {/* Field checklist */}
               <div style={{
                 maxHeight: 320, overflowY: 'auto', border: '1px solid #e4dcd2',
                 borderRadius: 6, marginBottom: 14
@@ -373,7 +510,6 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
                         background: checked ? 'rgba(255,255,255,0.94)' : '#faf8f5',
                         borderBottom: i < result.fields_found.length - 1 ? '1px solid #e6dfd6' : 'none',
                         opacity: checked ? 1 : 0.5,
-                        transition: 'opacity .15s, background .15s'
                       }}
                     >
                       <div style={{
@@ -386,33 +522,12 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: '#1c1917' }}>
-                            {labelFor(key)}
-                          </span>
-                          {filled && !overwrite && (
-                            <span style={{
-                              fontSize: 10, padding: '1px 6px', borderRadius: 10,
-                              background: 'rgba(251,191,36,0.15)', color: '#b45309', fontWeight: 600
-                            }}>will skip</span>
-                          )}
-                          {filled && overwrite && (
-                            <span style={{
-                              fontSize: 10, padding: '1px 6px', borderRadius: 10,
-                              background: 'rgba(239,68,68,0.15)', color: '#dc2626', fontWeight: 600
-                            }}>will overwrite</span>
-                          )}
-                          {!filled && (
-                            <span style={{
-                              fontSize: 10, padding: '1px 6px', borderRadius: 10,
-                              background: 'rgba(196,89,47,0.15)', color: '#C4592F', fontWeight: 600
-                            }}>new</span>
-                          )}
+                          <span style={{ fontSize: 12, fontWeight: 600, color: '#1c1917' }}>{labelFor(key)}</span>
+                          {filled && !overwrite && <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 10, background: 'rgba(251,191,36,0.15)', color: '#b45309', fontWeight: 600 }}>will skip</span>}
+                          {filled && overwrite && <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 10, background: 'rgba(239,68,68,0.15)', color: '#dc2626', fontWeight: 600 }}>will overwrite</span>}
+                          {!filled && <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 10, background: 'rgba(196,89,47,0.15)', color: '#C4592F', fontWeight: 600 }}>new</span>}
                         </div>
-                        <div style={{
-                          fontSize: 12, color: '#57534e', marginTop: 2,
-                          fontFamily: typeof val === 'string' && val.includes('\n') ? 'monospace' : 'inherit',
-                          whiteSpace: 'pre-wrap', wordBreak: 'break-word'
-                        }}>
+                        <div style={{ fontSize: 12, color: '#57534e', marginTop: 2, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                           {truncate(val)}
                         </div>
                       </div>
@@ -420,13 +535,9 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
                   );
                 })}
               </div>
-
-              {/* Selected count */}
               <div style={{ fontSize: 12, color: '#57534e', marginBottom: 12 }}>
                 {result.field_count - deselected.size} of {result.field_count} fields selected
               </div>
-
-              {/* Apply message */}
               {applyMsg && (
                 <div style={{
                   padding: '10px 14px', borderRadius: 6, fontSize: 13, marginBottom: 12,
@@ -435,23 +546,84 @@ export default function DocumentExtractor({ deal, currentInterviewData, onApply 
                   borderLeft: `4px solid ${applyMsg.startsWith('✓') ? '#C4592F' : '#dc2626'}`
                 }}>{applyMsg}</div>
               )}
-
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button
-                  className="btn-primary"
-                  onClick={handleApply}
-                  disabled={applying || deselected.size === result.field_count}
-                >
-                  {applying
-                    ? <><span className="spinner" />Applying…</>
-                    : '✓ Apply to Form'}
-                </button>
-                <button className="btn-ghost" onClick={handleReset}>
-                  ↺ Discard &amp; Try Again
-                </button>
-              </div>
-            </>
+              <button
+                className="btn-primary"
+                type="button"
+                onClick={handleApply}
+                disabled={applying || deselected.size === result.field_count}
+              >
+                {applying ? <><span className="spinner" />Applying…</> : 'Apply to Form'}
+              </button>
+            </div>
           )}
+
+          <div className="doc-upload-grid two">
+            {pdfZone(PDF_SECTIONS[2])}
+            {pdfZone(PDF_SECTIONS[3])}
+          </div>
+
+          <div className="doc-upload-grid two">
+            <div data-doc-section="biz_photo">
+              <label className="doc-section-label">
+                Business Photos <span className="opt">(optional · up to 5 · first used in flyer &amp; CIM cover)</span>
+              </label>
+              <div className={`doc-drop${busy.biz_photo ? ' busy' : ''}`} style={{ cursor: 'default', textAlign: 'left' }}>
+                <input
+                  ref={bizInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  style={{ display: 'none' }}
+                  onChange={e => uploadFiles('biz_photo', e.target.files)}
+                />
+                <div className="doc-photo-grid">
+                  {bizPhotos.map((photo, index) => (
+                    <div className="doc-thumb" key={photo.id}>
+                      {previews[photo.id]
+                        ? <img src={previews[photo.id]} alt={photo.filename || 'Business photo'} />
+                        : <div style={{ width: 64, height: 64, borderRadius: 6, background: '#f3eee8' }} />}
+                      <button type="button" className="remove" aria-label="Remove photo" onClick={() => removeDoc(photo)}>✕</button>
+                      {index === 0 && <div className="cover-tag">cover</div>}
+                    </div>
+                  ))}
+                  {bizPhotos.length < 5 && (
+                    <button type="button" className="doc-add-photo" title="Add photo" onClick={() => bizInputRef.current?.click()}>+</button>
+                  )}
+                </div>
+                {busy.biz_photo && <div className="doc-file-meta">Saving…</div>}
+                {bizPhotos.length > 0 && (
+                  <div className="doc-file-meta">
+                    {bizPhotos.map(photo => photo.filename).filter(Boolean).join(', ')} · Saved to this deal
+                  </div>
+                )}
+              </div>
+              <SectionError message={sectionError.biz_photo} />
+            </div>
+
+            <div data-doc-section="advisor_photo">
+              <label className="doc-section-label">
+                Advisor Headshot <span className="req">*</span>
+              </label>
+              <DropZone
+                section="advisor-photo"
+                doc={advisorDoc ? { ...advisorDoc, text_chars: 0 } : null}
+                busy={!!busy.advisor_photo}
+                error={sectionError.advisor_photo}
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                emptyIcon="👤"
+                emptyTitle="Drop or click to upload"
+                emptySub="JPG, PNG, WEBP"
+                onUpload={files => uploadFiles('advisor_photo', files)}
+                onRemove={removeDoc}
+              />
+              {advisorDoc && previews[advisorDoc.id] && (
+                <div style={{ marginTop: 8 }}>
+                  <img className="doc-advisor-preview" src={previews[advisorDoc.id]} alt="Advisor headshot" />
+                </div>
+              )}
+              <div className="doc-hint">Shown as a circular photo on the one-page flyer.</div>
+            </div>
+          </div>
         </div>
       )}
     </div>
