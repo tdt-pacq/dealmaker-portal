@@ -1,0 +1,43 @@
+---
+description: Glass Horizon spacing standards for Dealmaker Portal UI
+alwaysApply: true
+---
+
+# UI spacing
+
+The portal uses the Glass Horizon light theme. Spacing changes must keep those colors, the phoenix mark, and the fonts. Do not restyle color, type, or behavior in order to fix spacing.
+
+## Tokens
+
+Use the spacing custom properties in `client/src/styles.css`:
+
+- Scale: `--space-1` 4px, `--space-2` 8px, `--space-3` 12px, `--space-4` 16px, `--space-5` 20px, `--space-6` 24px, `--space-8` 32px
+- Cards and panels: `--pad-card` (20px), `--pad-card-desktop` (24px)
+- Fields: `--pad-field-y` (10px), `--pad-field-x` (12px)
+- Label above a field: `--gap-label` (6px)
+- Field to field and form rows: `--gap-field` (16px)
+- Section break: `--gap-section` (20px)
+- Table and label/value rows: `--pad-row-x` (16px)
+
+Prefer these tokens and the shared classes (`.card-body`, `.form-section-body`, `.stack`, `.kv-row`, `.field-group`, `.field-row`) so new screens inherit the inset. Do not invent a one-off padding when a shared class already applies.
+
+## Never glue content to an edge
+
+Text, icons, graphics, and values must not touch the edge of a card, panel, field, table, or modal.
+
+- Every card, panel, and section container has at least 16px of inner padding. On viewports 1025px and wider, use 20–24px (`--pad-card` / `--pad-card-desktop`).
+- Form controls have at least 10px vertical and 12px horizontal inner padding.
+- Leave about 6px between a label and its field, and about 16px between fields.
+- Section headings have space above and below. Do not stack a heading flush against the previous block or the following field.
+- Label-left / value-right rows and table cells use horizontal padding (`--pad-row-x` or `.kv-row`) so amounts never sit on the border.
+- Long numbers use `font-variant-numeric: tabular-nums`, may wrap or shrink, and live in a container with `min-width: 0`. Do not clip them with `overflow: hidden` or `white-space: nowrap` unless the row can wrap onto the next line.
+
+## Cascade
+
+Do not set `margin` or `padding` on `*` (or another universal reset) outside a CSS `@layer`. Tailwind utilities are layered. An unlayered `padding: 0` on `*` cancels `p-*`, `px-*`, `m-*`, and `space-y-*` and makes content flush to card edges. Tailwind preflight already resets browser margins inside `@layer base`.
+
+Inline styles that set padding override the shared classes. If an inline padding is below the minimums above, change it to a token-based value.
+
+## Check before a PR
+
+For any UI change, capture screenshots at 1440px and 1024px of each screen you touched and look for content on an edge, clipped numbers, and uneven vertical gaps before opening the PR.

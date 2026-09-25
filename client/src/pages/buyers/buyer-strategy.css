@@ -52,7 +52,7 @@
 }
 
 .bs-card-header {
-  padding: 14px 18px;
+  padding: var(--space-4) var(--pad-card);
   border-bottom: 1px solid #e6dfd6;
   display: flex;
   align-items: center;
@@ -68,7 +68,12 @@
   font-family: system-ui, sans-serif;
 }
 
-.bs-card-body { padding: 18px; }
+.bs-card-body { padding: var(--pad-card); }
+@media (min-width: 1025px) {
+  .bs-card-header,
+  .bs-card-body { padding-left: var(--pad-card-desktop); padding-right: var(--pad-card-desktop); }
+  .bs-card-body { padding-top: var(--pad-card-desktop); padding-bottom: var(--pad-card-desktop); }
+}
 
 /* ── Stage Nav ──────────────────────────────────────────────────────────── */
 
@@ -662,7 +667,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
+  padding: var(--space-2) var(--space-1);
   border-bottom: 1px solid #e6dfd6;
   font-family: system-ui, sans-serif;
   font-size: 13px;

@@ -20,9 +20,34 @@
   --font-mono: 'Courier New', monospace;
   --shadow: 0 10px 30px rgba(70, 48, 30, 0.07), 0 1px 2px rgba(70, 48, 30, 0.04);
   --radius: 16px;
+
+  /* Spacing scale. Use these tokens for padding, gap, and margin. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --pad-card: var(--space-5);
+  --pad-card-desktop: var(--space-6);
+  --pad-field-y: 10px;
+  --pad-field-x: var(--space-3);
+  --gap-label: 6px;
+  --gap-field: var(--space-4);
+  --gap-section: var(--space-5);
+  --pad-row-x: var(--space-4);
+  --pad-page: 28px;
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/*
+  Box-sizing only. Do not set margin or padding on the universal selector
+  outside a cascade layer. Tailwind utilities live in @layer utilities, so an
+  unlayered padding reset on everything cancels spacing utilities and glues
+  content to card edges. Tailwind preflight already zeroes browser margin
+  and padding inside @layer base.
+*/
+*, *::before, *::after { box-sizing: border-box; }
 
 html, body, #root {
   min-height: 100%;
@@ -111,15 +136,18 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn-lg { padding: 11px 24px; font-size: 15px; }
 
 input[type="text"], input[type="url"], input[type="number"], input[type="color"], input[type="date"],
+input[type="password"], input[type="email"], input[type="search"], input[type="tel"], input[type="month"],
 select, textarea {
   font-family: var(--font-body);
   font-size: 14px;
-  padding: 8px 12px;
+  padding: var(--pad-field-y) var(--pad-field-x);
   border: 1.5px solid var(--border);
   border-radius: 10px;
   width: 100%;
+  min-width: 0;
   background: var(--bg-input);
   color: var(--text);
+  font-variant-numeric: tabular-nums;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 input:focus, select:focus, textarea:focus {
@@ -137,13 +165,57 @@ label {
   font-size: 12px;
   font-weight: 500;
   color: var(--text-muted);
-  margin-bottom: 5px;
+  margin-bottom: var(--gap-label);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 label .required { color: var(--accent); margin-left: 2px; }
+/* Unlayered label{display:block} would beat Tailwind's layered .flex. */
+label.flex {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0;
+}
 
-.field-group { margin-bottom: 18px; }
+.field-group { margin-bottom: var(--gap-field); }
+
+/* Vertical rhythm and label/value rows. New screens should use these. */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-field);
+  min-width: 0;
+}
+.stack-sm { gap: var(--space-3); }
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.kv-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--pad-row-x);
+  min-width: 0;
+}
+.kv-row > :last-child {
+  text-align: right;
+  margin-left: auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.num, .mono, .calc-field {
+  font-variant-numeric: tabular-nums lining-nums;
+  min-width: 0;
+}
+.section-kicker {
+  margin: var(--gap-section) 0 var(--space-3);
+}
 
 /* Portal shell layout */
 .portal-shell {
@@ -167,7 +239,8 @@ label .required { color: var(--accent); margin-left: 2px; }
   width: min(100%, 1680px);
   margin-inline: auto;
   align-self: center;
-  padding: 28px 28px 36px;
+  min-width: 0;
+  padding: var(--pad-page) var(--pad-page) 36px;
 }
 
 .page-header {
@@ -201,12 +274,14 @@ label .required { color: var(--accent); margin-left: 2px; }
 }
 
 .card-header {
-  padding: 14px 20px;
+  padding: var(--space-4) var(--pad-card);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-3);
   background: rgba(255, 255, 255, 0.45);
+  min-width: 0;
 }
 .card-title {
   font-family: var(--font-body);
@@ -215,7 +290,17 @@ label .required { color: var(--accent); margin-left: 2px; }
   letter-spacing: -0.01em;
   color: var(--text);
 }
-.card-body { padding: 20px; }
+.card,
+.card-body,
+.form-section,
+.form-section-body,
+.output-panel,
+.modal,
+.bs-card,
+.bs-card-body {
+  min-width: 0;
+}
+.card-body { padding: var(--pad-card); }
 
 /* Table */
 .data-table {
@@ -224,7 +309,7 @@ label .required { color: var(--accent); margin-left: 2px; }
 }
 .data-table th {
   text-align: left;
-  padding: 10px 16px;
+  padding: 10px var(--pad-row-x);
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
@@ -234,7 +319,9 @@ label .required { color: var(--accent); margin-left: 2px; }
   border-bottom: 1px solid var(--border-subtle);
 }
 .data-table td {
-  padding: 13px 16px;
+  padding: 13px var(--pad-row-x);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
   border-bottom: 1px solid var(--border-subtle);
   font-size: 14px;
   color: var(--text);
@@ -308,7 +395,7 @@ label .required { color: var(--accent); margin-left: 2px; }
 
 /* Alerts */
 .alert {
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   border-radius: 6px;
   font-size: 13px;
   margin-bottom: 16px;
@@ -397,7 +484,8 @@ label .required { color: var(--accent); margin-left: 2px; }
 .form-section-header {
   display: flex;
   align-items: center;
-  padding: 13px 18px;
+  gap: var(--space-2);
+  padding: 14px var(--pad-card);
   cursor: pointer;
   user-select: none;
   border-bottom: 1px solid transparent;
@@ -428,17 +516,17 @@ label .required { color: var(--accent); margin-left: 2px; }
   transition: transform 0.2s;
 }
 .section-chevron.open { transform: rotate(180deg); }
-.form-section-body { padding: 18px 20px; }
+.form-section-body { padding: var(--pad-card); }
 
 .field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: var(--gap-field);
 }
 .field-row-3 {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 16px;
+  gap: var(--gap-field);
 }
 .field-full { grid-column: 1 / -1; }
 
@@ -451,21 +539,23 @@ label .required { color: var(--accent); margin-left: 2px; }
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.8px;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--pad-row-x);
   text-align: left;
   border-bottom: 1px solid var(--border-subtle);
 }
 .fin-table td {
-  padding: 4px 8px;
+  padding: var(--space-2) var(--pad-row-x);
   border-bottom: 1px solid var(--border-subtle);
   vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
 }
 .fin-table tr:nth-child(even) td { background: rgba(28, 25, 23, 0.03); }
 .fin-table .row-label {
   font-size: 12px;
   font-weight: 500;
   color: var(--text-secondary);
-  padding-left: 12px;
+  padding-left: var(--pad-row-x);
   white-space: nowrap;
 }
 .fin-table .bold-row td { font-weight: 700; background: rgba(196,89,47,0.06) !important; }
@@ -518,7 +608,7 @@ label .required { color: var(--accent); margin-left: 2px; }
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 18px;
+  padding: var(--space-3) var(--pad-card);
   border-bottom: 1px solid var(--border-subtle);
   background: rgba(255, 255, 255, 0.4);
   flex-wrap: wrap;
@@ -595,8 +685,10 @@ label .required { color: var(--accent); margin-left: 2px; }
   backdrop-filter: blur(18px);
   border: 1px solid rgba(255, 255, 255, 0.95);
   border-radius: 18px;
-  padding: 28px;
-  width: 400px;
+  padding: var(--space-8);
+  width: min(440px, calc(100% - var(--space-8)));
+  max-height: calc(100vh - var(--space-8));
+  overflow: auto;
   box-shadow: 0 24px 60px rgba(70, 48, 30, 0.16);
 }
 .modal-title {
@@ -711,7 +803,11 @@ label .required { color: var(--accent); margin-left: 2px; }
     box-shadow: 8px 0 32px rgba(0, 0, 0, 0.45);
   }
 
-  .page-content { padding: 24px 24px 32px; }
+  .page-content { padding: var(--space-6) var(--space-6) var(--space-8); }
+  .card-body,
+  .form-section-body { padding: var(--space-5); }
+  .card-header,
+  .form-section-header { padding: 14px var(--space-5); }
 
   .page-header {
     flex-direction: column;
@@ -742,7 +838,9 @@ label .required { color: var(--accent); margin-left: 2px; }
   .interview-layout { grid-template-columns: 1fr; }
   .section-nav { position: static; }
   .field-row, .field-row-3 { grid-template-columns: 1fr; }
-  .page-content { padding: 16px; }
+  .page-content { padding: var(--space-4); }
+  .card-body,
+  .form-section-body { padding: var(--space-4); }
 }
 
 @media (max-width: 768px) {
@@ -790,6 +888,32 @@ label .required { color: var(--accent); margin-left: 2px; }
     overflow: visible !important;
     background: #fff !important;
   }
+}
+
+/*
+  Cards that rely on Tailwind p-* get a real inset here.
+  Unlayered on purpose: it wins over @layer utilities, so content
+  cannot sit on the border even if a later reset is added in a layer.
+  Header/body cards keep padding on .card-header / .card-body instead.
+*/
+.card.p-3 { padding: var(--space-4) var(--space-5); }
+.card.p-4,
+.card.p-5,
+.card.p-6 { padding: var(--pad-card); }
+
+@media (min-width: 1025px) {
+  .card-body,
+  .form-section-body,
+  .card.p-4,
+  .card.p-5,
+  .card.p-6 {
+    padding: var(--pad-card-desktop);
+  }
+  .card-header,
+  .form-section-header {
+    padding: var(--space-4) var(--pad-card-desktop);
+  }
+  .output-toolbar { padding: var(--space-3) var(--pad-card-desktop); }
 }
 
 /* Brand lockup — phoenix sits directly on the surface, no badge */

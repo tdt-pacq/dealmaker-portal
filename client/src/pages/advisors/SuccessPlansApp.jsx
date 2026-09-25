@@ -168,7 +168,7 @@ function ProgressRow({ label, actual, target, format }) {
 
 function Kpi({ label, value, detail }) {
   return (
-    <div className="card" style={{ padding: '16px 18px' }}>
+    <div className="card" style={{ padding: '20px 24px' }}>
       <div style={{ fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', color: '#57534e', fontWeight: 700 }}>
         {label}
       </div>
