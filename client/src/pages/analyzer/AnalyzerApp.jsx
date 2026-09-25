@@ -216,7 +216,7 @@ const Tog = ({on,set,label}) => (
 
 /* ── SVG Bar Chart ─────────────────────────────────── */
 const BarChart = ({data,dataKey,color='#C4592F',label='',fmtAxis}) => {
-  const W=340,H=160,PAD={t:10,r:10,b:30,l:60};
+  const W=340,H=168,PAD={t:16,r:16,b:36,l:72};
   const vals=data.map(d=>d[dataKey]||0);
   const maxV=Math.max(...vals,1);
   const minV=Math.min(...vals,0);
@@ -229,11 +229,11 @@ const BarChart = ({data,dataKey,color='#C4592F',label='',fmtAxis}) => {
   const fmtTick=fmtAxis||(v=>{ const a=Math.abs(v); if(a>=1000000)return '$'+(v/1000000).toFixed(1)+'M'; if(a>=1000)return '$'+(v/1000).toFixed(0)+'k'; return '$'+v; });
   const ticks=4;
   return (
-    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{overflow:'visible'}}>
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{overflow:'hidden'}}>
       {Array.from({length:ticks+1},(_,i)=>{
         const v=minV+(range/ticks)*i;
         const y=PAD.t+scaleY(v);
-        return <g key={i}><line x1={PAD.l} x2={PAD.l+innerW} y1={y} y2={y} stroke="#a8a29e" strokeDasharray="3 3"/><text x={PAD.l-4} y={y+4} textAnchor="end" fontSize="9" fill="#57534e">{fmtTick(v)}</text></g>;
+        return <g key={i}><line x1={PAD.l} x2={PAD.l+innerW} y1={y} y2={y} stroke="#a8a29e" strokeDasharray="3 3"/><text x={PAD.l-8} y={y+4} textAnchor="end" fontSize="9" fill="#57534e">{fmtTick(v)}</text></g>;
       })}
       {data.map((d,i)=>{
         const x=PAD.l+gap*i+gap/2-bw/2;
@@ -255,7 +255,7 @@ const BarChart = ({data,dataKey,color='#C4592F',label='',fmtAxis}) => {
 
 /* ── SVG Line Chart ────────────────────────────────── */
 const LineChart = ({data,dataKey,color='#C4592F'}) => {
-  const W=340,H=140,PAD={t:10,r:10,b:30,l:60};
+  const W=340,H=148,PAD={t:16,r:16,b:36,l:72};
   const vals=data.map(d=>d[dataKey]||0);
   const maxV=Math.max(...vals,1),minV=Math.min(...vals,0);
   const range=maxV-minV||1;
@@ -265,10 +265,10 @@ const LineChart = ({data,dataKey,color='#C4592F'}) => {
   const fmtTick=v=>{ const a=Math.abs(v); if(a>=1000000)return '$'+(v/1000000).toFixed(1)+'M'; if(a>=1000)return '$'+(v/1000).toFixed(0)+'k'; return '$'+v; };
   const pts=data.map((d,i)=>`${PAD.l+gap*i},${PAD.t+scaleY(d[dataKey]||0)}`).join(' ');
   return (
-    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{overflow:'visible'}}>
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{overflow:'hidden'}}>
       {[0,1,2,3,4].map(i=>{
         const v=minV+(range/4)*i; const y=PAD.t+scaleY(v);
-        return <g key={i}><line x1={PAD.l} x2={PAD.l+innerW} y1={y} y2={y} stroke="#a8a29e" strokeDasharray="3 3"/><text x={PAD.l-4} y={y+4} textAnchor="end" fontSize="9" fill="#57534e">{fmtTick(v)}</text></g>;
+        return <g key={i}><line x1={PAD.l} x2={PAD.l+innerW} y1={y} y2={y} stroke="#a8a29e" strokeDasharray="3 3"/><text x={PAD.l-8} y={y+4} textAnchor="end" fontSize="9" fill="#57534e">{fmtTick(v)}</text></g>;
       })}
       <polyline points={pts} fill="none" stroke={color} strokeWidth="2"/>
       {data.map((d,i)=>(
@@ -285,7 +285,7 @@ const LineChart = ({data,dataKey,color='#C4592F'}) => {
 
 /* ── SVG Stacked Bar ───────────────────────────────── */
 const StackedBar = ({data}) => {
-  const W=480,H=200,PAD={t:10,r:120,b:30,l:60};
+  const W=480,H=208,PAD={t:16,r:128,b:36,l:72};
   const keys=[{k:'ebitda',c:'#C4592F',l:'EBITDA'},{k:'oc',c:'#1d4ed8',l:"Owner's Comp"},{k:'ab',c:'#b45309',l:'Add-Backs'}];
   const totals=data.map(d=>keys.reduce((s,k)=>s+Math.max(0,d[k.k]||0),0));
   const maxV=Math.max(...totals,1);
@@ -293,10 +293,10 @@ const StackedBar = ({data}) => {
   const bw=Math.floor(innerW/data.length*0.55);
   const gap=innerW/data.length;
   return (
-    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{overflow:'visible'}}>
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{overflow:'hidden'}}>
       {[0,1,2,3,4].map(i=>{
         const v=(maxV/4)*i; const y=PAD.t+innerH*(1-v/maxV);
-        return <g key={i}><line x1={PAD.l} x2={PAD.l+innerW} y1={y} y2={y} stroke="#a8a29e" strokeDasharray="3 3"/><text x={PAD.l-4} y={y+4} textAnchor="end" fontSize="9" fill="#57534e">{v>=1000000?'$'+(v/1000000).toFixed(1)+'M':v>=1000?'$'+(v/1000).toFixed(0)+'k':'$'+v}</text></g>;
+        return <g key={i}><line x1={PAD.l} x2={PAD.l+innerW} y1={y} y2={y} stroke="#a8a29e" strokeDasharray="3 3"/><text x={PAD.l-8} y={y+4} textAnchor="end" fontSize="9" fill="#57534e">{v>=1000000?'$'+(v/1000000).toFixed(1)+'M':v>=1000?'$'+(v/1000).toFixed(0)+'k':'$'+v}</text></g>;
       })}
       {data.map((d,i)=>{
         const x=PAD.l+gap*i+gap/2-bw/2;
@@ -365,7 +365,7 @@ const YearSec = ({yd,onChange,onImport,reVal=0,yearEditable=true}) => {
           </select>
         </div>
         <div className="az-year-actions flex items-center gap-4">
-          {onImport&&<button onClick={e=>{e.stopPropagation();onImport();}} style={{fontSize:12,padding:'5px 12px',background:'rgba(255,255,255,0.94)',color:'#57534e',border:'1px solid #e4dcd2',borderRadius:4,cursor:'pointer',whiteSpace:'nowrap'}}>Import PDF</button>}
+          {onImport&&<button className="az-import-btn" onClick={e=>{e.stopPropagation();onImport();}} style={{background:'rgba(255,255,255,0.94)',color:'#57534e',border:'1px solid #e4dcd2',borderRadius:4,cursor:'pointer',whiteSpace:'nowrap'}}>Import PDF</button>}
           <div className="az-year-sde">
             <span className="text-sm text-gray-500">SDE</span>
             <span className={`mono font-bold text-base ${c.sde>=0?'text-green-400':'text-red-400'}`}>{(pn(yd.revenue)||c.sde)?fmtD(c.sde):'—'}</span>
@@ -500,10 +500,10 @@ const Analysis = ({state,set,primeRate}) => {
         <>
           <div className="mb-4">
             <span className="lbl">SDE Basis</span>
-            <div className="flex rounded overflow-hidden border border-gray-700 text-sm">
+            <div className="az-seg flex rounded overflow-hidden border border-gray-700 text-sm">
               {['weighted','recent'].map(b=>(
                 <button key={b} onClick={()=>set({...state,sdeBasis:b})}
-                  className={`flex-1 py-2 transition-colors ${(basisKey===b)?'bg-blue-700 text-white':'bg-gray-900 text-gray-400 hover:bg-gray-800'}`}>
+                  className={`az-seg-btn flex-1 py-2 transition-colors ${(basisKey===b)?'bg-blue-700 text-white':'bg-gray-900 text-gray-400 hover:bg-gray-800'}`}>
                   {b==='weighted'?'Weighted Avg':'Most Recent'}
                 </button>
               ))}
@@ -523,7 +523,7 @@ const Analysis = ({state,set,primeRate}) => {
           <div className="mb-4">
             <span className="lbl text-blue-400 mb-2 block">Fair Market Value Range</span>
             {mults.map(m=>(
-              <div key={m} className="flex justify-between items-center bg-gray-900 rounded px-3 py-2 mb-1.5">
+              <div key={m} className="az-fmv-row bg-gray-900 rounded mb-1.5">
                 <span className="text-sm text-gray-400">{m.toFixed(1)}× SDE</span>
                 <span className="mono text-base font-semibold text-blue-300">{fmtD(base*m)}</span>
               </div>
@@ -535,7 +535,7 @@ const Analysis = ({state,set,primeRate}) => {
           </div>
           <div className="border-t border-gray-700 pt-4">
             <span className="lbl text-green-400 mb-2 block">SBA Loan Analysis</span>
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="az-rate-grid grid grid-cols-2 gap-3 mb-4">
               <div><span className="lbl">Rate (%)</span><NI value={loanRate} onChange={v=>set({...state,loanRate:v})}/>{primeRate&&<div className="text-xs text-gray-600 mt-1">Prime {primeRate}% + 2.75%</div>}</div>
               <div><span className="lbl">Amort (yrs)</span><NI value={loanAmort} onChange={v=>set({...state,loanAmort:v})}/></div>
             </div>
@@ -545,7 +545,7 @@ const Analysis = ({state,set,primeRate}) => {
               return (
                 <div key={m} className="bg-gray-900 rounded p-3 mb-2 text-sm">
                   <div className="text-gray-300 font-semibold mb-2">{m.toFixed(1)}× — {fmtD(price)}</div>
-                  <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                  <div className="az-loan-rows grid grid-cols-2 gap-x-2 gap-y-1">
                     <span className="text-gray-500">Loan ({100-(dpPct||10)}% LTV):</span><span className="mono text-gray-300">{fmtD(loan)}</span>
                     <span className="text-gray-500">Monthly Pmt:</span><span className="mono text-yellow-400">{fmtD(mo)}</span>
                     <span className="text-gray-500">Annual DS:</span><span className="mono text-red-400">{fmtD(ann)}</span>

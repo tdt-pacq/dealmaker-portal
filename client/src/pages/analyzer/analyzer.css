@@ -154,13 +154,17 @@
   }
 }
 
-#analyzer-root .az-year { margin-bottom: var(--space-5); }
+#analyzer-root .az-year {
+  margin-bottom: var(--space-5);
+  container-type: inline-size;
+  container-name: az-year;
+}
 #analyzer-root .az-year-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: var(--space-3);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   padding: var(--space-4) var(--pad-card-desktop);
   min-width: 0;
 }
@@ -169,17 +173,26 @@
   align-items: center;
   gap: var(--space-3);
   min-width: 0;
-  flex: 1 1 220px;
+  flex: 0 1 auto;
 }
 #analyzer-root .az-year-actions {
   margin-left: auto;
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+#analyzer-root .az-import-btn {
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 6px 12px;
 }
 #analyzer-root .az-year-sde {
   display: inline-flex;
   align-items: baseline;
   gap: var(--space-2);
-  margin-left: auto;
+  margin-left: 0;
   flex: 0 0 auto;
   min-width: 0;
   max-width: 100%;
@@ -187,7 +200,36 @@
   font-variant-numeric: tabular-nums;
 }
 #analyzer-root .az-year-sde .mono {
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+/* Narrow year cards (1024 viewport): keep Import PDF and SDE on the year row. */
+@container az-year (max-width: 520px) {
+  #analyzer-root .az-year-head {
+    gap: var(--space-2);
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
+  #analyzer-root .az-year-main { gap: 6px; }
+  #analyzer-root .az-year-main input.input-field {
+    width: 4.25rem !important;
+    padding-left: 6px;
+    padding-right: 6px;
+    font-size: 14px !important;
+  }
+  #analyzer-root .az-year-main select.input-field {
+    width: 5.6rem !important;
+    padding-left: 6px;
+    padding-right: 2px;
+    font-size: 12px !important;
+  }
+  #analyzer-root .az-year-actions { gap: var(--space-2) !important; }
+  #analyzer-root .az-year-actions > button {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  #analyzer-root .az-year-sde { gap: 6px; font-size: 13px; }
+  #analyzer-root .az-year-sde .mono { font-size: 14px !important; }
 }
 #analyzer-root .az-year-body {
   display: flex;
@@ -207,20 +249,119 @@
 
 #analyzer-root .az-panel {
   padding: var(--pad-card-desktop);
+  container-type: inline-size;
+  container-name: az-panel;
 }
 #analyzer-root .az-panel .mono,
 #analyzer-root .mono {
   font-variant-numeric: tabular-nums;
-  min-width: 0;
-  overflow-wrap: anywhere;
 }
-#analyzer-root .az-panel .grid.grid-cols-2 > :nth-child(even) {
-  text-align: right;
+#analyzer-root .az-scroll .card .flex.justify-between {
+  flex-wrap: wrap;
+  column-gap: var(--space-3);
+  row-gap: var(--space-1);
   min-width: 0;
+}
+#analyzer-root .az-scroll .card .flex.justify-between > .mono {
+  flex: 0 0 auto;
+  margin-left: auto;
+  white-space: nowrap;
+  min-width: max-content;
+}
+#analyzer-root .az-year-body .grid.grid-cols-5 {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(8.75rem, 1.2fr) auto;
+}
+#analyzer-root .az-panel .mono {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+#analyzer-root .az-seg {
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  align-self: flex-start;
+}
+#analyzer-root .az-seg-btn {
+  flex: 1 1 auto;
+  padding: 8px 14px;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.25;
+  min-width: 0;
+}
+#analyzer-root .az-rate-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-4);
+}
+#analyzer-root .az-fmv-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+}
+#analyzer-root .az-fmv-row .mono {
+  flex: 0 0 auto;
+  text-align: right;
+}
+#analyzer-root .az-loan-rows {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-3);
+  row-gap: 6px;
+  align-items: baseline;
+}
+#analyzer-root .az-loan-rows > :nth-child(odd) {
+  min-width: 0;
+  white-space: nowrap;
+}
+#analyzer-root .az-loan-rows > :nth-child(even) {
+  white-space: nowrap;
+  text-align: right;
+  overflow-wrap: normal;
+  font-variant-numeric: tabular-nums;
 }
 #analyzer-root .az-panel .bg-gray-900 {
-  padding-left: var(--space-4);
-  padding-right: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+}
+@container az-panel (max-width: 260px) {
+  #analyzer-root .az-seg-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  #analyzer-root .az-loan-rows {
+    font-size: 12px;
+    column-gap: 10px;
+  }
+  #analyzer-root .az-fmv-row { font-size: 13px; }
+}
+
+/* Every analyzer card keeps the shared inset. Year cards pad their head/body instead. */
+#analyzer-root .az-scroll .card:not(.az-year) {
+  padding: var(--pad-card);
+}
+#analyzer-root .az-scroll .card svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  overflow: hidden;
+}
+#analyzer-root .az-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+}
+#analyzer-root .az-scroll .num,
+#analyzer-root .az-scroll .mono,
+#analyzer-root .az-scroll td,
+#analyzer-root .az-scroll th {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 1025px) {
+  #analyzer-root .az-scroll .card:not(.az-year) {
+    padding: var(--pad-card-desktop);
+  }
 }
 
 @media (max-width: 1024px) {
@@ -231,5 +372,16 @@
     padding-right: var(--space-5);
   }
   #analyzer-root .az-year-body { padding-bottom: var(--space-5); }
-  #analyzer-root .az-panel { padding-top: var(--space-5); padding-bottom: var(--space-5); }
+  #analyzer-root .az-panel {
+    padding-top: var(--space-5);
+    padding-bottom: var(--space-5);
+  }
+}
+
+/* After the 1024 padding tweak so a narrow year card can use the 16px minimum and stay one row. */
+@container az-year (max-width: 520px) {
+  #analyzer-root .az-year-head {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
 }

@@ -901,9 +901,16 @@ label.flex {
 .card.p-5,
 .card.p-6 { padding: var(--pad-card); }
 
+/* PR #19 defines .doc-drop at 14px 12px. Double class beats that later rule. */
+.doc-drop.doc-drop,
+.doc-upload-grid > .doc-drop {
+  padding: var(--space-4);
+}
+
 @media (min-width: 1025px) {
   .card-body,
   .form-section-body,
+  .card.p-3,
   .card.p-4,
   .card.p-5,
   .card.p-6 {
