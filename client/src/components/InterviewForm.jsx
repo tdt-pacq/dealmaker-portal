@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect, useContext, createContext } from 'react';
 import { Link } from 'react-router-dom';
 import { updateDeal } from '../api';
+import { interviewHasContent, mergeInterview, parseInterview } from './interviewDraft';
 
 const TEAM_MEMBERS = [
   { name: 'Michael', role: 'Lead Broker | Deal Structure | Strategy | Negotiations' },
@@ -118,49 +119,158 @@ function clearDraft(id) {
   try { localStorage.removeItem(DRAFT_KEY(id)); } catch {}
 }
 
+const SAVE_DEBOUNCE_MS = 700;
+
 export default function InterviewForm({ deal, onUpdate }) {
-  const serverData = (() => { try { return JSON.parse(deal.interview_data || '{}'); } catch { return {}; } })();
+  const serverData = parseInterview(deal.interview_data);
   const [data, setData] = useState(() => {
     const draft = loadDraft(deal.id);
-    // Restore draft if it has content the server doesn't
-    if (draft && JSON.stringify(draft) !== JSON.stringify(serverData)) return draft;
-    return serverData;
+    if (draft && !interviewHasContent(draft)) clearDraft(deal.id);
+    return mergeInterview(serverData, interviewHasContent(draft) ? draft : null);
   });
   const [saveStatus, setSaveStatus] = useState('');
   const [draftRestored, setDraftRestored] = useState(() => {
     const draft = loadDraft(deal.id);
-    return !!(draft && JSON.stringify(draft) !== JSON.stringify(serverData));
+    if (!draft || !interviewHasContent(draft)) return false;
+    return JSON.stringify(mergeInterview(serverData, draft)) !== JSON.stringify(serverData);
   });
+  const dataRef = useRef(data);
+  const serverSnapshotRef = useRef(serverData);
+  const dirtyRef = useRef(false);
+  const hydratedRef = useRef(true);
   const saveTimeout = useRef(null);
+  const hideSavedTimer = useRef(null);
+  const dealIdRef = useRef(deal.id);
+  const loadedIdRef = useRef(deal.id);
+  const onUpdateRef = useRef(onUpdate);
+  onUpdateRef.current = onUpdate;
 
-  // When the deal prop updates from server (after save), sync only if no pending draft
-  useEffect(() => {
+  const remember = useCallback((next) => {
+    dataRef.current = next;
+    saveDraft(dealIdRef.current, next);
+    return next;
+  }, []);
+
+  const persist = useCallback(async (latestData) => {
+    if (!hydratedRef.current || !dirtyRef.current) return;
+    if (!interviewHasContent(latestData) && interviewHasContent(serverSnapshotRef.current)) return;
+    const payload = JSON.stringify(latestData);
+    const id = dealIdRef.current;
+    if (hideSavedTimer.current) clearTimeout(hideSavedTimer.current);
+    setSaveStatus('saving');
     try {
-      const fresh = JSON.parse(deal.interview_data || '{}');
-      // Don't overwrite if user has a draft in progress
-      if (!loadDraft(deal.id)) setData(fresh);
-    } catch { /* */ }
-  }, [deal.interview_data]);
+      await updateDeal(id, { interview_data: payload });
+      if (dealIdRef.current !== id) return;
+      serverSnapshotRef.current = JSON.parse(payload);
+      if (JSON.stringify(dataRef.current) === payload) {
+        dirtyRef.current = false;
+        clearDraft(id);
+        setDraftRestored(false);
+        setSaveStatus('saved');
+        hideSavedTimer.current = setTimeout(() => {
+          setSaveStatus((current) => (current === 'saved' ? '' : current));
+        }, 2500);
+      } else {
+        dirtyRef.current = true;
+        clearTimeout(saveTimeout.current);
+        saveTimeout.current = setTimeout(() => persist(dataRef.current), SAVE_DEBOUNCE_MS);
+      }
+      if (onUpdateRef.current) onUpdateRef.current();
+    } catch {
+      setSaveStatus('error');
+    }
+  }, []);
+
+  const queueSave = useCallback(() => {
+    if (!hydratedRef.current) return;
+    dirtyRef.current = true;
+    setSaveStatus('saving');
+    clearTimeout(saveTimeout.current);
+    saveTimeout.current = setTimeout(() => persist(dataRef.current), SAVE_DEBOUNCE_MS);
+  }, [persist]);
+
+  const flushSave = useCallback((latestData, id) => {
+    if (!hydratedRef.current || !dirtyRef.current) return;
+    if (!interviewHasContent(latestData) && interviewHasContent(serverSnapshotRef.current)) return;
+    const payload = JSON.stringify(latestData);
+    dirtyRef.current = false;
+    clearDraft(id);
+    updateDeal(id, { interview_data: payload }).catch(() => {
+      if (dealIdRef.current === id) dirtyRef.current = true;
+      saveDraft(id, latestData);
+    });
+  }, []);
+
+  // Push a restored browser draft up to the server, and flush on leave
+  // so navigating to Generate does not drop the last edits.
+  useEffect(() => {
+    const id = deal.id;
+    if (loadedIdRef.current !== id) {
+      loadedIdRef.current = id;
+      dealIdRef.current = id;
+      const server = parseInterview(deal.interview_data);
+      const draft = loadDraft(id);
+      if (draft && !interviewHasContent(draft)) clearDraft(id);
+      const merged = mergeInterview(server, interviewHasContent(draft) ? draft : null);
+      dataRef.current = merged;
+      serverSnapshotRef.current = server;
+      dirtyRef.current = false;
+      setSaveStatus('');
+      setData(merged);
+      const restored = !!(draft && interviewHasContent(draft)
+        && JSON.stringify(merged) !== JSON.stringify(server));
+      setDraftRestored(restored);
+      if (restored) {
+        dirtyRef.current = true;
+        setSaveStatus('saving');
+        saveTimeout.current = setTimeout(() => persist(dataRef.current), SAVE_DEBOUNCE_MS);
+      }
+    } else if (
+      JSON.stringify(dataRef.current) !== JSON.stringify(serverSnapshotRef.current)
+      && interviewHasContent(dataRef.current)
+    ) {
+      dirtyRef.current = true;
+      setSaveStatus('saving');
+      clearTimeout(saveTimeout.current);
+      saveTimeout.current = setTimeout(() => persist(dataRef.current), SAVE_DEBOUNCE_MS);
+    }
+    return () => {
+      clearTimeout(saveTimeout.current);
+      clearTimeout(hideSavedTimer.current);
+      flushSave(dataRef.current, id);
+    };
+  }, [deal.id, persist, flushSave]);
+
+  // Refresh from the server only when the user has no unsaved edits,
+  // and never replace a filled form with an empty payload.
+  useEffect(() => {
+    if (dirtyRef.current) return;
+    const fresh = parseInterview(deal.interview_data);
+    if (!interviewHasContent(fresh) && interviewHasContent(dataRef.current)) return;
+    const draft = loadDraft(deal.id);
+    if (draft && interviewHasContent(draft)) return;
+    serverSnapshotRef.current = fresh;
+    if (JSON.stringify(dataRef.current) === JSON.stringify(fresh)) return;
+    dataRef.current = fresh;
+    setData(fresh);
+  }, [deal.interview_data, deal.id]);
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    setData(prev => {
-      const next = { ...prev, [name]: value };
-      saveDraft(deal.id, next);
-      return next;
-    });
-  }, [deal.id]);
+    setData(prev => remember({ ...prev, [name]: value }));
+    queueSave();
+  }, [remember, queueSave]);
 
   const handleCheckbox = useCallback((name, checked) => {
     setData(prev => {
       const arr = prev[name] ? [...prev[name]] : [];
       const next = checked
-        ? { ...prev, [name]: [...arr, name.startsWith('deal_team') ? checked : checked] }
+        ? { ...prev, [name]: [...arr, checked] }
         : prev;
-      saveDraft(deal.id, next);
-      return next;
+      return remember(next);
     });
-  }, [deal.id]);
+    queueSave();
+  }, [remember, queueSave]);
 
   const handleTeamToggle = useCallback((memberName) => {
     setData(prev => {
@@ -168,36 +278,16 @@ export default function InterviewForm({ deal, onUpdate }) {
       const updated = current.includes(memberName)
         ? current.filter(m => m !== memberName)
         : [...current, memberName];
-      const next = { ...prev, deal_team_members: updated };
-      saveDraft(deal.id, next);
-      return next;
+      return remember({ ...prev, deal_team_members: updated });
     });
-  }, [deal.id]);
-
-  const triggerSave = useCallback(async (latestData) => {
-    setSaveStatus('saving');
-    try {
-      await updateDeal(deal.id, { interview_data: JSON.stringify(latestData) });
-      clearDraft(deal.id);
-      setDraftRestored(false);
-      setSaveStatus('saved');
-      if (onUpdate) onUpdate();
-      setTimeout(() => setSaveStatus(''), 2500);
-    } catch {
-      setSaveStatus('error');
-      setTimeout(() => setSaveStatus(''), 3000);
-    }
-  }, [deal.id, onUpdate]);
+    queueSave();
+  }, [remember, queueSave]);
 
   const handleBlur = useCallback(() => {
+    if (!dirtyRef.current) return;
     clearTimeout(saveTimeout.current);
-    saveTimeout.current = setTimeout(() => {
-      setData(current => {
-        triggerSave(current);
-        return current;
-      });
-    }, 300);
-  }, [triggerSave]);
+    persist(dataRef.current);
+  }, [persist]);
 
   const f = name => data[name] || '';
 
@@ -720,16 +810,22 @@ export default function InterviewForm({ deal, onUpdate }) {
             padding: '10px 16px', margin: '16px 0', fontSize: 13, gap: 12,
           }}>
             <span>
-              <strong>Draft restored</strong> — you have unsaved edits from your last session.
-              Click any field and tab away to sync to the server.
+              <strong>Draft restored</strong> — unsaved edits from this browser were merged in and are being saved to the server.
             </span>
             <button
               className="btn-ghost btn-sm"
               style={{ flexShrink: 0 }}
               onClick={() => {
+                clearTimeout(saveTimeout.current);
+                dirtyRef.current = false;
                 clearDraft(deal.id);
                 setDraftRestored(false);
-                try { setData(JSON.parse(deal.interview_data || '{}')); } catch { /* */ }
+                const fresh = interviewHasContent(serverSnapshotRef.current)
+                  ? serverSnapshotRef.current
+                  : parseInterview(deal.interview_data);
+                dataRef.current = fresh;
+                setData(fresh);
+                setSaveStatus('');
               }}
             >
               Discard draft
@@ -753,10 +849,14 @@ export default function InterviewForm({ deal, onUpdate }) {
         </div>
 
         {/* Autosave indicator */}
-        <div className={`autosave-indicator ${saveStatus ? 'visible' : ''}`}>
-          {saveStatus === 'saving' && <><span className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />Saving…</>}
-          {saveStatus === 'saved' && <>✓ Saved</>}
-          {saveStatus === 'error' && <>⚠ Save failed</>}
+        <div
+          className={`autosave-indicator ${saveStatus ? 'visible' : ''} ${saveStatus === 'error' ? 'error' : ''}`}
+          role="status"
+          aria-live="polite"
+        >
+          {saveStatus === 'saving' && <><span className="spinner spinner-dark" style={{ width: 14, height: 14, borderWidth: 2 }} />Saving…</>}
+          {saveStatus === 'saved' && <>Saved</>}
+          {saveStatus === 'error' && <>Save failed</>}
         </div>
       </div>
     </div>

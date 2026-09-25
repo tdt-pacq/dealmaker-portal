@@ -155,14 +155,17 @@ function ActivityTab({ dealId }) {
 
 function friendlyError(err) {
   const status = err.response?.status;
-  const msg = err.response?.data?.error || err.message || '';
+  const msg = (typeof err.response?.data?.error === 'string' && err.response.data.error)
+    || err.message
+    || '';
   if (status === 401) return 'Session expired — reload the page to log back in.';
-  if (status === 429) return 'Rate limit reached — wait a minute then retry.';
-  if (status === 504 || err.code === 'ECONNABORTED' || msg.includes('timeout'))
+  if (status === 429) return msg || 'Rate limit reached — wait a minute then retry.';
+  if (status === 504 || err.code === 'ECONNABORTED' || /timeout/i.test(msg))
     return 'Request timed out — the AI service was slow. Try again.';
-  if (status >= 500) return `Server error (${status}) — try again in a moment.`;
   if (!navigator.onLine) return 'No internet connection — check your network and retry.';
-  return msg || 'Generation failed — please try again.';
+  if (msg) return msg;
+  if (status >= 500) return `Server error (${status}). Try again in a moment.`;
+  return 'Generation failed. Please try again.';
 }
 
 function useElapsedTimer(running) {
@@ -272,11 +275,19 @@ function BlindAdTab({ deal, onUpdate }) {
       </div>
       {error && <ErrorAlert message={error} onRetry={handleGenerate} />}
 
-      {!text && !generating && (
+      {!text && !generating && !error && (
         <div className="empty-state">
           <div className="empty-state-icon">📝</div>
           <div className="empty-state-title">No Blind Ad Yet</div>
           <p>Fill out the interview form, then click <strong>Generate Blind Ad</strong>. Copy or Download .txt appears after generation — copy is not created automatically.</p>
+        </div>
+      )}
+
+      {!text && !generating && error && (
+        <div className="empty-state">
+          <div className="empty-state-icon">⚠️</div>
+          <div className="empty-state-title">Blind ad was not created</div>
+          <p>Nothing was saved for this tab. The message above is the reason. Use Retry after it is fixed.</p>
         </div>
       )}
 
@@ -357,11 +368,19 @@ function FlyerTab({ deal, onUpdate }) {
       </div>
       {error && <ErrorAlert message={error} onRetry={!exporting ? handleGenerate : undefined} />}
 
-      {!html && !generating && (
+      {!html && !generating && !error && (
         <div className="empty-state">
           <div className="empty-state-icon">🗂️</div>
           <div className="empty-state-title">No Flyer Yet</div>
           <p>Fill out the interview form, then click <strong>Generate Flyer</strong>. The Download PDF button appears after generation — materials are not created automatically.</p>
+        </div>
+      )}
+
+      {!html && !generating && error && (
+        <div className="empty-state">
+          <div className="empty-state-icon">⚠️</div>
+          <div className="empty-state-title">One-page flyer was not created</div>
+          <p>Nothing was saved for this tab. The message above is the reason. Use Retry after it is fixed.</p>
         </div>
       )}
 
@@ -443,7 +462,7 @@ function CbrTab({ deal, onUpdate }) {
       </div>
       {error && <ErrorAlert message={error} onRetry={!exporting ? handleGenerate : undefined} />}
 
-      {!html && !generating && (
+      {!html && !generating && !error && (
         <div className="empty-state">
           <div className="empty-state-icon">📊</div>
           <div className="empty-state-title">No CBR Yet</div>
@@ -451,6 +470,14 @@ function CbrTab({ deal, onUpdate }) {
           <div className="alert alert-info" style={{ maxWidth: 400, margin: '16px auto 0', textAlign: 'left' }}>
             <strong>Note:</strong> CBR generation uses more AI tokens and may take 30–60 seconds. Ensure the interview form is thoroughly filled out for best results.
           </div>
+        </div>
+      )}
+
+      {!html && !generating && error && (
+        <div className="empty-state">
+          <div className="empty-state-icon">⚠️</div>
+          <div className="empty-state-title">CBR was not created</div>
+          <p>Nothing was saved for this tab. The message above is the reason. Use Retry after it is fixed.</p>
         </div>
       )}
 

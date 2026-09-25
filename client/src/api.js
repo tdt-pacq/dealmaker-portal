@@ -79,9 +79,10 @@ export async function downloadDealPdf(id, type) {
 }
 
 // Generate
-export const generateBlindAd = (deal_id) => api.post('/generate/blind-ad', { deal_id });
-export const generateFlyer = (deal_id) => api.post('/generate/flyer', { deal_id });
-export const generateCbr = (deal_id) => api.post('/generate/cbr', { deal_id });
+const GENERATE_TIMEOUT_MS = 180000;
+export const generateBlindAd = (deal_id) => api.post('/generate/blind-ad', { deal_id }, { timeout: GENERATE_TIMEOUT_MS });
+export const generateFlyer = (deal_id) => api.post('/generate/flyer', { deal_id }, { timeout: GENERATE_TIMEOUT_MS });
+export const generateCbr = (deal_id) => api.post('/generate/cbr', { deal_id }, { timeout: GENERATE_TIMEOUT_MS });
 
 // Export to PDF
 export const exportFlyer = (id) => api.post(`/export/flyer/${id}`);
@@ -93,6 +94,19 @@ export const extractInterview = (formData) =>
     headers: { 'Content-Type': 'multipart/form-data' },
     timeout: 120000 // 2 min — Claude may take 20-30s for large docs
   });
+
+export const fetchDealDocuments = (dealId) => api.get(`/deals/${dealId}/documents`);
+export const uploadDealDocuments = (dealId, formData) =>
+  api.post(`/deals/${dealId}/documents`, formData, { timeout: 120000 });
+export const deleteDealDocument = (dealId, docId) =>
+  api.delete(`/deals/${dealId}/documents/${docId}`);
+export const extractStoredInterview = (dealId) =>
+  api.post(`/deals/${dealId}/documents/interview/extract`, {}, { timeout: 120000 });
+
+export async function fetchDealDocumentObjectUrl(dealId, docId) {
+  const res = await api.get(`/deals/${dealId}/documents/${docId}/file`, { responseType: 'blob' });
+  return URL.createObjectURL(res.data);
+}
 
 // Users
 export const fetchCurrentUser = () => api.get('/users/me');

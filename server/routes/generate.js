@@ -1,6 +1,8 @@
 const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
 const { getDb, logEvent } = require('../database');
+const { documentFromMessage, generationBody } = require('../marketingText');
+const { sourceBlockForDeal, loadPhotoAssets, stampMarketingHtml } = require('../dealDocuments');
 
 const router = express.Router();
 
@@ -17,13 +19,13 @@ router.post('/blind-ad', async (req, res) => {
 
   let interviewData;
   try { interviewData = JSON.parse(deal.interview_data || '{}'); } catch { interviewData = {}; }
+  const sources = sourceBlockForDeal(deal_id);
 
   const client = getClient();
   try {
-    const message = await client.messages.create({
-      model: 'claude-sonnet-5',
-      max_tokens: 2000,
-      system: `You are a professional business broker copywriter for Peterson Acquisitions / The Deal Team.
+    const message = await client.messages.create(generationBody(
+      4000,
+      `You are a professional business broker copywriter for Peterson Acquisitions / The Deal Team.
 You write compelling, factual blind ads for BizBuySell that follow a strict structure.
 CRITICAL RULES:
 - NEVER reveal the business name, owner name, specific street address, or any detail that would identify the business.
@@ -32,9 +34,8 @@ CRITICAL RULES:
 - Write in a confident, authoritative tone. Avoid filler language.
 - If a field is not provided, omit that line entirely rather than guessing.
 - Output must be plain text, copy-paste ready for BizBuySell. No markdown except bold headline (use ** for bold) and bullet points (use - for bullets).`,
-      messages: [{
-        role: 'user',
-        content: `Generate a BizBuySell blind ad using this business data: ${JSON.stringify(interviewData, null, 2)}
+      `Generate a BizBuySell blind ad using this business data: ${JSON.stringify(interviewData, null, 2)}
+${sources}
 
 Follow this EXACT structure and formatting. Do not add, remove, or reorder sections.
 
@@ -113,17 +114,16 @@ Real Estate: [Owned / Leased]
 ---
 
 Output the ad exactly as formatted above. Plain text only.`
-      }]
-    });
+    ));
 
-    const blindAdText = message.content[0].text;
+    const blindAdText = documentFromMessage(message, 'Blind ad');
     getDb().prepare('UPDATE deals SET blind_ad_text = ?, updated_at = ? WHERE id = ?')
       .run(blindAdText, new Date().toISOString(), deal_id);
     logEvent(deal_id, req.user, 'blind_ad_generated', 'Blind ad generated');
     res.json({ blind_ad_text: blindAdText });
   } catch (err) {
     console.error('Blind ad generation error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 
@@ -136,13 +136,14 @@ router.post('/flyer', async (req, res) => {
 
   let interviewData;
   try { interviewData = JSON.parse(deal.interview_data || '{}'); } catch { interviewData = {}; }
+  const sources = sourceBlockForDeal(deal_id);
+  const photos = loadPhotoAssets(deal_id);
 
   const client = getClient();
   try {
-    const message = await client.messages.create({
-      model: 'claude-sonnet-5',
-      max_tokens: 8000,
-      system: `You are a professional graphic designer and copywriter for Peterson Acquisitions.
+    const message = await client.messages.create(generationBody(
+      12000,
+      `You are a professional graphic designer and copywriter for Peterson Acquisitions.
 You generate single-page, print-ready HTML/CSS business listing flyers.
 
 ABSOLUTE RULES — VIOLATION MEANS THE OUTPUT IS REJECTED:
@@ -157,9 +158,7 @@ ABSOLUTE RULES — VIOLATION MEANS THE OUTPUT IS REJECTED:
 6. NO paragraph-style "Business Analysis" or "Overview" sections. ALL body copy must be bullet points of 15 words or fewer. No exceptions.
 7. The advisor contact card goes INSIDE the right sidebar column — NOT as a separate footer or second page.
 8. TEXT CONTRAST: body text #111111, headers #1A1A1A, secondary #444444 minimum. This is a print document.`,
-      messages: [{
-        role: 'user',
-        content: `Generate a single-page print-ready business listing flyer. The page is exactly 8.5×11 inches. NOTHING may overflow.
+      `Generate a single-page print-ready business listing flyer. The page is exactly 8.5×11 inches. NOTHING may overflow.
 
 FONTS (include exactly this link tag in <head>):
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -196,7 +195,9 @@ LEFT (padding 20px 16px 16px 20px, vertical flex):
   - Headline: Oswald bold, white, font-size 26px, line-height 1.15, max 2 lines, margin-top 8px. BLIND (industry + region only, no business name).
   - Tagline: #C1622F Oswald 12px uppercase letter-spacing 0.08em, margin-top 6px. Max 1 line, 10 words max.
   - Description: white Inter 11px, line-height 1.5, margin-top 8px. MAX 2 SENTENCES, 30 words total. Do not start with "This business".
-RIGHT: If a photo URL is available use it as a cover image (object-fit: cover, width/height 100%); otherwise fill with a gradient from #2a2a2a to #1a1a1a with a large centered copper "✦" symbol at 48px.
+RIGHT: ${photos.hasCover
+        ? 'Use exactly this cover image and nothing else: <img data-pacq="biz-cover" src="{{PACQ_BIZ_COVER}}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"/>'
+        : 'Fill with a gradient from #2a2a2a to #1a1a1a with a large centered copper "✦" symbol at 48px.'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ZONE 3 — METRICS STRIP  [height: 88px, flex-shrink: 0]
@@ -232,7 +233,9 @@ RIGHT COLUMN (padding 14px 18px 12px 14px, display flex flex-direction column ga
   CARD 3 — ADVISOR (same card style, background #fafafa):
     Header: "YOUR ADVISOR" Oswald 9px #888 uppercase.
     Flex row: advisor name Inter 11px bold #1A1A1A + title Inter 9px #C1622F + phone Inter 10px #111111 + email Inter 9px #444444 + "The Deal Team | Peterson Acquisitions" Inter 8px #888.
-    NO photo in the advisor card (photo assets are not available in server context).
+    ${photos.hasAdvisor
+      ? 'Start the advisor card with this circular headshot: <img data-pacq="advisor-photo" src="{{PACQ_ADVISOR_PHOTO}}" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2.5px solid #C1622F;flex-shrink:0"/>'
+      : 'No advisor headshot was uploaded, so do not invent a photo in the advisor card.'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ZONE 5 — FOOTER BAR  [height: 36px, flex-shrink: 0]
@@ -250,23 +253,30 @@ CONTENT RULES:
 - Do not add any section not listed above (no "Overview", no "Business Analysis", no "About", no second advisor block).
 - The advisor info is ONLY in Zone 4 Right Column Card 3. Nowhere else.
 
+${sources}
+
 Business data:
 ${JSON.stringify(interviewData, null, 2)}
 
 Advisor name: ${deal.advisor_name || 'Your Advisor'}
 
 Output ONLY the complete HTML document starting with <!DOCTYPE html>. Nothing before or after.`
-      }]
-    });
+    ));
 
-    const flyerHtml = message.content[0].text;
+    const flyerHtml = stampMarketingHtml(documentFromMessage(message, 'One-page flyer'), {
+      ...photos,
+      stampCover: true,
+      stampAdvisor: true,
+      stampSidebar: false,
+      stampGallery: false,
+    });
     getDb().prepare('UPDATE deals SET flyer_html = ?, updated_at = ? WHERE id = ?')
       .run(flyerHtml, new Date().toISOString(), deal_id);
     logEvent(deal_id, req.user, 'flyer_generated', 'One-page flyer generated');
     res.json({ flyer_html: flyerHtml });
   } catch (err) {
     console.error('Flyer generation error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 
@@ -281,13 +291,14 @@ router.post('/cbr', async (req, res) => {
   try { interviewData = JSON.parse(deal.interview_data || '{}'); } catch { interviewData = {}; }
 
   const brandColor = interviewData.seller_brand_color || '#2D5016';
+  const sources = sourceBlockForDeal(deal_id);
+  const photos = loadPhotoAssets(deal_id);
   const client = getClient();
 
   try {
-    const message = await client.messages.create({
-      model: 'claude-sonnet-5',
-      max_tokens: 16000,
-      system: `You are generating a Confidential Business Review (CBR) for a business acquisition listing.
+    const message = await client.messages.create(generationBody(
+      32000,
+      `You are generating a Confidential Business Review (CBR) for a business acquisition listing.
 This is a CONFIDENTIAL document shared only with vetted, NDA-signed buyers.
 It must be professional, accurate, and compelling.
 
@@ -309,9 +320,7 @@ RIGHT SIDEBAR RULE:
 - Every content page has a right sidebar (28% width)
 - The sidebar MUST contain real, useful content — a callout box with 3-5 key stats, a highlighted bullet list, or a "Why This Deal" box
 - NEVER leave the sidebar empty or purely decorative — empty space looks unprofessional`,
-      messages: [{
-        role: 'user',
-        content: `Generate a complete multi-page Confidential Business Review (CBR) as a single HTML document.
+      `Generate a complete multi-page Confidential Business Review (CBR) as a single HTML document.
 
 FONTS (include in <head>):
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -368,6 +377,8 @@ Full-page dark background #1A1A1A. Center-aligned vertically and horizontally.
 - Separator: 3px line half copper half gray, 80px wide, margin 24px auto
 - Confidentiality notice: Inter 12px #888 italic
 - Bottom bar: #C1622F strip 60px tall — left: "PETERSON ACQUISITIONS | THE DEAL TEAM" Oswald 14px white; right: "Offered Exclusively · Strictly Confidential" Inter 11px white
+${photos.hasCover ? '- COVER IMAGE (required): at the top of the cover, full width, before the title, include exactly <img data-pacq="biz-cover" src="{{PACQ_BIZ_COVER}}" alt="" style="width:100%;height:420px;object-fit:cover;display:block"/>' : ''}
+${photos.hasGallery ? '- Immediately after the cover page, output this placeholder on its own line and do not modify it: {{PACQ_GALLERY}}' : ''}
 
 ━━━ PAGE 2: TABLE OF CONTENTS ━━━
 Class: content-page (page-break-before: always)
@@ -390,6 +401,7 @@ Left column:
   - section-block: sub-heading "BUSINESS DETAILS" — stat-row table: Industry, Founded, City/State, Hours, Entity Type, Licenses, Employees, Owner Tenure
   - section-block: sub-heading "KEY SYSTEMS & INFRASTRUCTURE" — bullet list of systems, SOPs, IP
 Right sidebar:
+  ${photos.hasSidebar ? '- First element: <img data-pacq="biz-sidebar" src="{{PACQ_CIM_SIDEBAR}}" alt="" style="width:100%;height:220px;object-fit:cover;display:block;border-radius:4px;margin-bottom:16px"/>' : ''}
   - callout-box: ASKING PRICE — value from listing_price or asking_price
   - callout-box: MOST RECENT REVENUE — fin_year1_revenue with year label caption
   - callout-box: CASH FLOW / SDE — fin_year1_sde with year label caption
@@ -570,15 +582,22 @@ Left: "© ${new Date().getFullYear()} Peterson Acquisitions"
 Center: "Confidential Business Review · [industry/type descriptor, no business name]"
 Right: "petersonacquisitions.com"
 
+${sources}
+
 Business data: ${JSON.stringify(interviewData, null, 2)}
 Advisor: ${deal.advisor_name}
 
 IMPORTANT: Output ONLY the complete HTML document starting with <!DOCTYPE html>. No other text.
 IMPORTANT: Follow the PAGE BREAK RULES exactly — content pages use page-break-before: always and page-break-inside: avoid on blocks. NEVER use page-break-after on content blocks.`
-      }]
-    });
+    ));
 
-    const cbrHtml = message.content[0].text;
+    const cbrHtml = stampMarketingHtml(documentFromMessage(message, 'CBR'), {
+      ...photos,
+      stampCover: true,
+      stampAdvisor: false,
+      stampSidebar: true,
+      stampGallery: true,
+    });
     // Strip any accidental markdown fences
     const cleanHtml = cbrHtml.replace(/^```html\n?/, '').replace(/\n?```$/, '').trim();
     getDb().prepare('UPDATE deals SET cbr_html = ?, updated_at = ? WHERE id = ?')
@@ -587,7 +606,7 @@ IMPORTANT: Follow the PAGE BREAK RULES exactly — content pages use page-break-
     res.json({ cbr_html: cleanHtml });
   } catch (err) {
     console.error('CBR generation error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 
