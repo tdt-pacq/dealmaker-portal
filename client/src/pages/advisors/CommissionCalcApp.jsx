@@ -27,25 +27,25 @@ const initState = () => ({
 // ─── Styled helpers ───────────────────────────────────────────────────────────
 const inp = {
   background: '#ffffff', border: '1px solid #e6dfd6', borderRadius: 5,
-  color: '#1c1917', padding: '7px 10px', fontSize: 13, width: '100%',
+  color: '#1c1917', padding: '10px 12px', fontSize: 13, width: '100%',
   fontFamily: 'system-ui, sans-serif', outline: 'none', boxSizing: 'border-box',
 };
-const lbl = { display: 'block', fontSize: 11, color: '#57534e', marginBottom: 4,
+const lbl = { display: 'block', fontSize: 11, color: '#57534e', marginBottom: 6,
   textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'system-ui, sans-serif' };
 const card = { background: '#ffffff', border: '1px solid #e6dfd6', borderRadius: 8,
-  padding: '18px 20px', marginBottom: 16 };
+  padding: '20px 24px', marginBottom: 16 };
 const mono = { fontFamily: 'monospace', fontWeight: 700 };
 
 function NI({ value, onChange, placeholder = '0', prefix = '$', style = {} }) {
   return (
     <div style={{ position: 'relative' }}>
-      {prefix && <span style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: '#44403c', fontSize: 13, pointerEvents: 'none' }}>{prefix}</span>}
+      {prefix && <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#44403c', fontSize: 13, pointerEvents: 'none' }}>{prefix}</span>}
       <input
         type="number"
         value={value}
         placeholder={placeholder}
         onChange={e => onChange(e.target.value)}
-        style={{ ...inp, paddingLeft: prefix ? 20 : 10, ...style }}
+        style={{ ...inp, paddingLeft: prefix ? 28 : 12, ...style }}
       />
     </div>
   );

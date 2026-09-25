@@ -276,7 +276,7 @@ function ProfileForm({ onSave, onCancel, profile }) {
       <div style={S.cardHd}>
         <span style={S.cardTitle}>{isEdit ? 'Edit Search Profile' : 'New Search Profile'}</span>
       </div>
-      <div style={{ padding: '20px 20px 8px' }}>
+      <div style={{ padding: '20px 24px 12px' }}>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
           <div>
@@ -389,7 +389,7 @@ function ProfileCard({ profile, onDelete, onToggle, onRunResult, onEdit, onViewL
 
   return (
     <div style={{ ...S.card, marginBottom: 12 }}>
-      <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+      <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
 
         {/* Active dot */}
         <div style={{ flexShrink: 0, marginTop: 3 }}>
@@ -467,16 +467,16 @@ function ProfileCard({ profile, onDelete, onToggle, onRunResult, onEdit, onViewL
 
 const S = {
   card:      { background: 'rgba(255,255,255,0.94)', borderRadius: 8, border: '1px solid #e4dcd2', overflow: 'hidden' },
-  cardHd:    { padding: '13px 18px', borderBottom: '1px solid #e6dfd6', background: '#faf8f5', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+  cardHd:    { padding: '16px 20px', borderBottom: '1px solid #e6dfd6', background: '#faf8f5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   cardTitle: { fontFamily: 'Oswald, sans-serif', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: .5, color: '#1c1917' },
-  label:     { display: 'block', fontSize: 11, fontWeight: 500, color: '#57534e', marginBottom: 5, letterSpacing: .3 },
-  input:     { fontFamily: 'inherit', fontSize: 14, padding: '8px 11px', border: '1.5px solid #e4dcd2', borderRadius: 4, width: '100%', background: '#ffffff', color: '#1c1917', boxSizing: 'border-box', outline: 'none' },
+  label:     { display: 'block', fontSize: 11, fontWeight: 500, color: '#57534e', marginBottom: 6, letterSpacing: .3 },
+  input:     { fontFamily: 'inherit', fontSize: 14, padding: '10px 12px', border: '1.5px solid #e4dcd2', borderRadius: 4, width: '100%', background: '#ffffff', color: '#1c1917', boxSizing: 'border-box', outline: 'none' },
   primaryBtn: { background: '#C4592F', color: '#fff', border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600, padding: '8px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 },
   ghostBtn:  { background: 'transparent', color: '#57534e', border: '1px solid #e4dcd2', borderRadius: 4, fontSize: 13, fontWeight: 500, padding: '7px 14px', cursor: 'pointer' },
   dangerBtn: { background: 'transparent', color: '#dc2626', border: '1px solid rgba(239,68,68,.3)', borderRadius: 4, fontSize: 13, fontWeight: 500, padding: '7px 14px', cursor: 'pointer' },
   linkBtn:   { display: 'inline-block', background: '#C4592F', color: '#fff', textDecoration: 'none', fontSize: 12, fontWeight: 600, padding: '6px 14px', borderRadius: 4 },
   error:     { background: 'rgba(220,38,38,.1)', color: '#dc2626', borderLeft: '4px solid #ef4444', padding: '10px 14px', borderRadius: '0 6px 6px 0', fontSize: 13, marginBottom: 14 },
-  resultCard: { background: 'rgba(255,255,255,0.92)', border: '1px solid #e6dfd6', borderRadius: 8, padding: '16px 18px', marginBottom: 10 },
+  resultCard: { background: 'rgba(255,255,255,0.92)', border: '1px solid #e6dfd6', borderRadius: 8, padding: '20px 24px', marginBottom: 10 },
   sectionHd: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, paddingBottom: 10, borderBottom: '1px solid #e6dfd6' },
   sectionNum: { fontFamily: 'Oswald, sans-serif', fontSize: 10, fontWeight: 700, color: '#C4592F', background: 'rgba(196,89,47,.1)', borderRadius: 3, padding: '2px 7px' },
   metaLbl:   { fontSize: 10, color: '#57534e', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 2 },

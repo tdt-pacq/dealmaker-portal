@@ -46,7 +46,7 @@ function FieldGroup({ label, children, hint }) {
         color: '#57534e',
         textTransform: 'uppercase',
         letterSpacing: 0.8,
-        marginBottom: 5,
+        marginBottom: 6,
         fontFamily: 'system-ui, sans-serif',
       }}>
         {label}
@@ -67,7 +67,7 @@ const inputStyle = {
   border: '1px solid #e6dfd6',
   borderRadius: 5,
   color: '#1c1917',
-  padding: '8px 11px',
+  padding: '10px 12px',
   fontSize: 13,
   fontFamily: 'system-ui, sans-serif',
   outline: 'none',
@@ -114,7 +114,7 @@ function MoneyInput({ value, onChange, placeholder }) {
   return (
     <div style={{ position: 'relative' }}>
       <div style={{
-        position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
+        position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
         color: '#57534e', fontSize: 13, pointerEvents: 'none',
       }}>$</div>
       <input
@@ -123,7 +123,7 @@ function MoneyInput({ value, onChange, placeholder }) {
         value={raw ? Number(raw.replace(/[^0-9]/g, '')).toLocaleString('en-US') : ''}
         onChange={e => handleChange(e.target.value)}
         placeholder={placeholder || '0'}
-        style={{ ...inputStyle, paddingLeft: 22 }}
+        style={{ ...inputStyle, paddingLeft: 28 }}
         onFocus={e => { e.target.style.borderColor = '#C4592F'; }}
         onBlur={e => { e.target.style.borderColor = '#1e2d45'; }}
       />
@@ -178,7 +178,7 @@ function FormSection({ title, icon, children }) {
       overflow: 'hidden',
     }}>
       <div style={{
-        padding: '10px 18px',
+        padding: '14px 24px',
         background: '#fff7f3',
         borderBottom: '1px solid #e6dfd6',
         display: 'flex',
@@ -195,7 +195,7 @@ function FormSection({ title, icon, children }) {
           letterSpacing: 1,
         }}>{title}</span>
       </div>
-      <div style={{ padding: '16px 18px' }}>{children}</div>
+      <div style={{ padding: '20px 24px' }}>{children}</div>
     </div>
   );
 }
@@ -249,7 +249,7 @@ function PriceSummary({ f }) {
       background: '#f7f3ee',
       border: '1px solid #e6dfd6',
       borderRadius: 6,
-      padding: '12px 14px',
+      padding: '16px 20px',
       marginTop: 8,
     }}>
       <div style={{ fontSize: 10, fontWeight: 700, color: '#44403c', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>

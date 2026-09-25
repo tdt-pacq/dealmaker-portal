@@ -258,7 +258,7 @@ export default function AcqCalcApp() {
 
       {/* Row 5 — Equity buildup table */}
       <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid #e6dfd6' }}>
+        <div style={{ padding: '16px 20px 12px', borderBottom: '1px solid #e6dfd6' }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: '#C4592F', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             5-Year Equity Buildup — SBA Loan Amortization
           </div>
@@ -268,7 +268,7 @@ export default function AcqCalcApp() {
             <thead>
               <tr style={{ background: '#f7f3ee' }}>
                 {['Year', 'Loan Bal Start', 'Interest Paid', 'Principal Paid', 'Loan Bal End', 'Total Equity Built'].map(h => (
-                  <th key={h} style={{ padding: '9px 14px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: '#57534e', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', borderBottom: '1px solid #e6dfd6' }}>
+                  <th key={h} style={{ padding: '10px 16px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: '#57534e', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', borderBottom: '1px solid #e6dfd6' }}>
                     {h}
                   </th>
                 ))}
@@ -277,16 +277,16 @@ export default function AcqCalcApp() {
             <tbody>
               {equityRows.map((row, i) => (
                 <tr key={row.y} style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.92)' : '#ffffff' }}>
-                  <td style={{ padding: '9px 14px', color: '#1c1917', fontWeight: 600, textAlign: 'right' }}>{row.y}</td>
-                  <td style={{ padding: '9px 14px', color: '#1c1917', fontFamily: 'monospace', textAlign: 'right' }}>{fmtD(row.balStart)}</td>
-                  <td style={{ padding: '9px 14px', color: '#57534e', fontFamily: 'monospace', textAlign: 'right' }}>{fmtD(row.intPaid)}</td>
-                  <td style={{ padding: '9px 14px', color: '#C4592F', fontFamily: 'monospace', textAlign: 'right' }}>{fmtD(row.principal)}</td>
-                  <td style={{ padding: '9px 14px', color: '#1c1917', fontFamily: 'monospace', textAlign: 'right' }}>{fmtD(row.balEnd)}</td>
-                  <td style={{ padding: '9px 14px', color: '#C4592F', fontFamily: 'monospace', fontWeight: 700, textAlign: 'right' }}>{fmtD(row.equity)}</td>
+                  <td style={{ padding: '10px 16px', color: '#1c1917', fontWeight: 600, textAlign: 'right' }}>{row.y}</td>
+                  <td style={{ padding: '10px 16px', color: '#1c1917', fontFamily: 'monospace', textAlign: 'right' }}>{fmtD(row.balStart)}</td>
+                  <td style={{ padding: '10px 16px', color: '#57534e', fontFamily: 'monospace', textAlign: 'right' }}>{fmtD(row.intPaid)}</td>
+                  <td style={{ padding: '10px 16px', color: '#C4592F', fontFamily: 'monospace', textAlign: 'right' }}>{fmtD(row.principal)}</td>
+                  <td style={{ padding: '10px 16px', color: '#1c1917', fontFamily: 'monospace', textAlign: 'right' }}>{fmtD(row.balEnd)}</td>
+                  <td style={{ padding: '10px 16px', color: '#C4592F', fontFamily: 'monospace', fontWeight: 700, textAlign: 'right' }}>{fmtD(row.equity)}</td>
                 </tr>
               ))}
               <tr style={{ background: '#f7f3ee', borderTop: '1px solid #e6dfd6' }}>
-                <td colSpan={6} style={{ padding: '9px 14px', fontSize: 11, color: '#57534e', fontStyle: 'italic' }}>
+                <td colSpan={6} style={{ padding: '10px 16px', fontSize: 11, color: '#57534e', fontStyle: 'italic' }}>
                   Illustrative only. Actual SBA terms, multiples, and cash flow vary by deal. Equity buildup includes buyer down payment of {fmtD(downAmt)}.
                 </td>
               </tr>

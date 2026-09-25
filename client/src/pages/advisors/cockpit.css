@@ -1,6 +1,6 @@
 .cockpit {
-  margin: 0 0 18px;
-  padding: 16px 16px 14px;
+  margin: 0 0 var(--space-5);
+  padding: var(--space-5) var(--pad-card-desktop) var(--space-5);
   border: 1px solid #e6dfd6;
   border-radius: 18px;
   background:
@@ -201,7 +201,7 @@
 }
 
 .cockpit-podium {
-  padding: 12px 12px 10px;
+  padding: var(--space-4) var(--space-5) var(--space-4);
   background:
     linear-gradient(180deg, rgba(196, 89, 47, 0.08), transparent 42%),
     rgba(255, 255, 255, 0.8);
@@ -242,7 +242,7 @@
   gap: 2px;
   width: 100%;
   margin: 0;
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-4);
   text-align: left;
   color: inherit;
   background: #ffffff;
@@ -295,14 +295,14 @@
 .cockpit-empty-board {
   font-size: 13px;
   color: var(--text-secondary);
-  padding: 8px 2px 4px;
+  padding: var(--space-3) var(--space-2) var(--space-2);
 }
 
 .cockpit-digital {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 12px 14px;
+  padding: var(--space-4) var(--space-5);
   gap: 4px;
 }
 
@@ -332,7 +332,7 @@
 
 @media (max-width: 720px) {
   .cockpit {
-    padding: 14px 12px 12px;
+    padding: var(--space-4);
     border-radius: 14px;
   }
   .cockpit-head {
