@@ -7,6 +7,10 @@ import {
   pn, isPT, calcSDE, isYtdYear, yearNum, sortedByYear, uniquifyYears,
   mostRecentYearData, mostRecentYear, wtdSDE, recentSDE, fairMarketSde,
 } from './sdeBasis.js';
+import {
+  dealSlug, toSavedAtMillis, stripDealMeta, dealForExport,
+  savedByLabel, formatSavedAt, isOwnWrite, decideDealSync,
+} from './dealSync.js';
 
 if (!firebase.apps.length) {
   firebase.initializeApp({
@@ -3863,7 +3867,20 @@ function App() {
   });
   const [showLoad,setShowLoad]=useState(false);
   const [saveStatus,setSaveStatus]=useState('idle');
+  const [statusNote,setStatusNote]=useState('');
+  const [conflict,setConflict]=useState(null);
+  const [syncReady,setSyncReady]=useState(false);
   const saveTimer=useRef(null);
+  const baseSavedAtRef=useRef(state._baseSavedAt ?? null);
+  const writeIdRef=useRef(null);
+  const ourWriteIdsRef=useRef(new Set());
+  const cleanStateRef=useRef(null);
+  const inflightRef=useRef(null);
+  const editGenRef=useRef(0);
+  const stateRef=useRef(state);
+  const userRef=useRef(null);
+  const conflictRef=useRef(null);
+  const dirtyRef=useRef(true);
   const [primeRate,setPrimeRate]=useState(null);
   const [user,setUser]=useState(null);
   const [authLoading,setAuthLoading]=useState(true);
@@ -3883,33 +3900,12 @@ function App() {
       setAuthLoading(false);
     });
   },[]);
+  stateRef.current=state;
+  userRef.current=user;
+  dirtyRef.current=state!==cleanStateRef.current;
   // Keep a local draft for every change, including work without a deal/advisor name.
   useEffect(()=>{
     saveDraft(state);
-  },[state]);
-  // Autosave — debounced 2.5s after any state change
-  useEffect(()=>{
-    if(!state.dealName?.trim()||!state.advisorName?.trim()) return;
-    if(saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current=setTimeout(async()=>{
-      setSaveStatus('saving');
-      const nm=state.dealName.trim();
-      const slug=nm.replace(/[^a-z0-9]/gi,'-').toLowerCase();
-      localStorage.setItem(`deal_${nm}`,JSON.stringify(state));
-      try{
-        await firebase.firestore().collection('deals').doc(slug).set({
-          ...state,
-          _savedAt:firebase.firestore.FieldValue.serverTimestamp(),
-          _savedBy:user?.email||'',
-          _savedByName:user?.displayName||state.advisorName||''
-        });
-        setSaveStatus('saved');
-        setTimeout(()=>setSaveStatus('idle'),3000);
-      }catch(e){
-        setSaveStatus('error');
-      }
-    },2500);
-    return()=>{if(saveTimer.current)clearTimeout(saveTimer.current);};
   },[state]);
   useEffect(()=>{
     fetch('https://fred.stlouisfed.org/graph/fredgraph.csv?id=PRIME')
@@ -3925,27 +3921,6 @@ function App() {
       })
       .catch(()=>{});
   },[]);
-  const save=async()=>{
-    if(!state.dealName?.trim()){alert('Please enter a Deal Name before saving.');return;}
-    if(!state.advisorName?.trim()){alert('Please enter an Advisor Name before saving.');return;}
-    setSaveStatus('saving');
-    const nm=state.dealName.trim();
-    const slug=nm.replace(/[^a-z0-9]/gi,'-').toLowerCase();
-    localStorage.setItem(`deal_${nm}`,JSON.stringify(state));
-    try{
-      await firebase.firestore().collection('deals').doc(slug).set({
-        ...state,
-        _savedAt:firebase.firestore.FieldValue.serverTimestamp(),
-        _savedBy:user?.email||'',
-        _savedByName:user?.displayName||state.advisorName||''
-      });
-      setSaveStatus('saved');
-      setTimeout(()=>setSaveStatus('idle'),3000);
-    }catch(e){
-      setSaveStatus('error');
-      alert(`Cloud sync failed: ${e.message}`);
-    }
-  };
   const migrateBs=d=>{if(d.bs&&!Array.isArray(d.bs)){const o=d.bs;d={...d,bs:[{cash:o.cash||'',ar:o.ar||'',inv:o.inv||'',ca:o.ca||'',ta:o.ta||'',ap:o.ap||'',cl:o.cl||'',tl:o.tl||'',nw:o.nw||'',capex:o.capex||''},{cash:'',ar:'',inv:'',ca:'',ta:'',ap:'',cl:'',tl:'',nw:'',capex:''},{cash:'',ar:'',inv:'',ca:'',ta:'',ap:'',cl:'',tl:'',nw:'',capex:''}]};}return d;};
   // Older saved deals stored buyer's salary under seller.buyerSalary (Seller Reality Check tab only).
   // Carry that value into the new global state.buyerSalary field instead of overwriting it with the $75,000 default.
@@ -3959,18 +3934,268 @@ function App() {
   };
   const migrateDeal=d=>migrateYears(migrateBuyerSalary(migrateBs(d)));
   const hydrateDeal=data=>{
-    data=migrateDeal(data);
+    data=migrateDeal(stripDealMeta(data));
     return {...initState(),...data,_net:0};
   };
-  const load=data=>{setState(hydrateDeal(data));setShowLoad(false);setTab('dashboard');};
+  const flashUpdated=name=>{
+    setStatusNote(name||'someone else');
+    setSaveStatus('updated');
+    setTimeout(()=>setSaveStatus(s=>s==='updated'?'idle':s),3000);
+  };
+  const showConflict=data=>{
+    const banner={
+      savedByName:savedByLabel(data),
+      savedAt:toSavedAtMillis(data&&data._savedAt),
+      data,
+    };
+    conflictRef.current=banner;
+    if(saveTimer.current){clearTimeout(saveTimer.current);saveTimer.current=null;}
+    setConflict(banner);
+    setSaveStatus(s=>s==='saving'?'idle':s);
+  };
+  const applyShared=data=>{
+    const savedAt=toSavedAtMillis(data&&data._savedAt);
+    const next=hydrateDeal(data||{});
+    if(savedAt!=null) next._baseSavedAt=savedAt;
+    baseSavedAtRef.current=savedAt??null;
+    cleanStateRef.current=next;
+    inflightRef.current=null;
+    editGenRef.current+=1;
+    conflictRef.current=null;
+    if(saveTimer.current){clearTimeout(saveTimer.current);saveTimer.current=null;}
+    setConflict(null);
+    setState(next);
+  };
+  const rememberBase=millis=>{
+    const nextBase=millis??null;
+    baseSavedAtRef.current=nextBase;
+    const anchor=inflightRef.current;
+    inflightRef.current=null;
+    setState(prev=>{
+      const wasInflight=anchor!=null&&prev===anchor;
+      const wasClean=prev===cleanStateRef.current;
+      const same=(prev._baseSavedAt??null)===nextBase;
+      if(wasInflight||wasClean){
+        const stamped=same?prev:{...prev,_baseSavedAt:nextBase};
+        cleanStateRef.current=stamped;
+        return stamped;
+      }
+      if(same) return prev;
+      return {...prev,_baseSavedAt:nextBase};
+    });
+  };
+  const commitDeal=async({force=false,gen=null}={})=>{
+    const named=stateRef.current;
+    if(!named.dealName?.trim()||!named.advisorName?.trim()) return 'skipped';
+    if(!force && gen!=null && gen!==editGenRef.current) return 'stale';
+    const nm=named.dealName.trim();
+    const slug=dealSlug(nm);
+    localStorage.setItem(`deal_${nm}`,JSON.stringify(named));
+    const ref=firebase.firestore().collection('deals').doc(slug);
+    const writeId=(globalThis.crypto&&typeof crypto.randomUUID==='function')
+      ?crypto.randomUUID()
+      :`w_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    try{
+      await firebase.firestore().runTransaction(async tx=>{
+        const snap=await tx.get(ref);
+        if(!force && gen!=null && gen!==editGenRef.current){
+          const err=new Error('stale'); err.code='stale'; throw err;
+        }
+        if(!force && snap.exists){
+          const remote=snap.data()||{};
+          const stillOurWrite=remote._writeId&&ourWriteIdsRef.current.has(remote._writeId);
+          if(!stillOurWrite){
+            const decision=decideDealSync({
+              intent:'write',
+              hasSharedDoc:true,
+              baseSavedAt:baseSavedAtRef.current,
+              sharedSavedAt:remote._savedAt,
+            });
+            if(decision.action==='conflict'){
+              const err=new Error('conflict'); err.code='conflict'; err.data=remote; throw err;
+            }
+          }
+        }
+        const written=stateRef.current;
+        inflightRef.current=written;
+        writeIdRef.current=writeId;
+        ourWriteIdsRef.current.add(writeId);
+        if(ourWriteIdsRef.current.size>30){
+          const oldest=ourWriteIdsRef.current.values().next().value;
+          ourWriteIdsRef.current.delete(oldest);
+        }
+        tx.set(ref,{
+          ...stripDealMeta(written),
+          _writeId:writeId,
+          _savedAt:firebase.firestore.FieldValue.serverTimestamp(),
+          _savedBy:userRef.current?.email||'',
+          _savedByName:userRef.current?.displayName||written.advisorName||'',
+        });
+      });
+    }catch(e){
+      if(e&&(e.code==='conflict'||e.message==='conflict')){showConflict(e.data);return 'conflict';}
+      if(e&&(e.code==='stale'||e.message==='stale')) return 'stale';
+      throw e;
+    }
+    conflictRef.current=null;
+    setConflict(null);
+    setSaveStatus('saved');
+    setTimeout(()=>setSaveStatus(s=>s==='saved'?'idle':s),3000);
+    return 'saved';
+  };
+  // Shared copy wins for a named deal once the advisor is signed in.
+  // A failed read (offline) leaves the local draft in place.
+  useEffect(()=>{
+    if(!user){setSyncReady(false);return;}
+    let cancelled=false;
+    const draft=stateRef.current;
+    const name=draft.dealName?.trim();
+    const advisor=draft.advisorName?.trim();
+    if(!name||!advisor){setSyncReady(true);return;}
+    (async()=>{
+      try{
+        const snap=await firebase.firestore().collection('deals').doc(dealSlug(name)).get();
+        if(cancelled) return;
+        const data=snap.exists?(snap.data()||{}):null;
+        const decision=decideDealSync({
+          fetchError:false,
+          hasSharedDoc:!!snap.exists,
+          baseSavedAt:draft._baseSavedAt??null,
+          sharedSavedAt:data?data._savedAt:null,
+          localDirty:false,
+        });
+        if(decision.action==='adopt'&&data) applyShared(data);
+      }catch{
+        /* offline — keep the local draft */
+      }finally{
+        if(!cancelled) setSyncReady(true);
+      }
+    })();
+    return()=>{cancelled=true;};
+  },[user]);
+  // Live updates for the open deal. Resubscribe when the name changes.
+  useEffect(()=>{
+    if(!user||!syncReady) return;
+    const name=state.dealName?.trim();
+    if(!name) return;
+    const unsub=firebase.firestore().collection('deals').doc(dealSlug(name)).onSnapshot(snap=>{
+      if(!snap.exists) return;
+      const data=snap.data()||{};
+      const pending=!!(snap.metadata&&snap.metadata.hasPendingWrites);
+      const fromThisBrowser=!!(data._writeId&&ourWriteIdsRef.current.has(data._writeId));
+      const own=fromThisBrowser||isOwnWrite({
+        hasPendingWrites:pending,
+        writeId:data._writeId,
+        pendingWriteId:writeIdRef.current,
+        savedBy:data._savedBy,
+        currentUser:userRef.current?.email||'',
+        sharedSavedAt:data._savedAt,
+        baseSavedAt:baseSavedAtRef.current,
+      });
+      if(own&&!pending&&fromThisBrowser){
+        if(data._writeId===writeIdRef.current) writeIdRef.current=null;
+        const savedAt=toSavedAtMillis(data._savedAt);
+        if(savedAt!=null) rememberBase(savedAt);
+        return;
+      }
+      const decision=decideDealSync({
+        hasSharedDoc:true,
+        baseSavedAt:baseSavedAtRef.current,
+        sharedSavedAt:data._savedAt,
+        localDirty:!!saveTimer.current||dirtyRef.current,
+        hasPendingWrites:pending,
+        ownWrite:own,
+      });
+      if(decision.action==='adopt'){
+        applyShared(data);
+        flashUpdated(savedByLabel(data));
+      }else if(decision.action==='conflict'){
+        showConflict(data);
+      }
+    },()=>{/* offline — keep local */});
+    return()=>unsub();
+  },[user,syncReady,state.dealName]);
+  // Autosave only after the startup read, and only when this draft is not the shared version.
+  useEffect(()=>{
+    if(!syncReady||!user) return;
+    if(state===cleanStateRef.current) return;
+    if(conflictRef.current) return;
+    if(!state.dealName?.trim()||!state.advisorName?.trim()) return;
+    editGenRef.current+=1;
+    const gen=editGenRef.current;
+    if(saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current=setTimeout(async()=>{
+      saveTimer.current=null;
+      if(conflictRef.current) return;
+      if(gen!==editGenRef.current) return;
+      setSaveStatus('saving');
+      try{
+        const result=await commitDeal({force:false,gen});
+        if(result==='conflict'||result==='stale'||result==='skipped'){
+          setSaveStatus(s=>s==='saving'?'idle':s);
+        }
+      }catch{
+        setSaveStatus('error');
+      }
+    },2500);
+    return()=>{
+      if(saveTimer.current){clearTimeout(saveTimer.current);saveTimer.current=null;}
+    };
+  },[state,syncReady,user]);
+  const save=async()=>{
+    if(!state.dealName?.trim()){alert('Please enter a Deal Name before saving.');return;}
+    if(!state.advisorName?.trim()){alert('Please enter an Advisor Name before saving.');return;}
+    if(saveTimer.current){clearTimeout(saveTimer.current);saveTimer.current=null;}
+    setSaveStatus('saving');
+    try{
+      const result=await commitDeal({force:false,gen:editGenRef.current});
+      if(result==='conflict'||result==='stale'||result==='skipped'){
+        setSaveStatus(s=>s==='saving'?'idle':s);
+      }
+    }catch(e){
+      setSaveStatus('error');
+      alert(`Cloud sync failed: ${e.message}`);
+    }
+  };
+  const loadLatest=()=>{
+    const data=conflictRef.current&&conflictRef.current.data;
+    if(!data) return;
+    applyShared(data);
+    flashUpdated(savedByLabel(data));
+  };
+  const keepMine=async()=>{
+    if(!window.confirm('Overwrite the newer shared version with your copy? This replaces the other version of this deal.')) return;
+    if(saveTimer.current){clearTimeout(saveTimer.current);saveTimer.current=null;}
+    setSaveStatus('saving');
+    try{
+      await commitDeal({force:true});
+    }catch(e){
+      setSaveStatus('error');
+      alert(`Cloud sync failed: ${e.message}`);
+    }
+  };
+  const load=data=>{
+    applyShared(data);
+    setShowLoad(false);
+    setTab('dashboard');
+  };
   const newDeal=()=>{
     if(window.confirm('Start a new deal? Unsaved data will be lost.')){
       clearDraft();
-      setState(initState());
+      const next=initState();
+      baseSavedAtRef.current=null;
+      cleanStateRef.current=next;
+      inflightRef.current=null;
+      writeIdRef.current=null;
+      editGenRef.current+=1;
+      conflictRef.current=null;
+      if(saveTimer.current){clearTimeout(saveTimer.current);saveTimer.current=null;}
+      setConflict(null);
+      setState(next);
     }
   };
   const exportDeal=()=>{
-    const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+    const blob=new Blob([JSON.stringify(dealForExport(state),null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
     a.href=url;
@@ -3985,7 +4210,18 @@ function App() {
       const file=e.target.files[0]; if(!file) return;
       const reader=new FileReader();
       reader.onload=ev=>{
-        try{let data=JSON.parse(ev.target.result);setState(hydrateDeal(data));setTab('dashboard');}
+        try{
+          let data=JSON.parse(ev.target.result);
+          const next=hydrateDeal(data);
+          baseSavedAtRef.current=null;
+          cleanStateRef.current=null;
+          inflightRef.current=null;
+          editGenRef.current+=1;
+          conflictRef.current=null;
+          setConflict(null);
+          setState(next);
+          setTab('dashboard');
+        }
         catch{alert('Invalid deal file — could not import.');}
       };
       reader.readAsText(file);
@@ -4135,10 +4371,10 @@ function App() {
               onMouseEnter={e=>{e.target.style.filter='brightness(1.2)';}} onMouseLeave={e=>{e.target.style.filter='';}}>{l}</button>
           ))}
           {saveStatus!=='idle'&&(
-            <div style={{fontSize:10,textAlign:'center',padding:'3px 0',marginTop:2,borderRadius:4,
-              background:saveStatus==='saving'?'rgba(255,255,255,0.94)':saveStatus==='saved'?'rgba(196,89,47,0.12)':'#fef2f2',
-              color:saveStatus==='saving'?'#57534e':saveStatus==='saved'?'#C4592F':'#dc2626'}}>
-              {saveStatus==='saving'?'Saving...':saveStatus==='saved'?'✓ Saved':'⚠ Save failed'}
+            <div style={{fontSize:10,textAlign:'center',padding:'var(--space-2) var(--space-3)',marginTop:'var(--space-1)',borderRadius:4,lineHeight:1.4,
+              background:saveStatus==='error'?'#fef2f2':saveStatus==='saving'?'rgba(255,255,255,0.94)':'rgba(196,89,47,0.12)',
+              color:saveStatus==='error'?'#dc2626':saveStatus==='saving'?'#57534e':'#C4592F'}}>
+              {saveStatus==='saving'?'Saving...':saveStatus==='saved'?'✓ Saved':saveStatus==='updated'?`Updated from ${statusNote}`:'⚠ Save failed'}
             </div>
           )}
           <div style={{borderTop:'1px solid #e6dfd6',marginTop:4,paddingTop:6}}>
@@ -4169,6 +4405,17 @@ function App() {
       {/* Content */}
       <div className="az-main" style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
       <div className="az-scroll" style={{flex:1,overflowY:'auto'}}>
+        {conflict&&(
+          <div className="deal-sync-banner no-print" role="status">
+            <p className="deal-sync-banner-text">
+              A newer version of this deal was saved by {conflict.savedByName} at {formatSavedAt(conflict.savedAt)}.
+            </p>
+            <div className="deal-sync-banner-actions">
+              <button type="button" className="deal-sync-btn deal-sync-btn-primary" onClick={loadLatest}>Load latest</button>
+              <button type="button" className="deal-sync-btn" onClick={keepMine}>Keep my version and overwrite</button>
+            </div>
+          </div>
+        )}
         {tab==='input'&&<T1 state={state} set={setState} primeRate={primeRate} importTaxReturn={importTaxReturn}/>}
         {tab==='dashboard'&&<T2 state={state}/>}
         {tab==='sde'&&<T3 state={state}/>}
