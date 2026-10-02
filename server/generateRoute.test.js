@@ -37,6 +37,7 @@ Messages.prototype.create = async function create(body) {
 const { getDb } = require('./database');
 const generateRouter = require('./routes/generate');
 const { replaceSingleDocument, addBusinessPhotos } = require('./dealDocuments');
+const { confirmMarketing } = require('./marketingLock');
 
 function app() {
   const server = express();
@@ -67,13 +68,41 @@ async function post(server, urlPath, body) {
   }
 }
 
-function insertDeal(interview) {
+function insertDeal(interview, { confirm = true } = {}) {
+  const data = {
+    fin_year1_label: '2024',
+    fin_year1_sde: '180000',
+    fin_year2_label: '2023',
+    fin_year2_sde: '150000',
+    fin_year3_label: '2022',
+    fin_year3_sde: '120000',
+    asking_price: '450000',
+    business_type: 'Coffeehouse and roastery',
+    year_founded: '1998',
+    business_city_state: 'White Mountains, AZ',
+    employees_count: '6 full-time baristas',
+    real_estate_situation: 'Leased',
+    ...interview,
+  };
   const id = `deal-${Math.random().toString(16).slice(2)}`;
   const now = new Date().toISOString();
   getDb().prepare(`
     INSERT INTO deals (id, deal_name, status, created_at, updated_at, advisor_name, interview_data)
     VALUES (?, ?, 'active', ?, ?, 'Alisha', ?)
-  `).run(id, 'Pinetop Coffeehouse & Roastery', now, now, JSON.stringify(interview));
+  `).run(id, 'Pinetop Coffeehouse & Roastery', now, now, JSON.stringify(data));
+  if (confirm) {
+    confirmMarketing(id, {
+      sba_rate: 10.5,
+      sde_basis: 'weighted_321',
+      real_estate_included: false,
+      summary: { asking_price: data.asking_price, sba_preapproved: 'No' },
+      sde_years: [
+        { year: '2024', sde: data.fin_year1_sde },
+        { year: '2023', sde: data.fin_year2_sde },
+        { year: '2022', sde: data.fin_year3_sde },
+      ],
+    });
+  }
   return id;
 }
 
@@ -91,6 +120,9 @@ test('generate routes keep the text block and refuse a thinking-only reply', { c
   assert.equal(blind.json.blind_ad_text, 'Profitable coffee roaster in the White Mountains');
   assert.equal(calls.at(-1).thinking.type, 'disabled');
   assert.equal(calls.at(-1).model, 'claude-sonnet-5');
+  assert.match(calls.at(-1).messages[0].content, /Valuation SDE: \$160,000 \(basis: weighted avg 3-2-1\)/);
+  assert.match(calls.at(-1).system, /3-2-1 weighting only when three years of SDE exist/);
+  assert.match(calls.at(-1).system, /Do not use the word "Upside"/);
 
   const flyer = await post(server, '/api/generate/flyer', { deal_id: id });
   assert.equal(flyer.status, 200);
@@ -126,6 +158,16 @@ test('generate routes keep the text block and refuse a thinking-only reply', { c
       buffer: png,
       text: null,
     });
+    confirmMarketing(id, {
+      sba_rate: 10.5,
+      sde_basis: 'weighted_321',
+      summary: { asking_price: '450000', sba_preapproved: 'No' },
+      sde_years: [
+        { year: '2024', sde: '180000' },
+        { year: '2023', sde: '150000' },
+        { year: '2022', sde: '120000' },
+      ],
+    });
 
     const blind = await post(server, '/api/generate/blind-ad', { deal_id: id });
     assert.equal(blind.status, 200);
@@ -146,6 +188,17 @@ test('generate routes keep the text block and refuse a thinking-only reply', { c
     assert.match(cbr.json.cbr_html, /data-pacq="biz-cover"/);
     assert.match(cbr.json.cbr_html, /data-pacq="biz-sidebar"/);
     assert.doesNotMatch(cbr.json.cbr_html, /data-pacq="advisor-photo"/);
+    assert.match(calls.at(-1).messages[0].content, /Valuation SDE: \$160,000 \(basis: weighted avg 3-2-1\)/);
+    assert.match(calls.at(-1).system, /#C1622F/);
+    assert.match(calls.at(-1).system, /Michael — Lead Broker/);
+  });
+
+  await t.test('generation waits for a confirmed Valuation SDE', async () => {
+    const server = app();
+    const id = insertDeal({ business_description: 'Needs a review' }, { confirm: false });
+    const res = await post(server, '/api/generate/blind-ad', { deal_id: id });
+    assert.equal(res.status, 409);
+    assert.match(res.json.error, /Confirm the deal summary/);
   });
 
   await t.test('a thinking-only reply does not wipe a saved document', async () => {

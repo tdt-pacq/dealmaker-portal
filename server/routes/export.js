@@ -4,10 +4,12 @@ const path = require('path');
 const fs = require('fs');
 const { getDb, logEvent } = require('../database');
 const { OUTPUT_ROOT } = require('../paths');
+const { ensurePageFit } = require('../pageFit');
+const { saveDocument } = require('../marketingEdit');
 
 const router = express.Router();
 
-async function renderToPDF(html, outputPath, landscape = false) {
+async function renderToPDF(html, outputPath, singlePage = false) {
   const browser = await puppeteer.launch({
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
   });
@@ -16,21 +18,21 @@ async function renderToPDF(html, outputPath, landscape = false) {
     await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
     const pdfOptions = {
       path: outputPath,
+      format: 'Letter',
       printBackground: true,
-      margin: { top: 0, right: 0, bottom: 0, left: 0 }
+      margin: { top: 0, right: 0, bottom: 0, left: 0 },
     };
-    if (landscape) {
-      pdfOptions.width = '1920px';
-      pdfOptions.height = '1080px';
-      pdfOptions.landscape = true;
-    } else {
-      pdfOptions.format = 'Letter';
-      pdfOptions.pageRanges = '1';
-    }
+    if (singlePage) pdfOptions.pageRanges = '1';
     await page.pdf(pdfOptions);
   } finally {
     await browser.close();
   }
+}
+
+async function fitForExport(dealId, kind, html) {
+  const fitted = await ensurePageFit(html, kind);
+  if (fitted.html !== html) saveDocument(dealId, kind, fitted.html, 'page-fit', null);
+  return fitted;
 }
 
 // POST /api/export/flyer/:id
@@ -44,9 +46,14 @@ router.post('/flyer/:id', async (req, res) => {
   const outputPath = path.join(outputDir, 'flyer.pdf');
 
   try {
-    await renderToPDF(deal.flyer_html, outputPath, false);
+    const fitted = await fitForExport(req.params.id, 'flyer', deal.flyer_html);
+    await renderToPDF(fitted.html, outputPath, true);
     logEvent(req.params.id, req.user, 'pdf_exported', 'One-page flyer exported to PDF');
-    res.json({ success: true, path: `/output/${req.params.id}/flyer.pdf` });
+    res.json({
+      success: true,
+      path: `/output/${req.params.id}/flyer.pdf`,
+      page_fit: { fit: fitted.fit, flagged: fitted.flagged },
+    });
   } catch (err) {
     console.error('Flyer PDF error:', err);
     res.status(500).json({ error: err.message });
@@ -64,9 +71,14 @@ router.post('/cbr/:id', async (req, res) => {
   const outputPath = path.join(outputDir, 'cbr.pdf');
 
   try {
-    await renderToPDF(deal.cbr_html, outputPath, true);
+    const fitted = await fitForExport(req.params.id, 'cbr', deal.cbr_html);
+    await renderToPDF(fitted.html, outputPath, false);
     logEvent(req.params.id, req.user, 'pdf_exported', 'CBR exported to PDF');
-    res.json({ success: true, path: `/output/${req.params.id}/cbr.pdf` });
+    res.json({
+      success: true,
+      path: `/output/${req.params.id}/cbr.pdf`,
+      page_fit: { fit: fitted.fit, flagged: fitted.flagged },
+    });
   } catch (err) {
     console.error('CBR PDF error:', err);
     res.status(500).json({ error: err.message });

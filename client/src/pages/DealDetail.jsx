@@ -6,6 +6,8 @@ import {
   exportFlyer, exportCbr,
   downloadDealPdf, fetchDealEvents
 } from '../api';
+import MarketingConfirm from './marketing/MarketingConfirm';
+import EditRequestBox from './marketing/EditRequestBox';
 
 const PIPELINE_STAGES = ['draft', 'active', 'under_contract', 'closed'];
 const STAGE_LABELS = { draft: 'Draft', active: 'Active', under_contract: 'Under Contract', closed: 'Closed' };
@@ -200,6 +202,16 @@ function fmt(dateStr) {
   });
 }
 
+function downloadHtmlFile(filename, html) {
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function fmtMoney(val) {
   if (!val) return '';
   const n = parseFloat(String(val).replace(/[^0-9.]/g, ''));
@@ -208,7 +220,7 @@ function fmtMoney(val) {
 }
 
 // ─── BLIND AD TAB ─────────────────────────────────────────────────────────────
-function BlindAdTab({ deal, onUpdate }) {
+function BlindAdTab({ deal, onUpdate, needsReview }) {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -217,6 +229,7 @@ function BlindAdTab({ deal, onUpdate }) {
   useEffect(() => setText(deal.blind_ad_text || ''), [deal.blind_ad_text]);
 
   const handleGenerate = useCallback(async () => {
+    if (text && !window.confirm('Regenerate replaces this blind ad, including any edits. Continue?')) return;
     setGenerating(true);
     setError('');
     try {
@@ -228,7 +241,7 @@ function BlindAdTab({ deal, onUpdate }) {
     } finally {
       setGenerating(false);
     }
-  }, [deal.id, onUpdate]);
+  }, [deal.id, onUpdate, text]);
 
   const handleSaveEdit = async () => {
     await updateDeal(deal.id, { blind_ad_text: text });
@@ -254,7 +267,7 @@ function BlindAdTab({ deal, onUpdate }) {
   return (
     <div className="output-panel">
       <div className="output-toolbar">
-        <button className="btn-primary" onClick={handleGenerate} disabled={generating}>
+        <button className="btn-primary" onClick={handleGenerate} disabled={generating || needsReview}>
           {generating
             ? <><span className="spinner" />{text ? 'Regenerating…' : 'Generating…'}</>
             : text ? '↺ Regenerate Blind Ad' : '⚡ Generate Blind Ad'}
@@ -273,6 +286,11 @@ function BlindAdTab({ deal, onUpdate }) {
           <span className="gen-time">Last generated: {fmt(deal.updated_at)}</span>
         )}
       </div>
+      {needsReview && (
+        <p style={{ margin: '0 var(--pad-card) var(--space-3)', color: 'var(--text-secondary)' }}>
+          Confirm the summary above before generating. The blind ad uses the locked Valuation SDE.
+        </p>
+      )}
       {error && <ErrorAlert message={error} onRetry={handleGenerate} />}
 
       {!text && !generating && !error && (
@@ -300,47 +318,63 @@ function BlindAdTab({ deal, onUpdate }) {
       )}
 
       {text && (
-        <textarea
-          className="blind-ad-textarea"
-          value={text}
-          onChange={e => setText(e.target.value)}
-          onBlur={handleSaveEdit}
-          spellCheck
-        />
+        <>
+          <EditRequestBox
+            dealId={deal.id}
+            kind="blind_ad"
+            needsReview={needsReview}
+            onApplied={(next) => { setText(next || ''); onUpdate(); }}
+          />
+          <textarea
+            className="blind-ad-textarea"
+            value={text}
+            onChange={e => setText(e.target.value)}
+            onBlur={handleSaveEdit}
+            spellCheck
+          />
+        </>
       )}
     </div>
   );
 }
 
 // ─── FLYER TAB ────────────────────────────────────────────────────────────────
-function FlyerTab({ deal, onUpdate }) {
+function FlyerTab({ deal, onUpdate, needsReview }) {
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
   const [html, setHtml] = useState(deal.flyer_html || '');
+  const [fitNote, setFitNote] = useState('');
   const iframeRef = useRef();
 
   useEffect(() => setHtml(deal.flyer_html || ''), [deal.flyer_html]);
 
   const handleGenerate = useCallback(async () => {
+    if (html && !window.confirm('Regenerate replaces this flyer, including any edits. Continue?')) return;
     setGenerating(true);
     setError('');
     try {
       const res = await generateFlyer(deal.id);
       setHtml(res.data.flyer_html);
+      setFitNote(res.data.page_fit?.flagged
+        ? 'Page fit: the flyer still overflows one letter page after tightening. Shorten a section, or tell it what to change.'
+        : '');
       onUpdate();
     } catch (err) {
       setError(friendlyError(err));
     } finally {
       setGenerating(false);
     }
-  }, [deal.id, onUpdate]);
+  }, [deal.id, onUpdate, html]);
 
   const handleExportPdf = async () => {
     setExporting(true);
     setError('');
     try {
-      await exportFlyer(deal.id);
+      const exported = await exportFlyer(deal.id);
+      if (exported.data?.page_fit?.flagged) {
+        setFitNote('Page fit: the flyer PDF was tightened, and some content may still be long for one page.');
+      }
       await downloadDealPdf(deal.id, 'flyer');
     } catch (err) {
       setError(friendlyError(err));
@@ -352,20 +386,36 @@ function FlyerTab({ deal, onUpdate }) {
   return (
     <div className="output-panel">
       <div className="output-toolbar">
-        <button className="btn-primary" onClick={handleGenerate} disabled={generating}>
+        <button className="btn-primary" onClick={handleGenerate} disabled={generating || needsReview}>
           {generating
             ? <><span className="spinner" />{html ? 'Regenerating…' : 'Generating…'}</>
             : html ? '↺ Regenerate Flyer' : '⚡ Generate Flyer'}
         </button>
         {html && (
-          <button className="btn-dark btn-sm" onClick={handleExportPdf} disabled={exporting}>
-            {exporting ? <><span className="spinner" />Exporting…</> : '↓ Download PDF'}
-          </button>
+          <>
+            <button className="btn-dark btn-sm" onClick={handleExportPdf} disabled={exporting}>
+              {exporting ? <><span className="spinner" />Exporting…</> : '↓ Download PDF'}
+            </button>
+            <button
+              className="btn-ghost btn-sm"
+              onClick={() => downloadHtmlFile(`${(deal.deal_name || 'flyer').replace(/[^a-z0-9]/gi, '_')}_flyer.html`, html)}
+            >
+              ↓ Download HTML
+            </button>
+          </>
         )}
         {deal.updated_at && html && (
           <span className="gen-time">Last generated: {fmt(deal.updated_at)}</span>
         )}
       </div>
+      {needsReview && (
+        <p style={{ margin: '0 var(--pad-card) var(--space-3)', color: 'var(--text-secondary)' }}>
+          Confirm the summary above before generating. Cash flow on the flyer is the locked Valuation SDE.
+        </p>
+      )}
+      {fitNote && (
+        <p style={{ margin: '0 var(--pad-card) var(--space-3)', color: 'var(--text-secondary)' }}>{fitNote}</p>
+      )}
       {error && <ErrorAlert message={error} onRetry={!exporting ? handleGenerate : undefined} />}
 
       {!html && !generating && !error && (
@@ -393,48 +443,64 @@ function FlyerTab({ deal, onUpdate }) {
       )}
 
       {html && (
-        <iframe
-          ref={iframeRef}
-          className="preview-iframe"
-          style={{ height: 800 }}
-          srcDoc={html}
-          title="Flyer Preview"
-          sandbox="allow-same-origin"
-        />
+        <>
+          <EditRequestBox
+            dealId={deal.id}
+            kind="flyer"
+            needsReview={needsReview}
+            onApplied={(next) => { setHtml(next || ''); onUpdate(); }}
+          />
+          <iframe
+            ref={iframeRef}
+            className="preview-iframe"
+            style={{ height: 800 }}
+            srcDoc={html}
+            title="Flyer Preview"
+            sandbox="allow-same-origin"
+          />
+        </>
       )}
     </div>
   );
 }
 
 // ─── CBR TAB ──────────────────────────────────────────────────────────────────
-function CbrTab({ deal, onUpdate }) {
+function CbrTab({ deal, onUpdate, needsReview }) {
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
   const [html, setHtml] = useState(deal.cbr_html || '');
+  const [fitNote, setFitNote] = useState('');
   const elapsed = useElapsedTimer(generating);
 
   useEffect(() => setHtml(deal.cbr_html || ''), [deal.cbr_html]);
 
   const handleGenerate = useCallback(async () => {
+    if (html && !window.confirm('Regenerate replaces this CBR, including any edits. Continue?')) return;
     setGenerating(true);
     setError('');
     try {
       const res = await generateCbr(deal.id);
       setHtml(res.data.cbr_html);
+      setFitNote(res.data.page_fit?.flagged
+        ? 'Page fit: a CBR page still overflows after tightening. Ask it to shorten Business Overview so the text stays on the page.'
+        : '');
       onUpdate();
     } catch (err) {
       setError(friendlyError(err));
     } finally {
       setGenerating(false);
     }
-  }, [deal.id, onUpdate]);
+  }, [deal.id, onUpdate, html]);
 
   const handleExportPdf = async () => {
     setExporting(true);
     setError('');
     try {
-      await exportCbr(deal.id);
+      const exported = await exportCbr(deal.id);
+      if (exported.data?.page_fit?.flagged) {
+        setFitNote('Page fit: the CBR was tightened for letter pages, and at least one page is still long.');
+      }
       await downloadDealPdf(deal.id, 'cbr');
     } catch (err) {
       setError(friendlyError(err));
@@ -446,20 +512,36 @@ function CbrTab({ deal, onUpdate }) {
   return (
     <div className="output-panel">
       <div className="output-toolbar">
-        <button className="btn-primary" onClick={handleGenerate} disabled={generating}>
+        <button className="btn-primary" onClick={handleGenerate} disabled={generating || needsReview}>
           {generating
             ? <><span className="spinner" />{html ? `Regenerating… ${elapsed}s` : 'Generating…'}</>
             : html ? '↺ Regenerate CBR' : '⚡ Generate CBR'}
         </button>
         {html && (
-          <button className="btn-dark btn-sm" onClick={handleExportPdf} disabled={exporting}>
-            {exporting ? <><span className="spinner" />Exporting…</> : '↓ Download PDF'}
-          </button>
+          <>
+            <button className="btn-dark btn-sm" onClick={handleExportPdf} disabled={exporting}>
+              {exporting ? <><span className="spinner" />Exporting…</> : '↓ Download PDF'}
+            </button>
+            <button
+              className="btn-ghost btn-sm"
+              onClick={() => downloadHtmlFile(`${(deal.deal_name || 'cbr').replace(/[^a-z0-9]/gi, '_')}_cbr.html`, html)}
+            >
+              ↓ Download HTML
+            </button>
+          </>
         )}
         {deal.updated_at && html && (
           <span className="gen-time">Last generated: {fmt(deal.updated_at)}</span>
         )}
       </div>
+      {needsReview && (
+        <p style={{ margin: '0 var(--pad-card) var(--space-3)', color: 'var(--text-secondary)' }}>
+          Confirm the summary above before generating. The CBR uses the same locked Valuation SDE.
+        </p>
+      )}
+      {fitNote && (
+        <p style={{ margin: '0 var(--pad-card) var(--space-3)', color: 'var(--text-secondary)' }}>{fitNote}</p>
+      )}
       {error && <ErrorAlert message={error} onRetry={!exporting ? handleGenerate : undefined} />}
 
       {!html && !generating && !error && (
@@ -498,6 +580,12 @@ function CbrTab({ deal, onUpdate }) {
 
       {html && (
         <div style={{ position: 'relative' }}>
+          <EditRequestBox
+            dealId={deal.id}
+            kind="cbr"
+            needsReview={needsReview}
+            onApplied={(next) => { setHtml(next || ''); onUpdate(); }}
+          />
           <div style={{
             background: 'rgba(255,255,255,0.72)', color: '#C4592F', padding: '8px 16px',
             fontSize: 11, fontFamily: 'Oswald, sans-serif', letterSpacing: 1,
@@ -533,6 +621,8 @@ export default function DealDetail() {
   const [activeTab, setActiveTab] = useState(
     OUTPUT_TABS.includes(tabFromUrl) ? tabFromUrl : 'blind-ad'
   );
+  const [needsReview, setNeedsReview] = useState(true);
+  const handleReview = useCallback((value) => setNeedsReview(Boolean(value)), []);
 
   const selectTab = (tabId) => {
     setActiveTab(tabId);
@@ -589,7 +679,7 @@ export default function DealDetail() {
             )}
           </div>
           <div className="page-subtitle" style={{ marginTop: 8 }}>
-            Generate each tab below, then Download. Files are not built automatically from the interview.
+            Confirm the summary, then generate each tab. Files are not built automatically from the interview.
           </div>
         </div>
         <div className="page-header-actions">
@@ -625,6 +715,8 @@ export default function DealDetail() {
         </div>
       )}
 
+      <MarketingConfirm deal={deal} onUpdate={loadDeal} onReview={handleReview} />
+
       {/* Pipeline stage bar */}
       <PipelineBar status={deal.status} dealId={deal.id} onUpdate={loadDeal} />
 
@@ -652,9 +744,9 @@ export default function DealDetail() {
         ))}
       </div>
 
-      {activeTab === 'blind-ad' && <BlindAdTab deal={deal} onUpdate={loadDeal} />}
-      {activeTab === 'flyer' && <FlyerTab deal={deal} onUpdate={loadDeal} />}
-      {activeTab === 'cbr' && <CbrTab deal={deal} onUpdate={loadDeal} />}
+      {activeTab === 'blind-ad' && <BlindAdTab deal={deal} onUpdate={loadDeal} needsReview={needsReview} />}
+      {activeTab === 'flyer' && <FlyerTab deal={deal} onUpdate={loadDeal} needsReview={needsReview} />}
+      {activeTab === 'cbr' && <CbrTab deal={deal} onUpdate={loadDeal} needsReview={needsReview} />}
       {activeTab === 'activity' && <ActivityTab dealId={deal.id} />}
     </div>
   );

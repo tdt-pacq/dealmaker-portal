@@ -86,7 +86,18 @@ app.use('/api', basicAuth, apiLimiter);
 app.post('/api/discovery',            aiLimiter);
 app.use('/api/buyer-intel/research', aiLimiter);
 app.use('/api/deal-finder/:id/run',  aiLimiter);
-app.use('/api/generate',             aiLimiter);
+// Generation and edit calls spend model tokens. Reading the confirm summary,
+// saving the lock, and version history are part of opening the page.
+app.use('/api/generate', (req, res, next) => {
+  const url = req.originalUrl || '';
+  const pageRead = req.method === 'GET'
+    || url.includes('/generate/summary')
+    || url.includes('/generate/confirm')
+    || url.includes('/generate/restore')
+    || url.includes('/generate/versions');
+  if (pageRead) return next();
+  return aiLimiter(req, res, next);
+});
 app.use('/api/extract',              aiLimiter);
 app.post('/api/deals/:dealId/documents/interview/extract', aiLimiter);
 app.use('/api/redact',               aiLimiter);
