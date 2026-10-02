@@ -6,6 +6,7 @@ import {
   exportFlyer, exportCbr,
   downloadDealPdf, fetchDealEvents
 } from '../api';
+import MarketingConfirm from './marketing/MarketingConfirm';
 
 const PIPELINE_STAGES = ['draft', 'active', 'under_contract', 'closed'];
 const STAGE_LABELS = { draft: 'Draft', active: 'Active', under_contract: 'Under Contract', closed: 'Closed' };
@@ -208,7 +209,7 @@ function fmtMoney(val) {
 }
 
 // ─── BLIND AD TAB ─────────────────────────────────────────────────────────────
-function BlindAdTab({ deal, onUpdate }) {
+function BlindAdTab({ deal, onUpdate, needsReview }) {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -254,7 +255,7 @@ function BlindAdTab({ deal, onUpdate }) {
   return (
     <div className="output-panel">
       <div className="output-toolbar">
-        <button className="btn-primary" onClick={handleGenerate} disabled={generating}>
+        <button className="btn-primary" onClick={handleGenerate} disabled={generating || needsReview}>
           {generating
             ? <><span className="spinner" />{text ? 'Regenerating…' : 'Generating…'}</>
             : text ? '↺ Regenerate Blind Ad' : '⚡ Generate Blind Ad'}
@@ -273,6 +274,11 @@ function BlindAdTab({ deal, onUpdate }) {
           <span className="gen-time">Last generated: {fmt(deal.updated_at)}</span>
         )}
       </div>
+      {needsReview && (
+        <p style={{ margin: '0 var(--pad-card) var(--space-3)', color: 'var(--text-secondary)' }}>
+          Confirm the summary above before generating. The blind ad uses the locked Valuation SDE.
+        </p>
+      )}
       {error && <ErrorAlert message={error} onRetry={handleGenerate} />}
 
       {!text && !generating && !error && (
@@ -313,7 +319,7 @@ function BlindAdTab({ deal, onUpdate }) {
 }
 
 // ─── FLYER TAB ────────────────────────────────────────────────────────────────
-function FlyerTab({ deal, onUpdate }) {
+function FlyerTab({ deal, onUpdate, needsReview }) {
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
@@ -352,7 +358,7 @@ function FlyerTab({ deal, onUpdate }) {
   return (
     <div className="output-panel">
       <div className="output-toolbar">
-        <button className="btn-primary" onClick={handleGenerate} disabled={generating}>
+        <button className="btn-primary" onClick={handleGenerate} disabled={generating || needsReview}>
           {generating
             ? <><span className="spinner" />{html ? 'Regenerating…' : 'Generating…'}</>
             : html ? '↺ Regenerate Flyer' : '⚡ Generate Flyer'}
@@ -366,6 +372,11 @@ function FlyerTab({ deal, onUpdate }) {
           <span className="gen-time">Last generated: {fmt(deal.updated_at)}</span>
         )}
       </div>
+      {needsReview && (
+        <p style={{ margin: '0 var(--pad-card) var(--space-3)', color: 'var(--text-secondary)' }}>
+          Confirm the summary above before generating. Cash flow on the flyer is the locked Valuation SDE.
+        </p>
+      )}
       {error && <ErrorAlert message={error} onRetry={!exporting ? handleGenerate : undefined} />}
 
       {!html && !generating && !error && (
@@ -407,7 +418,7 @@ function FlyerTab({ deal, onUpdate }) {
 }
 
 // ─── CBR TAB ──────────────────────────────────────────────────────────────────
-function CbrTab({ deal, onUpdate }) {
+function CbrTab({ deal, onUpdate, needsReview }) {
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
@@ -446,7 +457,7 @@ function CbrTab({ deal, onUpdate }) {
   return (
     <div className="output-panel">
       <div className="output-toolbar">
-        <button className="btn-primary" onClick={handleGenerate} disabled={generating}>
+        <button className="btn-primary" onClick={handleGenerate} disabled={generating || needsReview}>
           {generating
             ? <><span className="spinner" />{html ? `Regenerating… ${elapsed}s` : 'Generating…'}</>
             : html ? '↺ Regenerate CBR' : '⚡ Generate CBR'}
@@ -460,6 +471,11 @@ function CbrTab({ deal, onUpdate }) {
           <span className="gen-time">Last generated: {fmt(deal.updated_at)}</span>
         )}
       </div>
+      {needsReview && (
+        <p style={{ margin: '0 var(--pad-card) var(--space-3)', color: 'var(--text-secondary)' }}>
+          Confirm the summary above before generating. The CBR uses the same locked Valuation SDE.
+        </p>
+      )}
       {error && <ErrorAlert message={error} onRetry={!exporting ? handleGenerate : undefined} />}
 
       {!html && !generating && !error && (
@@ -533,6 +549,8 @@ export default function DealDetail() {
   const [activeTab, setActiveTab] = useState(
     OUTPUT_TABS.includes(tabFromUrl) ? tabFromUrl : 'blind-ad'
   );
+  const [needsReview, setNeedsReview] = useState(true);
+  const handleReview = useCallback((value) => setNeedsReview(Boolean(value)), []);
 
   const selectTab = (tabId) => {
     setActiveTab(tabId);
@@ -589,7 +607,7 @@ export default function DealDetail() {
             )}
           </div>
           <div className="page-subtitle" style={{ marginTop: 8 }}>
-            Generate each tab below, then Download. Files are not built automatically from the interview.
+            Confirm the summary, then generate each tab. Files are not built automatically from the interview.
           </div>
         </div>
         <div className="page-header-actions">
@@ -625,6 +643,8 @@ export default function DealDetail() {
         </div>
       )}
 
+      <MarketingConfirm deal={deal} onUpdate={loadDeal} onReview={handleReview} />
+
       {/* Pipeline stage bar */}
       <PipelineBar status={deal.status} dealId={deal.id} onUpdate={loadDeal} />
 
@@ -652,9 +672,9 @@ export default function DealDetail() {
         ))}
       </div>
 
-      {activeTab === 'blind-ad' && <BlindAdTab deal={deal} onUpdate={loadDeal} />}
-      {activeTab === 'flyer' && <FlyerTab deal={deal} onUpdate={loadDeal} />}
-      {activeTab === 'cbr' && <CbrTab deal={deal} onUpdate={loadDeal} />}
+      {activeTab === 'blind-ad' && <BlindAdTab deal={deal} onUpdate={loadDeal} needsReview={needsReview} />}
+      {activeTab === 'flyer' && <FlyerTab deal={deal} onUpdate={loadDeal} needsReview={needsReview} />}
+      {activeTab === 'cbr' && <CbrTab deal={deal} onUpdate={loadDeal} needsReview={needsReview} />}
       {activeTab === 'activity' && <ActivityTab dealId={deal.id} />}
     </div>
   );

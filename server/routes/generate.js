@@ -1,12 +1,15 @@
 const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
 const { getDb, logEvent } = require('../database');
-const { documentFromMessage, generationBody } = require('../marketingText');
+const { documentFromMessage, generationBody, textFromMessage } = require('../marketingText');
 const { sourceBlockForDeal, loadPhotoAssets, stampMarketingHtml } = require('../dealDocuments');
 const {
   blindAdSystem, blindAdUser, flyerSystem, flyerUser, cbrSystem, cbrUser, scrubUpside,
 } = require('../marketingRules');
 const { prepareMarketingHtml } = require('../pageFit');
+const {
+  extractReview, summaryPrompt, confirmMarketing, requireConfirmed, formatLockedBlock,
+} = require('../marketingLock');
 
 const router = express.Router();
 
@@ -22,6 +25,49 @@ function stripFences(text) {
   return String(text || '').replace(/^```html\n?/i, '').replace(/\n?```$/, '').trim();
 }
 
+function loadConfirmed(deal, res) {
+  try {
+    return requireConfirmed(deal);
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ error: err.message });
+    return null;
+  }
+}
+
+// POST /api/generate/summary
+router.post('/summary', async (req, res) => {
+  const { deal_id } = req.body || {};
+  if (!deal_id) return res.status(400).json({ error: 'deal_id required' });
+  try {
+    const review = await extractReview(deal_id, async (draft) => {
+      const message = await getClient().messages.create(summaryPrompt(draft));
+      return textFromMessage(message);
+    });
+    res.json(review);
+  } catch (err) {
+    console.error('Marketing summary error:', err);
+    res.status(err.statusCode || 500).json({ error: err.message });
+  }
+});
+
+// POST /api/generate/confirm
+router.post('/confirm', (req, res) => {
+  const { deal_id } = req.body || {};
+  if (!deal_id) return res.status(400).json({ error: 'deal_id required' });
+  try {
+    const lock = confirmMarketing(deal_id, req.body || {});
+    logEvent(deal_id, req.user, 'marketing_confirmed', `Valuation SDE confirmed (${lock.valuation_basis_label})`);
+    res.json({
+      marketing_lock: lock,
+      valuation_sde: lock.valuation_sde,
+      valuation_basis_label: lock.valuation_basis_label,
+      sba_rate: lock.sba_rate,
+    });
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ error: err.message });
+  }
+});
+
 // POST /api/generate/blind-ad
 router.post('/blind-ad', async (req, res) => {
   const { deal_id } = req.body;
@@ -31,6 +77,8 @@ router.post('/blind-ad', async (req, res) => {
 
   const interviewData = loadInterview(deal);
   const sources = sourceBlockForDeal(deal_id);
+  const lock = loadConfirmed(deal, res);
+  if (!lock) return undefined;
   const client = getClient();
   try {
     const message = await client.messages.create(generationBody(
@@ -40,6 +88,7 @@ router.post('/blind-ad', async (req, res) => {
         interviewData,
         sources,
         advisorName: interviewData.advisor_name || deal.advisor_name,
+        lockedBlock: formatLockedBlock(lock),
       })
     ));
 
@@ -64,6 +113,8 @@ router.post('/flyer', async (req, res) => {
   const interviewData = loadInterview(deal);
   const sources = sourceBlockForDeal(deal_id);
   const photos = loadPhotoAssets(deal_id);
+  const lock = loadConfirmed(deal, res);
+  if (!lock) return undefined;
   const client = getClient();
   try {
     const message = await client.messages.create(generationBody(
@@ -74,6 +125,7 @@ router.post('/flyer', async (req, res) => {
         sources,
         photos,
         advisorName: deal.advisor_name,
+        lockedBlock: formatLockedBlock(lock),
       })
     ));
 
@@ -101,6 +153,8 @@ router.post('/cbr', async (req, res) => {
   const interviewData = loadInterview(deal);
   const sources = sourceBlockForDeal(deal_id);
   const photos = loadPhotoAssets(deal_id);
+  const lock = loadConfirmed(deal, res);
+  if (!lock) return undefined;
   const client = getClient();
 
   try {
@@ -112,6 +166,7 @@ router.post('/cbr', async (req, res) => {
         sources,
         photos,
         advisorName: deal.advisor_name,
+        lockedBlock: formatLockedBlock(lock),
       })
     ));
 

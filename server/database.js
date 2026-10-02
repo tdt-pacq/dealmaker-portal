@@ -65,6 +65,10 @@ function initSchema() {
     )
   `);
 
+  try {
+    db.exec('ALTER TABLE deals ADD COLUMN marketing_lock TEXT');
+  } catch (_) { /* column already exists */ }
+
   // Additive only: original uploads and extracted text live with the deal
   // so a reload still has them. Rows are removed with the deal; nothing here
   // drops or rewrites existing deal columns.
