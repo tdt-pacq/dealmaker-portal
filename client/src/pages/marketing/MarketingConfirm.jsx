@@ -99,7 +99,7 @@ export default function MarketingConfirm({ deal, onUpdate, onReview }) {
     return (
       <div className="card marketing-review">
         <div className="card-body lock-banner">
-          <div className="cluster">
+          <div className="stack">
             <div>
               <div className="section-label">Valuation SDE</div>
               <div className="num">Valuation SDE: {confirmed.valuation_sde_display || money(confirmed.valuation_sde)} (basis: {confirmed.valuation_basis_label})</div>
@@ -108,9 +108,11 @@ export default function MarketingConfirm({ deal, onUpdate, onReview }) {
               <div className="section-label">SBA rate confirmed</div>
               <div className="num">{confirmed.sba_rate}%</div>
             </div>
-            <button type="button" className="btn-ghost btn-sm" onClick={() => { setEditing(true); onReview?.(true); }}>
-              Edit confirmed values
-            </button>
+            <div>
+              <button type="button" className="btn-ghost btn-sm" onClick={() => { setEditing(true); onReview?.(true); }}>
+                Edit confirmed values
+              </button>
+            </div>
           </div>
         </div>
       </div>
