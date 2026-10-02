@@ -2,6 +2,7 @@ const { v4: uuidv4 } = require('uuid');
 const mammoth = require('mammoth');
 const pdfjs = require('pdfjs-dist/legacy/build/pdf.js');
 const { getDb } = require('./database');
+const { SOURCE_RULES } = require('./marketingRules');
 
 const STORED_TEXT_LIMIT = 100000;
 const PROMPT_TEXT_LIMIT = 40000;
@@ -18,16 +19,6 @@ const DOC_SPECS = [
   ['termsheet', 'DOCUMENT 4 - BANK TERM SHEET (optional — use for the SBA section: bank name, rate, loan terms, and payment)'],
   ['discovery', 'DOCUMENT 5 - DISCOVERY PREP REPORT (optional — use for seller intel, industry context, buyer profile, and marketing angle)'],
 ];
-
-const SOURCE_RULES = `SOURCE DOCUMENT RULES:
-- Use ONLY numbers present in the interview form or these documents. Never invent figures.
-- The Engagement Agreement is authoritative for listing price, asking price, and deal terms, including reason for selling, building square footage, rent, year founded, hours, and employees.
-- The QSI MPA is authoritative for financial performance, SDE, DSCR, and valuation.
-- Where the Engagement Agreement and the MPA conflict on price, the Engagement Agreement governs.
-- A confirmed asking price already saved on the interview form overrides every other price figure.
-- The most recent year is the highest calendar year in the MPA. Use that year's SDE for flyer price boxes and the blind ad. In the CBR financial table, show both the weighted-average SDE and the most recent year SDE when both are present.
-- The Bank Term Sheet supplies the SBA bank name, interest rate, loan terms, and payment. Do not invent them.
-- The Discovery Prep Report may enrich the business description, seller differentiators, ideal buyer, and industry narrative. Do not use it for financial figures.`;
 
 async function extractPdfBuffer(buffer) {
   const data = new Uint8Array(buffer);
