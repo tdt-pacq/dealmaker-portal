@@ -202,6 +202,16 @@ function fmt(dateStr) {
   });
 }
 
+function downloadHtmlFile(filename, html) {
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function fmtMoney(val) {
   if (!val) return '';
   const n = parseFloat(String(val).replace(/[^0-9.]/g, ''));
@@ -334,6 +344,7 @@ function FlyerTab({ deal, onUpdate, needsReview }) {
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
   const [html, setHtml] = useState(deal.flyer_html || '');
+  const [fitNote, setFitNote] = useState('');
   const iframeRef = useRef();
 
   useEffect(() => setHtml(deal.flyer_html || ''), [deal.flyer_html]);
@@ -345,6 +356,9 @@ function FlyerTab({ deal, onUpdate, needsReview }) {
     try {
       const res = await generateFlyer(deal.id);
       setHtml(res.data.flyer_html);
+      setFitNote(res.data.page_fit?.flagged
+        ? 'Page fit: the flyer still overflows one letter page after tightening. Shorten a section, or tell it what to change.'
+        : '');
       onUpdate();
     } catch (err) {
       setError(friendlyError(err));
@@ -357,7 +371,10 @@ function FlyerTab({ deal, onUpdate, needsReview }) {
     setExporting(true);
     setError('');
     try {
-      await exportFlyer(deal.id);
+      const exported = await exportFlyer(deal.id);
+      if (exported.data?.page_fit?.flagged) {
+        setFitNote('Page fit: the flyer PDF was tightened, and some content may still be long for one page.');
+      }
       await downloadDealPdf(deal.id, 'flyer');
     } catch (err) {
       setError(friendlyError(err));
@@ -375,9 +392,17 @@ function FlyerTab({ deal, onUpdate, needsReview }) {
             : html ? '↺ Regenerate Flyer' : '⚡ Generate Flyer'}
         </button>
         {html && (
-          <button className="btn-dark btn-sm" onClick={handleExportPdf} disabled={exporting}>
-            {exporting ? <><span className="spinner" />Exporting…</> : '↓ Download PDF'}
-          </button>
+          <>
+            <button className="btn-dark btn-sm" onClick={handleExportPdf} disabled={exporting}>
+              {exporting ? <><span className="spinner" />Exporting…</> : '↓ Download PDF'}
+            </button>
+            <button
+              className="btn-ghost btn-sm"
+              onClick={() => downloadHtmlFile(`${(deal.deal_name || 'flyer').replace(/[^a-z0-9]/gi, '_')}_flyer.html`, html)}
+            >
+              ↓ Download HTML
+            </button>
+          </>
         )}
         {deal.updated_at && html && (
           <span className="gen-time">Last generated: {fmt(deal.updated_at)}</span>
@@ -387,6 +412,9 @@ function FlyerTab({ deal, onUpdate, needsReview }) {
         <p style={{ margin: '0 var(--pad-card) var(--space-3)', color: 'var(--text-secondary)' }}>
           Confirm the summary above before generating. Cash flow on the flyer is the locked Valuation SDE.
         </p>
+      )}
+      {fitNote && (
+        <p style={{ margin: '0 var(--pad-card) var(--space-3)', color: 'var(--text-secondary)' }}>{fitNote}</p>
       )}
       {error && <ErrorAlert message={error} onRetry={!exporting ? handleGenerate : undefined} />}
 
@@ -442,6 +470,7 @@ function CbrTab({ deal, onUpdate, needsReview }) {
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
   const [html, setHtml] = useState(deal.cbr_html || '');
+  const [fitNote, setFitNote] = useState('');
   const elapsed = useElapsedTimer(generating);
 
   useEffect(() => setHtml(deal.cbr_html || ''), [deal.cbr_html]);
@@ -453,6 +482,9 @@ function CbrTab({ deal, onUpdate, needsReview }) {
     try {
       const res = await generateCbr(deal.id);
       setHtml(res.data.cbr_html);
+      setFitNote(res.data.page_fit?.flagged
+        ? 'Page fit: a CBR page still overflows after tightening. Ask it to shorten Business Overview so the text stays on the page.'
+        : '');
       onUpdate();
     } catch (err) {
       setError(friendlyError(err));
@@ -465,7 +497,10 @@ function CbrTab({ deal, onUpdate, needsReview }) {
     setExporting(true);
     setError('');
     try {
-      await exportCbr(deal.id);
+      const exported = await exportCbr(deal.id);
+      if (exported.data?.page_fit?.flagged) {
+        setFitNote('Page fit: the CBR was tightened for letter pages, and at least one page is still long.');
+      }
       await downloadDealPdf(deal.id, 'cbr');
     } catch (err) {
       setError(friendlyError(err));
@@ -483,9 +518,17 @@ function CbrTab({ deal, onUpdate, needsReview }) {
             : html ? '↺ Regenerate CBR' : '⚡ Generate CBR'}
         </button>
         {html && (
-          <button className="btn-dark btn-sm" onClick={handleExportPdf} disabled={exporting}>
-            {exporting ? <><span className="spinner" />Exporting…</> : '↓ Download PDF'}
-          </button>
+          <>
+            <button className="btn-dark btn-sm" onClick={handleExportPdf} disabled={exporting}>
+              {exporting ? <><span className="spinner" />Exporting…</> : '↓ Download PDF'}
+            </button>
+            <button
+              className="btn-ghost btn-sm"
+              onClick={() => downloadHtmlFile(`${(deal.deal_name || 'cbr').replace(/[^a-z0-9]/gi, '_')}_cbr.html`, html)}
+            >
+              ↓ Download HTML
+            </button>
+          </>
         )}
         {deal.updated_at && html && (
           <span className="gen-time">Last generated: {fmt(deal.updated_at)}</span>
@@ -495,6 +538,9 @@ function CbrTab({ deal, onUpdate, needsReview }) {
         <p style={{ margin: '0 var(--pad-card) var(--space-3)', color: 'var(--text-secondary)' }}>
           Confirm the summary above before generating. The CBR uses the same locked Valuation SDE.
         </p>
+      )}
+      {fitNote && (
+        <p style={{ margin: '0 var(--pad-card) var(--space-3)', color: 'var(--text-secondary)' }}>{fitNote}</p>
       )}
       {error && <ErrorAlert message={error} onRetry={!exporting ? handleGenerate : undefined} />}
 

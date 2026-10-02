@@ -6,7 +6,7 @@ const { sourceBlockForDeal, loadPhotoAssets, stampMarketingHtml } = require('../
 const {
   blindAdSystem, blindAdUser, flyerSystem, flyerUser, cbrSystem, cbrUser, scrubUpside,
 } = require('../marketingRules');
-const { prepareMarketingHtml } = require('../pageFit');
+const { ensurePageFit } = require('../pageFit');
 const { saveDocument, listVersions, restoreVersion, reviseDocument } = require('../marketingEdit');
 const {
   extractReview, summaryPrompt, confirmMarketing, requireConfirmed, formatLockedBlock,
@@ -134,12 +134,14 @@ router.post('/flyer', async (req, res) => {
       })
     ));
 
-    const flyerHtml = saveDocument(deal_id, 'flyer', scrubUpside(prepareMarketingHtml(stampMarketingHtml(
+    const drafted = scrubUpside(stampMarketingHtml(
       stripFences(documentFromMessage(message, 'One-page flyer')),
       { ...photos, stampCover: true, stampAdvisor: true, stampSidebar: false, stampGallery: false }
-    ), 'flyer')), 'generate', null);
+    ));
+    const fitted = await ensurePageFit(drafted, 'flyer');
+    const flyerHtml = saveDocument(deal_id, 'flyer', fitted.html, 'generate', null);
     logEvent(deal_id, req.user, 'flyer_generated', 'One-page flyer generated');
-    res.json({ flyer_html: flyerHtml });
+    res.json({ flyer_html: flyerHtml, page_fit: { fit: fitted.fit, flagged: fitted.flagged } });
   } catch (err) {
     console.error('Flyer generation error:', err);
     res.status(err.statusCode || 500).json({ error: err.message });
@@ -173,12 +175,14 @@ router.post('/cbr', async (req, res) => {
       })
     ));
 
-    const cbrHtml = saveDocument(deal_id, 'cbr', prepareMarketingHtml(stampMarketingHtml(
+    const drafted = stampMarketingHtml(
       stripFences(documentFromMessage(message, 'CBR')),
       { ...photos, stampCover: true, stampAdvisor: false, stampSidebar: true, stampGallery: true }
-    ), 'cbr'), 'generate', null);
+    );
+    const fitted = await ensurePageFit(drafted, 'cbr');
+    const cbrHtml = saveDocument(deal_id, 'cbr', fitted.html, 'generate', null);
     logEvent(deal_id, req.user, 'cbr_generated', 'Confidential Business Review generated');
-    res.json({ cbr_html: cbrHtml });
+    res.json({ cbr_html: cbrHtml, page_fit: { fit: fitted.fit, flagged: fitted.flagged } });
   } catch (err) {
     console.error('CBR generation error:', err);
     res.status(err.statusCode || 500).json({ error: err.message });

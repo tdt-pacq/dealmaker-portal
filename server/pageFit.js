@@ -189,6 +189,63 @@ function applyTightenStep(html, step) {
   return out;
 }
 
+function hasPrintPages(html) {
+  return /class\s*=\s*["'][^"']*\b(content-page|section-divider|page)\b/.test(String(html || ''));
+}
+
+async function measureOverflow(html) {
+  const puppeteer = require('puppeteer');
+  const browser = await puppeteer.launch({
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+  });
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 816, height: 1056, deviceScaleFactor: 1 });
+    await page.emulateMediaType('print');
+    await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 20000 });
+    const measured = await page.evaluate(() => {
+      const nodes = [...document.querySelectorAll('.content-page, .section-divider, .page')];
+      return nodes
+        .filter((el) => el.classList.contains('content-page') || el.classList.contains('section-divider') || (
+          el.classList.contains('page') && !el.classList.contains('page-title') && !el.classList.contains('page-footer')
+        ))
+        .map((el) => ({
+          scrollHeight: el.scrollHeight,
+          clientHeight: el.clientHeight,
+        }));
+    });
+    return overflowFromMeasurements(measured);
+  } finally {
+    await browser.close();
+  }
+}
+
+async function ensurePageFit(html, kind) {
+  let current = prepareMarketingHtml(html, kind);
+  if (!hasPrintPages(current)) {
+    return { html: current, fit: true, report: [], flagged: false };
+  }
+  let report = [];
+  try {
+    for (let step = 0; step <= 2; step += 1) {
+      report = await measureOverflow(current);
+      if (!report.some((page) => page.overflow)) {
+        return { html: current, fit: true, report, flagged: false };
+      }
+      if (step === 2) break;
+      current = applyTightenStep(current, step + 1);
+    }
+  } catch (err) {
+    return { html: current, fit: false, report, flagged: true, error: err.message };
+  }
+  return {
+    html: current,
+    fit: false,
+    report,
+    flagged: true,
+  };
+}
+
 function overflowFromMeasurements(pages) {
   return (pages || []).map((page, index) => {
     const scrollHeight = Number(page.scrollHeight) || 0;
@@ -213,4 +270,7 @@ module.exports = {
   prepareMarketingHtml,
   applyTightenStep,
   overflowFromMeasurements,
+  hasPrintPages,
+  measureOverflow,
+  ensurePageFit,
 };
