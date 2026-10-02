@@ -644,7 +644,8 @@ label.flex {
   margin: 0;
   font-size: 16px;
 }
-.marketing-review .section-label {
+.marketing-review .section-label,
+.edit-request .section-label {
   margin: var(--space-2) 0 0;
   font-size: 12px;
   font-weight: 650;
@@ -728,6 +729,35 @@ label.flex {
   background: rgba(255, 255, 255, 0.7);
   color: var(--text-secondary);
   white-space: pre-wrap;
+}
+.edit-request {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-label);
+  padding: var(--pad-card);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.edit-request textarea { min-height: 72px; }
+.version-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+}
+.version-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--pad-row-x);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  min-width: 0;
+}
+.version-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Empty state */

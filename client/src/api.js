@@ -85,6 +85,9 @@ export const generateFlyer = (deal_id) => api.post('/generate/flyer', { deal_id 
 export const generateCbr = (deal_id) => api.post('/generate/cbr', { deal_id }, { timeout: GENERATE_TIMEOUT_MS });
 export const fetchMarketingSummary = (deal_id) => api.post('/generate/summary', { deal_id }, { timeout: GENERATE_TIMEOUT_MS });
 export const confirmMarketingSummary = (body) => api.post('/generate/confirm', body, { timeout: 30000 });
+export const reviseMarketing = (body) => api.post('/generate/revise', body, { timeout: GENERATE_TIMEOUT_MS });
+export const fetchMarketingVersions = (dealId, kind) => api.get(`/generate/versions/${dealId}/${kind}`);
+export const restoreMarketingVersion = (deal_id, version_id) => api.post('/generate/restore', { deal_id, version_id });
 
 // Export to PDF
 export const exportFlyer = (id) => api.post(`/export/flyer/${id}`);

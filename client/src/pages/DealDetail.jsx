@@ -7,6 +7,7 @@ import {
   downloadDealPdf, fetchDealEvents
 } from '../api';
 import MarketingConfirm from './marketing/MarketingConfirm';
+import EditRequestBox from './marketing/EditRequestBox';
 
 const PIPELINE_STAGES = ['draft', 'active', 'under_contract', 'closed'];
 const STAGE_LABELS = { draft: 'Draft', active: 'Active', under_contract: 'Under Contract', closed: 'Closed' };
@@ -218,6 +219,7 @@ function BlindAdTab({ deal, onUpdate, needsReview }) {
   useEffect(() => setText(deal.blind_ad_text || ''), [deal.blind_ad_text]);
 
   const handleGenerate = useCallback(async () => {
+    if (text && !window.confirm('Regenerate replaces this blind ad, including any edits. Continue?')) return;
     setGenerating(true);
     setError('');
     try {
@@ -229,7 +231,7 @@ function BlindAdTab({ deal, onUpdate, needsReview }) {
     } finally {
       setGenerating(false);
     }
-  }, [deal.id, onUpdate]);
+  }, [deal.id, onUpdate, text]);
 
   const handleSaveEdit = async () => {
     await updateDeal(deal.id, { blind_ad_text: text });
@@ -306,13 +308,21 @@ function BlindAdTab({ deal, onUpdate, needsReview }) {
       )}
 
       {text && (
-        <textarea
-          className="blind-ad-textarea"
-          value={text}
-          onChange={e => setText(e.target.value)}
-          onBlur={handleSaveEdit}
-          spellCheck
-        />
+        <>
+          <EditRequestBox
+            dealId={deal.id}
+            kind="blind_ad"
+            needsReview={needsReview}
+            onApplied={(next) => { setText(next || ''); onUpdate(); }}
+          />
+          <textarea
+            className="blind-ad-textarea"
+            value={text}
+            onChange={e => setText(e.target.value)}
+            onBlur={handleSaveEdit}
+            spellCheck
+          />
+        </>
       )}
     </div>
   );
@@ -329,6 +339,7 @@ function FlyerTab({ deal, onUpdate, needsReview }) {
   useEffect(() => setHtml(deal.flyer_html || ''), [deal.flyer_html]);
 
   const handleGenerate = useCallback(async () => {
+    if (html && !window.confirm('Regenerate replaces this flyer, including any edits. Continue?')) return;
     setGenerating(true);
     setError('');
     try {
@@ -340,7 +351,7 @@ function FlyerTab({ deal, onUpdate, needsReview }) {
     } finally {
       setGenerating(false);
     }
-  }, [deal.id, onUpdate]);
+  }, [deal.id, onUpdate, html]);
 
   const handleExportPdf = async () => {
     setExporting(true);
@@ -404,14 +415,22 @@ function FlyerTab({ deal, onUpdate, needsReview }) {
       )}
 
       {html && (
-        <iframe
-          ref={iframeRef}
-          className="preview-iframe"
-          style={{ height: 800 }}
-          srcDoc={html}
-          title="Flyer Preview"
-          sandbox="allow-same-origin"
-        />
+        <>
+          <EditRequestBox
+            dealId={deal.id}
+            kind="flyer"
+            needsReview={needsReview}
+            onApplied={(next) => { setHtml(next || ''); onUpdate(); }}
+          />
+          <iframe
+            ref={iframeRef}
+            className="preview-iframe"
+            style={{ height: 800 }}
+            srcDoc={html}
+            title="Flyer Preview"
+            sandbox="allow-same-origin"
+          />
+        </>
       )}
     </div>
   );
@@ -428,6 +447,7 @@ function CbrTab({ deal, onUpdate, needsReview }) {
   useEffect(() => setHtml(deal.cbr_html || ''), [deal.cbr_html]);
 
   const handleGenerate = useCallback(async () => {
+    if (html && !window.confirm('Regenerate replaces this CBR, including any edits. Continue?')) return;
     setGenerating(true);
     setError('');
     try {
@@ -439,7 +459,7 @@ function CbrTab({ deal, onUpdate, needsReview }) {
     } finally {
       setGenerating(false);
     }
-  }, [deal.id, onUpdate]);
+  }, [deal.id, onUpdate, html]);
 
   const handleExportPdf = async () => {
     setExporting(true);
@@ -514,6 +534,12 @@ function CbrTab({ deal, onUpdate, needsReview }) {
 
       {html && (
         <div style={{ position: 'relative' }}>
+          <EditRequestBox
+            dealId={deal.id}
+            kind="cbr"
+            needsReview={needsReview}
+            onApplied={(next) => { setHtml(next || ''); onUpdate(); }}
+          />
           <div style={{
             background: 'rgba(255,255,255,0.72)', color: '#C4592F', padding: '8px 16px',
             fontSize: 11, fontFamily: 'Oswald, sans-serif', letterSpacing: 1,

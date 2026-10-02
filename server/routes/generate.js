@@ -7,6 +7,7 @@ const {
   blindAdSystem, blindAdUser, flyerSystem, flyerUser, cbrSystem, cbrUser, scrubUpside,
 } = require('../marketingRules');
 const { prepareMarketingHtml } = require('../pageFit');
+const { saveDocument, listVersions, restoreVersion, reviseDocument } = require('../marketingEdit');
 const {
   extractReview, summaryPrompt, confirmMarketing, requireConfirmed, formatLockedBlock,
 } = require('../marketingLock');
@@ -92,9 +93,13 @@ router.post('/blind-ad', async (req, res) => {
       })
     ));
 
-    const blindAdText = scrubUpside(documentFromMessage(message, 'Blind ad'));
-    getDb().prepare('UPDATE deals SET blind_ad_text = ?, updated_at = ? WHERE id = ?')
-      .run(blindAdText, new Date().toISOString(), deal_id);
+    const blindAdText = saveDocument(
+      deal_id,
+      'blind_ad',
+      scrubUpside(documentFromMessage(message, 'Blind ad')),
+      'generate',
+      null
+    );
     logEvent(deal_id, req.user, 'blind_ad_generated', 'Blind ad generated');
     res.json({ blind_ad_text: blindAdText });
   } catch (err) {
@@ -129,12 +134,10 @@ router.post('/flyer', async (req, res) => {
       })
     ));
 
-    const flyerHtml = scrubUpside(prepareMarketingHtml(stampMarketingHtml(
+    const flyerHtml = saveDocument(deal_id, 'flyer', scrubUpside(prepareMarketingHtml(stampMarketingHtml(
       stripFences(documentFromMessage(message, 'One-page flyer')),
       { ...photos, stampCover: true, stampAdvisor: true, stampSidebar: false, stampGallery: false }
-    ), 'flyer'));
-    getDb().prepare('UPDATE deals SET flyer_html = ?, updated_at = ? WHERE id = ?')
-      .run(flyerHtml, new Date().toISOString(), deal_id);
+    ), 'flyer')), 'generate', null);
     logEvent(deal_id, req.user, 'flyer_generated', 'One-page flyer generated');
     res.json({ flyer_html: flyerHtml });
   } catch (err) {
@@ -170,16 +173,53 @@ router.post('/cbr', async (req, res) => {
       })
     ));
 
-    const cbrHtml = prepareMarketingHtml(stampMarketingHtml(
+    const cbrHtml = saveDocument(deal_id, 'cbr', prepareMarketingHtml(stampMarketingHtml(
       stripFences(documentFromMessage(message, 'CBR')),
       { ...photos, stampCover: true, stampAdvisor: false, stampSidebar: true, stampGallery: true }
-    ), 'cbr');
-    getDb().prepare('UPDATE deals SET cbr_html = ?, updated_at = ? WHERE id = ?')
-      .run(cbrHtml, new Date().toISOString(), deal_id);
+    ), 'cbr'), 'generate', null);
     logEvent(deal_id, req.user, 'cbr_generated', 'Confidential Business Review generated');
     res.json({ cbr_html: cbrHtml });
   } catch (err) {
     console.error('CBR generation error:', err);
+    res.status(err.statusCode || 500).json({ error: err.message });
+  }
+});
+
+// POST /api/generate/revise
+router.post('/revise', async (req, res) => {
+  const { deal_id, kind, request } = req.body || {};
+  if (!deal_id) return res.status(400).json({ error: 'deal_id required' });
+  const deal = getDb().prepare('SELECT * FROM deals WHERE id = ?').get(deal_id);
+  if (!deal) return res.status(404).json({ error: 'Deal not found' });
+  try {
+    const edited = await reviseDocument(deal, kind, request, (body) => (
+      getClient().messages.create(body)
+    ), req.user);
+    const key = kind === 'blind_ad' ? 'blind_ad_text' : kind === 'flyer' ? 'flyer_html' : 'cbr_html';
+    res.json({ kind, [key]: edited });
+  } catch (err) {
+    console.error('Marketing edit error:', err);
+    res.status(err.statusCode || 500).json({ error: err.message });
+  }
+});
+
+router.get('/versions/:dealId/:kind', (req, res) => {
+  try {
+    res.json({ versions: listVersions(req.params.dealId, req.params.kind) });
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ error: err.message });
+  }
+});
+
+router.post('/restore', (req, res) => {
+  const { deal_id, version_id } = req.body || {};
+  if (!deal_id || !version_id) return res.status(400).json({ error: 'deal_id and version_id required' });
+  try {
+    const restored = restoreVersion(deal_id, version_id);
+    const key = restored.kind === 'blind_ad' ? 'blind_ad_text' : restored.kind === 'flyer' ? 'flyer_html' : 'cbr_html';
+    logEvent(deal_id, req.user, 'marketing_restored', `Restored a previous ${restored.kind.replace('_', ' ')}`);
+    res.json({ kind: restored.kind, [key]: restored.body });
+  } catch (err) {
     res.status(err.statusCode || 500).json({ error: err.message });
   }
 });

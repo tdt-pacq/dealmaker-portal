@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const fs = require('fs');
 const { getDb, logEvent } = require('../database');
+const { noteSavedBody, COLUMNS } = require('../marketingEdit');
 const { OUTPUT_ROOT } = require('../paths');
 
 const router = express.Router();
@@ -76,6 +77,11 @@ router.patch('/:id', (req, res) => {
   params.push(new Date().toISOString());
   params.push(req.params.id);
   getDb().prepare(`UPDATE deals SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+  for (const [kind, column] of Object.entries(COLUMNS)) {
+    if (column in req.body && req.body[column] !== deal[column]) {
+      noteSavedBody(req.params.id, kind, deal[column], req.body[column]);
+    }
+  }
   const updated = getDb().prepare('SELECT * FROM deals WHERE id = ?').get(req.params.id);
   res.json(updated);
 });

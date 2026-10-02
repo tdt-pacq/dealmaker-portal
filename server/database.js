@@ -69,6 +69,21 @@ function initSchema() {
     db.exec('ALTER TABLE deals ADD COLUMN marketing_lock TEXT');
   } catch (_) { /* column already exists */ }
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS deal_document_versions (
+      id TEXT PRIMARY KEY,
+      deal_id TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      body TEXT NOT NULL,
+      source TEXT NOT NULL,
+      note TEXT,
+      created_at TEXT NOT NULL
+    )
+  `);
+  try {
+    db.exec('CREATE INDEX IF NOT EXISTS idx_doc_versions ON deal_document_versions (deal_id, kind, created_at)');
+  } catch (_) { /* already exists */ }
+
   // Additive only: original uploads and extracted text live with the deal
   // so a reload still has them. Rows are removed with the deal; nothing here
   // drops or rewrites existing deal columns.
