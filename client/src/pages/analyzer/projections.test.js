@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { calcSDE, fairMarketSde } from './sdeBasis.js';
 import {
+  LEVERS,
   SCENARIO_PRESETS,
   clampLever,
   compareScenarios,
@@ -137,6 +138,22 @@ test('weighted valuation still projects the most recent year at the fair-market 
   assert.ok(Math.abs(base.multiple - 2.5) < 1e-9);
   assert.equal(fairMarketMultiple(state).basisKey, 'weighted');
   assert.notEqual(basis, 480000);
+});
+
+test('sequential impact still applies price before growth', () => {
+  assert.deepEqual(LEVERS.map(lever => lever.id), [
+    'price', 'growth', 'cogs', 'opex', 'ownerComp', 'gm', 'rent',
+  ]);
+  const base = projectionBaseline(sampleHvacState());
+  const impacts = leverImpacts(base, SCENARIO_PRESETS.Base);
+  const delta = id => round(impacts.find(item => item.id === id).delta);
+  assert.equal(delta('price'), 96000);
+  assert.equal(delta('growth'), 171313);
+  assert.equal(delta('cogs'), 57169);
+  assert.equal(delta('opex'), 30000);
+  assert.equal(delta('rent'), 12000);
+  assert.deepEqual(SCENARIO_PRESETS.Base.growth, { on: true, value: 6 });
+  assert.deepEqual(SCENARIO_PRESETS.Base.price, { on: true, value: 4 });
 });
 
 test('owner comp is SDE-neutral in the ranked impacts', () => {
