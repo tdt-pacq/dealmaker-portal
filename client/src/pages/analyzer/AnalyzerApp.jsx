@@ -11,6 +11,7 @@ import {
   dealSlug, toSavedAtMillis, stripDealMeta, dealForExport,
   savedByLabel, formatSavedAt, isOwnWrite, decideDealSync,
 } from './dealSync.js';
+import { fallbackSignInProvider, isAnalyzerUserAllowed } from './analyzerAccess.js';
 
 if (!firebase.apps.length) {
   firebase.initializeApp({
@@ -3544,17 +3545,70 @@ const ReviewModal=({reviewData,onApply,onCancel})=>{
 };
 
 /* ── Auth ──────────────────────────────────────────── */
-const ALLOWED_DOMAINS = ['petersonacquisitions.com', 'thedealteam.co'];
-const isAllowed = email => ALLOWED_DOMAINS.some(d => email.endsWith('@' + d));
+const serviceSignInMessage = err => {
+  switch (err && err.code) {
+    case 'auth/invalid-email':
+      return 'That email address does not look valid. Check it and try again.';
+    case 'auth/user-disabled':
+      return 'This account is disabled. Contact your administrator.';
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+    case 'auth/invalid-login-credentials':
+      return 'Email or password is incorrect.';
+    case 'auth/too-many-requests':
+      return 'Too many attempts. Wait a moment and try again.';
+    case 'auth/network-request-failed':
+      return 'Could not reach the sign-in service. Check your connection and try again.';
+    case 'auth/operation-not-allowed':
+      return 'Email sign-in is not turned on yet. Contact your administrator.';
+    case 'auth/missing-password':
+      return 'Enter the email and password.';
+    default:
+      return 'Sign-in failed. Check the email and password and try again.';
+  }
+};
+
+const resolveSignInProvider = async user => {
+  try {
+    const token = await user.getIdTokenResult();
+    if (token && typeof token.signInProvider === 'string' && token.signInProvider) {
+      return token.signInProvider;
+    }
+  } catch (_) { /* use linked providers below */ }
+  return fallbackSignInProvider(user);
+};
 
 const SignInScreen = ({denied}) => {
+  const [serviceEmail, setServiceEmail] = useState('');
+  const [servicePassword, setServicePassword] = useState('');
+  const [serviceError, setServiceError] = useState('');
+  const [serviceSubmitting, setServiceSubmitting] = useState(false);
   const signIn = () => {
     const p = new firebase.auth.GoogleAuthProvider();
     firebase.auth().signInWithPopup(p).catch(()=>{});
   };
+  const signInWithServiceAccount = async (e) => {
+    e.preventDefault();
+    if (serviceSubmitting) return;
+    const trimmed = serviceEmail.trim();
+    if (!trimmed || !servicePassword) {
+      setServiceError('Enter the email and password.');
+      return;
+    }
+    setServiceError('');
+    setServiceSubmitting(true);
+    try {
+      await firebase.auth().signInWithEmailAndPassword(trimmed, servicePassword);
+    } catch (err) {
+      setServiceError(serviceSignInMessage(err));
+    } finally {
+      setServiceSubmitting(false);
+    }
+  };
   return (
-    <div style={{display:'flex',height:'100vh',alignItems:'center',justifyContent:'center',background:'transparent'}}>
-      <div className="card p-10 text-center" style={{maxWidth:360,padding:40}}>
+    <div style={{display:'flex',minHeight:'100%',alignItems:'center',justifyContent:'center',background:'transparent',padding:'var(--space-6) var(--space-4)',boxSizing:'border-box'}}>
+      <div className="card p-10 text-center" style={{width:'100%',maxWidth:360,padding:40}}>
         <div style={{fontSize:18,fontWeight:800,color:'#C4592F',marginBottom:4}}>QSI™ Market Price Analyzer</div>
         <div style={{fontSize:12,color:'#44403c',marginBottom:28}}>SBA Acquisition Tool</div>
         {denied && (
@@ -3567,6 +3621,47 @@ const SignInScreen = ({denied}) => {
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" height="18"/>
           Sign in with Google
         </button>
+        <div style={{marginTop:'var(--gap-section)',paddingTop:'var(--gap-section)',borderTop:'1px solid #e6dfd6',textAlign:'left'}}>
+          <div style={{fontSize:12,fontWeight:600,color:'#57534e',textAlign:'center',marginBottom:'var(--gap-field)'}}>Team service sign-in</div>
+          <form onSubmit={signInWithServiceAccount}>
+            <div className="field-group">
+              <label htmlFor="analyzer-service-email" style={{textTransform:'none',letterSpacing:'normal'}}>Email</label>
+              <input
+                id="analyzer-service-email"
+                className="input-field"
+                type="email"
+                name="email"
+                autoComplete="username"
+                value={serviceEmail}
+                onChange={e => { setServiceEmail(e.target.value); if (serviceError) setServiceError(''); }}
+              />
+            </div>
+            <div className="field-group">
+              <label htmlFor="analyzer-service-password" style={{textTransform:'none',letterSpacing:'normal'}}>Password</label>
+              <input
+                id="analyzer-service-password"
+                className="input-field"
+                type="password"
+                name="password"
+                autoComplete="current-password"
+                value={servicePassword}
+                onChange={e => { setServicePassword(e.target.value); if (serviceError) setServiceError(''); }}
+              />
+            </div>
+            {serviceError && (
+              <div role="alert" style={{background:'#fef2f2',border:'1px solid #e6dfd6',borderRadius:6,padding:'var(--pad-field-y) var(--pad-field-x)',fontSize:12,color:'#dc2626',marginBottom:'var(--gap-field)',lineHeight:1.45}}>
+                {serviceError}
+              </div>
+            )}
+            <button
+              type="submit"
+              disabled={serviceSubmitting}
+              style={{display:'block',width:'100%',background:'#fff',color:'#44403c',border:'1px solid #e4dcd2',borderRadius:6,padding:'10px 12px',fontSize:13,fontWeight:600,cursor:'pointer'}}
+            >
+              {serviceSubmitting ? 'Signing in…' : 'Sign in'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -3890,15 +3985,30 @@ function App() {
   const [narrative,setNarrative]=useState('');
   const [narrativeStatus,setNarrativeStatus]=useState('idle');
   useEffect(()=>{
-    return firebase.auth().onAuthStateChanged(u=>{
-      if(u&&isAllowed(u.email)){
+    let alive = true;
+    const unsub = firebase.auth().onAuthStateChanged(async u=>{
+      if(!alive) return;
+      if(!u){
+        setUser(null);
+        setAuthLoading(false);
+        return;
+      }
+      const provider = await resolveSignInProvider(u);
+      if(!alive) return;
+      if(firebase.auth().currentUser?.uid !== u.uid){
+        setAuthLoading(false);
+        return;
+      }
+      if(isAnalyzerUserAllowed(u, provider)){
         setUser(u);setAuthDenied(false);
       } else {
         setUser(null);
-        if(u){setAuthDenied(true);firebase.auth().signOut();}
+        setAuthDenied(true);
+        firebase.auth().signOut();
       }
       setAuthLoading(false);
     });
+    return ()=>{ alive = false; unsub(); };
   },[]);
   stateRef.current=state;
   userRef.current=user;
