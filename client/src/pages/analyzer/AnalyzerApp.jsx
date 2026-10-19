@@ -11,6 +11,7 @@ import {
   dealSlug, toSavedAtMillis, stripDealMeta, dealForExport,
   savedByLabel, formatSavedAt, isOwnWrite, decideDealSync,
 } from './dealSync.js';
+import ProjectionsTab from './ProjectionsTab.jsx';
 
 if (!firebase.apps.length) {
   firebase.initializeApp({
@@ -3845,6 +3846,7 @@ const TABS=[
   {id:'sources',label:'Sources & Uses',icon:'💰'},
   {id:'dscr',label:'DSCR Analysis',icon:'🏦'},
   {id:'seller',label:'Seller Scenario',icon:'🔍'},
+  {id:'projections',label:'Projections',icon:'🔮',badge:'NEW'},
   {id:'roi',label:'Buyer ROI',icon:'💹'},
   {id:'proceeds',label:'Net Proceeds',icon:'💵'},
   {id:'nlb',label:'QSI™ NLB',icon:'⭐'},
@@ -4389,7 +4391,7 @@ function App() {
             <button key={t.id} onClick={()=>setTab(t.id)}
               className={`sidebar-btn w-full text-left`}
               style={{display:'flex',alignItems:'center',gap:8,padding:'10px 16px',fontSize:13,background:tab===t.id?'rgba(196,89,47,0.10)':'transparent',borderLeft:tab===t.id?'3px solid #C4592F':'3px solid transparent',color:tab===t.id?'#C4592F':'#57534e',cursor:'pointer',border:'none',outline:'none',width:'100%',borderRadius:0}}>
-              <span>{t.icon}</span><span>{t.label}</span>
+              <span>{t.icon}</span><span style={{minWidth:0}}>{t.label}</span>{t.badge?<span className="az-nav-badge">{t.badge}</span>:null}
             </button>
           ))}
         </nav>
@@ -4423,6 +4425,7 @@ function App() {
         {tab==='sources'&&<T4 state={state} set={setState}/>}
         {tab==='dscr'&&<T5 state={state} set={setState} primeRate={primeRate}/>}
         {tab==='seller'&&<TSeller state={state} set={setState}/>}
+        {tab==='projections'&&<ProjectionsTab state={state} set={setState} onSave={save}/>}
         {tab==='roi'&&<TBuyerROI state={state} set={setState}/>}
         {tab==='balance'&&<T6 state={state} set={setState} importBalanceSheet={importBalanceSheet}/>}
         {tab==='industry'&&<TIndustry state={state} set={setState} importIndustryReport={importIndustryReport}/>}
