@@ -11,7 +11,7 @@ RESEARCH BEHAVIOR:
 - Search industry data for the identified NAICS code including buyer activity, lender appetite appropriate to the deal size, and market trends
 - Search for any red flags, litigation, reputation issues, or public financial distress signals
 - If the website or business name yields limited results, say so explicitly and note what could not be confirmed
-- Name financing sources only when they match the SBA eligibility determination in the user message. When that determination says the deal fits SBA, you may name lenders active in SBA 7(a) for this industry and size. When SBA is not the primary path, research conventional senior lenders, mezzanine or unitranche, seller financing, and private-equity appetite instead. When eligibility is unconfirmed, do not present SBA lenders as if eligibility were established.
+- Name financing sources only when they match the SBA eligibility determination in the user message. When that determination says Likely - SBA, you may name lenders active in SBA 7(a) for this industry and size, and say it is pending confirmation with the owner. When the determination says Not likely - Likely M&A, research the M&A financing path: conventional senior lenders, mezzanine or unitranche, seller financing, and private-equity appetite. When eligibility is unconfirmed, the working assumption is an M&A financing path to be confirmed with the owner. Do not present SBA lenders as if eligibility were established. Use revenue and EBITDA you find in research, not only the figures the advisor typed. Revenue above $15 million is an M&A financing path even if EBITDA is missing.
 
 ${SBA_SYSTEM_RULES}
 
@@ -138,7 +138,7 @@ Primary Buyer Profiles for This Business:
 
 Strategic Buyer Potential: [High / Moderate / Low] - [one sentence rationale]
 Financial Buyer Potential: [High / Moderate / Low] - [one sentence rationale]
-Owner-Operator Buyer Potential: [High / Moderate / Low] - [one sentence rationale. If the SBA determination says SBA is not the primary financing path, or eligibility is unconfirmed, do not describe an SBA-financed owner-operator as the buyer who can finance this deal.]
+Owner-Operator Buyer Potential: [High / Moderate / Low] - [one sentence rationale. If the determination is Not likely - Likely M&A, or unconfirmed, do not describe an SBA-financed owner-operator as the buyer who can finance this deal. The buyer set is the M&A financing path.]
 
 Key Value Drivers That Will Attract Buyers:
 - [Driver 1 specific to this business]
@@ -161,12 +161,12 @@ LENDER AND SBA APPETITE ASSESSMENT
 Overall Lender Appetite: [Very High / High / Moderate / Low / Very Low — rate the path in the determination, not an SBA program the deal cannot use]
 
 Lender Appetite Rationale:
-[3-4 sentences. If SBA is not the primary path, explain why the deal size exceeds 7(a)/504 capacity and how conventional senior debt, mezzanine or unitranche, a seller note, and PE equity would underwrite this business. If the deal fits SBA, explain 7(a) appetite using the size-standard finding. If unconfirmed, say which size or deal-size figure is missing. Do not claim eligibility from NAICS alone. Do not include unsourced SBA marketing claims.]
+[3-4 sentences. If the line is Not likely - Likely M&A, explain the deal size or revenue against the 7(a) and 504 caps and how conventional senior debt, mezzanine or unitranche, a seller note, and PE equity would underwrite this business on an M&A financing path. If the line is Likely - SBA, explain 7(a) appetite using the size-standard finding and say it is pending confirmation with the owner. If unconfirmed, say which figure is missing and that the working assumption is an M&A financing path until the owner confirms. Do not claim eligibility from NAICS alone. Do not include unsourced SBA marketing claims.]
 
-Typical Deal Structure:
-[If SBA is not the primary path: conventional senior debt, mezzanine or unitranche, seller note, and PE equity, with ranges appropriate to a lower-middle-market deal of this size. Do not set Loan Type to SBA 7(a).
-If the deal fits SBA: Loan Type SBA 7(a), down payment, term, rate, and DSCR, each tied to a loan that fits under the $5 million 7(a) cap, and the NAICS size-standard finding.
-If unconfirmed: say the structure is not chosen yet. Do not default to SBA 7(a).]
+M&A Financing Path or SBA Financing Path:
+[If Not likely - Likely M&A: head this block "M&A Financing Path" and cover conventional senior debt, mezzanine or unitranche, seller note, and PE equity. Do not set Loan Type to SBA 7(a).
+If Likely - SBA: head this block "SBA Financing Path (to be confirmed with the business owner)". Loan Type SBA 7(a), down payment, term, rate, and DSCR, each tied to a loan that fits under the $5 million 7(a) cap, and the NAICS size-standard finding.
+If unconfirmed: head this block "M&A Financing Path (to be confirmed with the business owner)". Do not default to SBA 7(a).]
 
 Lender Red Flags for This Business:
 - [Red flag 1 that the actual financing path will scrutinize]
@@ -180,7 +180,7 @@ What Lenders or Sponsors Will Want to See:
 - [Requirement 4]
 
 Financing Sources:
-[Name sources only when research supports them AND they match the determination. Do not list Top SBA Lenders when SBA is not the primary path or when eligibility is unconfirmed.]
+[Name sources only when research supports them AND they match the determination. On an M&A financing path, or when eligibility is unconfirmed, do not list Top SBA Lenders. Label those sources as the M&A financing path.]
 
 Lender Notes:
 [2-3 sentences specific to this business. No generic SBA program pitch.]
@@ -298,7 +298,7 @@ Advisor Notes for This Section:
 
 --- SECTION 8: TRANSITION AND DEAL STRUCTURE ---
 
-Purpose of this section: Understand seller expectations, timeline, and deal structure preferences. Surface any deal-killers early. Match the questions to the SBA determination. Do not assume an SBA 7(a) loan, 10% SBA down payment, or SBA pre-qualification when SBA is not the primary path or when eligibility is unconfirmed. Ask about conventional senior debt, mezzanine or unitranche, a seller note, and equity in that case.
+Purpose of this section: Understand seller expectations, timeline, and deal structure preferences. Surface any deal-killers early. Match the questions to the SBA determination. When the line is Not likely - Likely M&A, or unconfirmed, ask about the M&A financing path: conventional senior debt, mezzanine or unitranche, a seller note, and equity. Do not assume an SBA 7(a) loan, 10% SBA down payment, or SBA pre-qualification in those cases.
 
 Questions:
 1. [Question]

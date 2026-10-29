@@ -13,9 +13,10 @@
  * Deal size uses asking price when the advisor supplied one. Otherwise it uses
  * EBITDA × 4.0 (low end of a typical lower-middle-market multiple) or, if there
  * is no EBITDA, SDE × 3.0 (a typical main-street multiple). Above $7.5 million
- * the $5 million 7(a) loan is no longer the primary financing: 10% cash equity
+ * the $5 million 7(a) loan is no longer the lead financing: 10% cash equity
  * on $7.5 million is $750,000, which still leaves a gap a max 7(a) loan cannot
- * cover as the lead source.
+ * cover. Revenue above $15 million is treated as M&A even when EBITDA is unknown,
+ * including revenue the research pass finds in the report.
  */
 
 const SIZE_STANDARDS = require('./data/sbaSizeStandards.json');
@@ -25,22 +26,26 @@ const SBA_504_MAX_PORTION = 5_500_000;
 const ALT_TANGIBLE_NET_WORTH_MAX = 20_000_000;
 const ALT_AVG_NET_INCOME_MAX = 6_500_000;
 const SBA_PRIMARY_DEAL_CEILING = 7_500_000;
+const SBA_REVENUE_MA_THRESHOLD = 15_000_000;
 const EBITDA_MULTIPLE = 4;
 const SDE_MULTIPLE = 3;
 
-const UNCONFIRMED_LINE = 'SBA Eligibility: Unconfirmed - depends on size standard and deal size';
-const NOT_PRIMARY_LABEL = 'Likely not SBA eligible / SBA not the primary financing path';
+const UNCONFIRMED_LINE = 'SBA Eligibility: Unconfirmed - Likely M&A (to be confirmed with the business owner)';
+const NOT_PRIMARY_LABEL = 'Not likely - Likely M&A';
+const SBA_LIKELY_LABEL = 'Likely - SBA';
 
 const SBA_SYSTEM_RULES = `SBA ELIGIBILITY RULES (mandatory):
 - SBA eligibility is decided from size and deal economics: revenue, EBITDA or SDE, asking price or deal size, employees, tangible net worth, and average net income after tax. It is never decided from the NAICS sector or from the fact that an industry is manufacturing, services, or another "SBA-friendly" category.
-- Never state that a business is "fully qualifying for SBA programs" from its NAICS code or industry sector. Never write SBA Eligibility: Yes, Likely, or any equivalent from industry research alone.
+- Deals fall into two arenas: SBA or M&A. Never state that a business is "fully qualifying for SBA programs" from its NAICS code or industry sector. Never write SBA Eligibility: Yes from industry research alone.
 - SBA 7(a) maximum loan is $5 million. The 504 program's SBA portion is about $5.5 million and finances fixed assets; it does not finance goodwill on a going-concern acquisition and does not make a larger business purchase an SBA deal.
 - NAICS size standards are employee-based or receipts-based. Use the NAICS-specific standard when it is known. When the code is missing, or the standard is known but the metric it uses (employees or receipts) was not provided, say the size standard needs verification. Do not treat an unknown standard as a pass.
-- Alternative size test for 7(a) and 504 (13 CFR 121.301(b)): tangible net worth not more than $20 million AND average net income after federal income taxes (excluding carryover losses) for the two completed fiscal years not more than $6.5 million. Meeting either the NAICS standard or this alternative test can satisfy size. Failing a size test is not, by itself, a reason to claim the deal is financeable with SBA.
-- Implied deal size is the asking price when one is provided. Otherwise use EBITDA × 4.0 (low end of a typical lower-middle-market multiple) or, if there is no EBITDA, SDE × 3.0. If that deal size is above $7.5 million, SBA cannot cover it as the primary financing. Say "Likely not SBA eligible / SBA not the primary financing path" and write the lender section around conventional senior debt, mezzanine or unitranche, a seller note, and PE equity. Give overall lender appetite and typical structures for a lower-middle-market deal of that size. Do not prescribe an SBA 7(a) loan as the structure.
-- If revenue, EBITDA/SDE, and asking price are all missing, write exactly: "${UNCONFIRMED_LINE}". Do not guess Yes.
+- Alternative size test for 7(a) and 504 (13 CFR 121.301(b)): tangible net worth not more than $20 million AND average net income after federal income taxes (excluding carryover losses) for the two completed fiscal years not more than $6.5 million. Meeting either the NAICS standard or this alternative test can satisfy size. Failing a size test is not, by itself, a reason to call the deal SBA.
+- Use revenue, EBITDA or SDE, and asking price from the advisor AND from figures you find in research. Implied deal size is the asking price when one is known. Otherwise use EBITDA × 4.0 (low end of a typical lower-middle-market multiple) or, if there is no EBITDA, SDE × 3.0.
+- If that deal size is above $7.5 million, or revenue is above $15 million even without EBITDA, the arena is M&A. Write exactly "SBA Eligibility: Not likely - Likely M&A" followed by a brief rationale comparing the deal or the revenue with the SBA caps. Label the structure "M&A Financing Path" and describe conventional senior debt, mezzanine or unitranche, a seller note, and PE equity. Do not prescribe an SBA 7(a) loan.
+- If the implied deal size fits under the $5 million 7(a) cap and revenue is not above $15 million, write "SBA Eligibility: Likely - SBA" and say it is pending confirmation with the business owner.
+- If revenue, EBITDA/SDE, and asking price are all missing, or the figures are not enough to choose an arena, write exactly: "${UNCONFIRMED_LINE}". The working assumption is still an M&A financing path until the owner confirms otherwise. Do not guess SBA.
 - Do not add generic SBA marketing claims (fee waivers, a higher guarantee percentage, "lowest-cost financing," "98% of manufacturers," or a named SBA program as proof of eligibility) unless you cite a primary source and the claim still fits inside the loan caps above. Those claims never override this determination.
-- Apply the same rule in buyer appetite and in deal structure. When SBA is not the primary path, or eligibility is unconfirmed, do not present an SBA-financed owner-operator as the buyer who can finance the deal, and do not assume an SBA 7(a) structure, 10% SBA down payment, or SBA pre-qualification in the deal-structure questions.`;
+- Apply the same rule in buyer appetite and in deal structure. On an M&A financing path, or when eligibility is unconfirmed, do not present an SBA-financed owner-operator as the buyer who can finance the deal, and do not assume an SBA 7(a) structure, 10% SBA down payment, or SBA pre-qualification.`;
 
 function formatMoney(n) {
   if (n == null || !Number.isFinite(n)) return 'n/a';
@@ -212,32 +217,37 @@ function buildPromptBlock(assessment) {
   ];
   if (assessment.status === 'not_primary') {
     lines.push(
-      'Pivot the Lender & SBA Appetite section off SBA. Overall lender appetite is about conventional senior lenders, mezzanine or unitranche providers, and lower-middle-market equity sponsors.',
-      'Typical structure for this size: conventional senior debt, mezzanine or unitranche, a seller note, and PE equity. Do not set the loan type to SBA 7(a). Do not title a subsection "Top SBA Lenders."',
+      'Label the structure "M&A Financing Path". Overall lender appetite is about conventional senior lenders, mezzanine or unitranche providers, and lower-middle-market equity sponsors.',
+      'M&A financing path: conventional senior debt, mezzanine or unitranche, a seller note, and PE equity. Do not set the loan type to SBA 7(a). Do not title a subsection "Top SBA Lenders."',
       'Buyer appetite: strategic buyers, private equity, and independent sponsors are the realistic set. Do not present an SBA-financed owner-operator as the buyer who can finance this acquisition.',
-      'Deal structure questions: do not assume an SBA 7(a) loan, 10% SBA down payment, or SBA pre-qualification.',
+      'Deal structure questions: do not assume an SBA 7(a) loan, 10% SBA down payment, or SBA pre-qualification. Describe the M&A financing path.',
     );
   } else if (assessment.status === 'unconfirmed') {
     lines.push(
-      'Do not default the section to an SBA 7(a) structure, Top SBA Lenders, or an owner-operator SBA buyer. Say which figure is missing (size standard metric and/or deal size) and what would change the answer.',
-      'If research later in this same report states an asking price, EBITDA, or SDE that you did not have above, apply the deal-size rules and use the not-primary line when implied deal size is above the ceiling. If the new figures are still not enough to size the deal, keep the Unconfirmed line. Never upgrade to Yes from NAICS alone.',
-      'Deal structure questions must not assume SBA financing while eligibility is unconfirmed.',
+      'Label the structure "M&A Financing Path (to be confirmed with the business owner)". Do not default the section to an SBA 7(a) structure, Top SBA Lenders, or an owner-operator SBA buyer.',
+      'If research in this same report states revenue above $15 million, or an asking price, EBITDA, or SDE that puts the deal above the ceiling, use "SBA Eligibility: Not likely - Likely M&A" instead of the Unconfirmed line. If the figures are still not enough, keep the Unconfirmed line. Never upgrade to SBA from NAICS alone.',
+      'Deal structure questions must not assume SBA financing while eligibility is unconfirmed. The working assumption is an M&A financing path until the owner confirms.',
     );
   } else {
     lines.push(
-      'An SBA 7(a) discussion is appropriate only because the implied deal size fits under the $5 million loan cap. State the size-standard finding, including when headcount or receipts still need verification.',
-      'Do not describe the company as eligible merely because of its industry.',
+      'Label the structure "SBA Financing Path (to be confirmed with the business owner)". An SBA 7(a) discussion is appropriate only because the implied deal size fits under the $5 million loan cap. Say it is pending confirmation with the business owner.',
+      'State the size-standard finding, including when headcount or receipts still need verification. Do not describe the company as SBA merely because of its industry.',
     );
   }
   return lines.join('\n');
 }
 
-function conventionalStructure(deal, reason) {
-  const lead = reason === 'deal_size' && deal
-    ? `On an implied deal size of ${formatMoney(deal.amount)} (${deal.basis}), SBA is not the primary financing path.`
-    : 'SBA is not the primary financing path on the size tests provided.';
+function conventionalStructure(deal, reason, revenue) {
+  let lead = 'This is an M&A financing path.';
+  if (reason === 'deal_size' && deal) {
+    lead = `On an implied deal size of ${formatMoney(deal.amount)} (${deal.basis}), this is an M&A financing path.`;
+  } else if (reason === 'revenue' && revenue != null) {
+    lead = `Revenue of ${formatMoney(revenue)} is above ${formatMoney(SBA_REVENUE_MA_THRESHOLD)}, so this is an M&A financing path.`;
+  } else if (reason === 'size_standard') {
+    lead = 'The size tests provided put this outside SBA, so this is an M&A financing path.';
+  }
   return [
-    'Typical Deal Structure for This Size:',
+    'M&A Financing Path:',
     `${lead} ${financingCapsSentence()}`,
     'Senior debt: a conventional bank or non-bank senior cash-flow loan. For a lower-middle-market manufacturer, senior leverage is often about 2.0–3.0x EBITDA, subject to credit, customer concentration, and capex. That range is typical market practice, not a quoted offer.',
     'Mezzanine or unitranche: subordinated debt or a single-tranche facility between senior debt and equity.',
@@ -255,24 +265,33 @@ function assessSbaEligibility(raw = {}) {
 
   let status = 'unconfirmed';
   let reason = null;
+  let lineBrief = '';
   let rationale = '';
 
   if (!hasAnyEconomics(input)) {
     status = 'unconfirmed';
-    rationale = 'Revenue, EBITDA/SDE, and asking price were not provided, so deal size cannot be compared with SBA loan caps. ' +
+    rationale = 'Revenue, EBITDA/SDE, and asking price were not provided, so the arena cannot be confirmed. The working assumption is an M&A financing path until the business owner confirms otherwise. ' +
       financingCapsSentence() + ' ' + size.detail +
       ' The alternative test (tangible net worth not more than $20 million and average net income after tax not more than $6.5 million) was not provided. Industry alone is not eligibility.';
   } else if (deal && deal.amount > SBA_PRIMARY_DEAL_CEILING) {
     status = 'not_primary';
     reason = 'deal_size';
+    lineBrief = `Implied deal size is ${formatMoney(deal.amount)} (${deal.basis}), above the ${formatMoney(SBA_7A_MAX_LOAN)} SBA 7(a) cap and the about ${formatMoney(SBA_504_MAX_PORTION)} 504 SBA portion.`;
     const revenueBit = input.revenue != null ? ` Revenue is ${formatMoney(input.revenue)}.` : '';
-    rationale = `Implied deal size is ${formatMoney(deal.amount)} (${deal.basis}). That is above ${formatMoney(SBA_PRIMARY_DEAL_CEILING)}, the level at which an SBA 7(a) loan (maximum ${formatMoney(SBA_7A_MAX_LOAN)}) can still be the primary financing. ${financingCapsSentence()}${revenueBit} ${size.detail} The size standard does not change the financing conclusion when the deal is larger than SBA can cover.`;
+    rationale = `${lineBrief}${revenueBit} ${size.detail} The size standard does not change the M&A financing path when the deal is larger than SBA can cover.`;
+  } else if (input.revenue != null && input.revenue > SBA_REVENUE_MA_THRESHOLD) {
+    status = 'not_primary';
+    reason = 'revenue';
+    lineBrief = `Revenue of ${formatMoney(input.revenue)} is above ${formatMoney(SBA_REVENUE_MA_THRESHOLD)}, above SBA-typical levels. A 7(a) loan stops at ${formatMoney(SBA_7A_MAX_LOAN)} and the 504 SBA portion is about ${formatMoney(SBA_504_MAX_PORTION)}.`;
+    rationale = `${lineBrief} EBITDA or asking price was not used to size the deal. ${size.detail} Treat this as an M&A financing path.`;
   } else if (hardSizeFail) {
     status = 'not_primary';
     reason = 'size_standard';
-    rationale = `${size.detail} The business fails that NAICS standard on the figures provided, and it also fails the alternative test (tangible net worth ${formatMoney(input.tangibleNetWorth)} vs ${formatMoney(ALT_TANGIBLE_NET_WORTH_MAX)}, average net income after tax ${formatMoney(input.avgNetIncome)} vs ${formatMoney(ALT_AVG_NET_INCOME_MAX)}). ${financingCapsSentence()}`;
+    lineBrief = `The business fails the NAICS size standard and the alternative test (tangible net worth ${formatMoney(input.tangibleNetWorth)} vs ${formatMoney(ALT_TANGIBLE_NET_WORTH_MAX)}, average net income after tax ${formatMoney(input.avgNetIncome)} vs ${formatMoney(ALT_AVG_NET_INCOME_MAX)}). ${financingCapsSentence()}`;
+    rationale = `${size.detail} ${lineBrief}`;
   } else if (deal && deal.amount <= SBA_PRIMARY_DEAL_CEILING && !sizeBlocksYes) {
     status = 'eligible';
+    lineBrief = `Implied deal size is ${formatMoney(deal.amount)} (${deal.basis}), inside the ${formatMoney(SBA_7A_MAX_LOAN)} SBA 7(a) cap. Pending confirmation with the business owner.`;
     const revenueBit = input.revenue != null ? ` Revenue is ${formatMoney(input.revenue)}.` : '';
     const altBit = size.alternative === 'pass'
       ? ' The alternative size test is met on the tangible net worth and average net income provided.'
@@ -280,20 +299,20 @@ function assessSbaEligibility(raw = {}) {
     const verifyBit = (size.naicsResult === 'unknown' || size.naicsResult === 'unverified')
       ? ' The NAICS-specific size standard still needs verification before a lender commits.'
       : '';
-    rationale = `Implied deal size is ${formatMoney(deal.amount)} (${deal.basis}), which fits within SBA 7(a) capacity (maximum loan ${formatMoney(SBA_7A_MAX_LOAN)}).${revenueBit} ${size.detail}${verifyBit}${altBit}`;
+    rationale = `${lineBrief}${revenueBit} ${size.detail}${verifyBit}${altBit}`;
   } else if (sizeBlocksYes) {
     status = 'unconfirmed';
-    rationale = `${size.detail} Revenue or headcount is over that NAICS standard, and the alternative test (tangible net worth not more than $20 million and average net income after tax not more than $6.5 million) is not confirmed. Do not call the company SBA eligible from the industry code. ${financingCapsSentence()}`;
+    rationale = `${size.detail} Revenue or headcount is over that NAICS standard, and the alternative test (tangible net worth not more than $20 million and average net income after tax not more than $6.5 million) is not confirmed. The working assumption is an M&A financing path until the owner confirms. ${financingCapsSentence()}`;
   } else {
     status = 'unconfirmed';
-    const revenueBit = input.revenue != null ? ` Revenue of ${formatMoney(input.revenue)} is not a deal size.` : '';
-    rationale = `Deal size is not known, so SBA cannot be confirmed or ruled out as the financing path.${revenueBit} ${size.detail} ${financingCapsSentence()} Eligibility stays unconfirmed until an asking price, EBITDA, or SDE is available.`;
+    const revenueBit = input.revenue != null ? ` Revenue of ${formatMoney(input.revenue)} is not above ${formatMoney(SBA_REVENUE_MA_THRESHOLD)} and is not itself a deal size.` : '';
+    rationale = `Deal size is not known, so the arena stays unconfirmed. The working assumption is an M&A financing path until the business owner confirms otherwise.${revenueBit} ${size.detail} ${financingCapsSentence()}`;
   }
 
   const eligibilityLine = status === 'not_primary'
-    ? `SBA Eligibility: ${NOT_PRIMARY_LABEL} - ${rationale}`
+    ? `SBA Eligibility: ${NOT_PRIMARY_LABEL} - ${lineBrief}`
     : status === 'eligible'
-      ? `SBA Eligibility: Yes - ${rationale}`
+      ? `SBA Eligibility: ${SBA_LIKELY_LABEL} - ${lineBrief}`
       : UNCONFIRMED_LINE;
 
   const assessment = {
@@ -304,7 +323,7 @@ function assessSbaEligibility(raw = {}) {
     impliedDealSize: deal ? deal.amount : null,
     dealBasis: deal ? deal.basis : null,
     size,
-    structureText: status === 'not_primary' ? conventionalStructure(deal, reason) : null,
+    structureText: status === 'not_primary' ? conventionalStructure(deal, reason, input.revenue) : null,
   };
   assessment.promptBlock = buildPromptBlock(assessment);
   return assessment;
@@ -391,8 +410,8 @@ function replaceSbaStructure(text, replacement) {
 }
 
 const UNCONFIRMED_STRUCTURE = [
-  'Typical Deal Structure:',
-  'Not selected. SBA eligibility is unconfirmed until deal size (asking price, or EBITDA or SDE times a typical multiple) and the NAICS size standard are known. Do not assume an SBA 7(a) loan, a 10% SBA down payment, or that this business qualifies for SBA programs.',
+  'M&A Financing Path (to be confirmed with the business owner):',
+  'Eligibility is unconfirmed. Until the owner confirms revenue, EBITDA or SDE, and deal size, treat this as an M&A financing path: conventional senior debt, mezzanine or unitranche, a seller note, and PE equity. Do not assume an SBA 7(a) loan, a 10% SBA down payment, or that this business qualifies for SBA programs.',
 ].join('\n');
 
 function scrubUnsupportedClaims(text) {
@@ -404,13 +423,13 @@ function scrubUnsupportedClaims(text) {
 function guardBuyerAndStructure(text, assessment) {
   if (assessment.status === 'eligible') return text;
   let out = text.replace(/(Owner-Operator Buyer Potential:[^\n]*)/i, (line) => {
-    if (!/SBA/i.test(line) || /not the primary financing path/i.test(line)) return line;
-    return `${line} SBA is not the primary financing path at this deal size; buyer fit here is strategic, private equity, or an independent sponsor using conventional debt, mezzanine or unitranche, a seller note, and equity.`;
+    if (!/SBA/i.test(line) || /M&A financing path/i.test(line)) return line;
+    return `${line} This is an M&A financing path, not SBA; buyer fit is strategic, private equity, or an independent sponsor using conventional debt, mezzanine or unitranche, a seller note, and equity.`;
   });
   if (assessment.status === 'not_primary') {
-    out = out.replace(/Top SBA Lenders for This Industry:/gi, 'Capital sources (SBA is not the primary financing path):');
+    out = out.replace(/Top SBA Lenders for This Industry:/gi, 'Capital sources (M&A financing path):');
   } else {
-    out = out.replace(/Top SBA Lenders for This Industry:/gi, 'Financing sources (SBA eligibility is unconfirmed):');
+    out = out.replace(/Top SBA Lenders for This Industry:/gi, 'Capital sources (M&A financing path, to be confirmed with the business owner):');
   }
   return out;
 }
@@ -439,10 +458,10 @@ function renderLenderSection(raw) {
     assessment.eligibilityLine,
     '',
     assessment.status === 'not_primary'
-      ? 'Overall Lender Appetite: Moderate to High for conventional senior credit and lower-middle-market sponsors. SBA appetite is not the relevant rating, because SBA is not the primary financing path.'
+      ? 'Overall Lender Appetite: Moderate to High for conventional senior credit and lower-middle-market sponsors on an M&A financing path.'
       : assessment.status === 'eligible'
-        ? 'Overall Lender Appetite: Rate SBA 7(a) appetite only because the deal size fits under the $5 million loan cap. Confirm the NAICS size standard before a lender application.'
-        : 'Overall Lender Appetite: Unrated for SBA. Do not describe SBA appetite as high or as established.',
+        ? 'Overall Lender Appetite: SBA financing path, pending confirmation with the business owner. The deal size fits under the $5 million 7(a) cap. Confirm the NAICS size standard before a lender application.'
+        : 'Overall Lender Appetite: Working assumption is an M&A financing path, to be confirmed with the business owner. Do not describe SBA appetite as established.',
     '',
     'Lender Appetite Rationale:',
     assessment.rationale,
@@ -454,8 +473,8 @@ function renderLenderSection(raw) {
     parts.push(UNCONFIRMED_STRUCTURE, '');
   } else {
     parts.push(
-      'Typical SBA Deal Structure:',
-      `Loan Type: SBA 7(a), only because implied deal size fits under the ${formatMoney(SBA_7A_MAX_LOAN)} maximum loan.`,
+      'SBA Financing Path (to be confirmed with the business owner):',
+      `Loan Type: SBA 7(a), because implied deal size fits under the ${formatMoney(SBA_7A_MAX_LOAN)} maximum loan. Pending confirmation with the business owner.`,
       'Down payment, term, rate, and DSCR come from the lender and the confirmed cash flow. Do not treat the NAICS code as the eligibility finding.',
       '',
     );
@@ -469,10 +488,12 @@ module.exports = {
   ALT_TANGIBLE_NET_WORTH_MAX,
   ALT_AVG_NET_INCOME_MAX,
   SBA_PRIMARY_DEAL_CEILING,
+  SBA_REVENUE_MA_THRESHOLD,
   EBITDA_MULTIPLE,
   SDE_MULTIPLE,
   UNCONFIRMED_LINE,
   NOT_PRIMARY_LABEL,
+  SBA_LIKELY_LABEL,
   SBA_SYSTEM_RULES,
   SIZE_STANDARDS,
   formatMoney,
