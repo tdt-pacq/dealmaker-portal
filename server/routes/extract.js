@@ -1,9 +1,9 @@
 const express = require('express');
 const multer = require('multer');
 const Anthropic = require('@anthropic-ai/sdk');
-const pdfParse = require('pdf-parse/lib/pdf-parse.js');
 
 const { extractUploadText } = require('../dealDocuments');
+const { extractAnalyzerPdf } = require('../industryPdf');
 
 const router = express.Router();
 
@@ -306,7 +306,8 @@ router.post('/interview', upload.single('file'), async (req, res) => {
 
 // POST /api/extract/pdf — MPA analyzer: extract text from PDF, send to Claude
 // Accepts multipart/form-data: file (PDF), prompt (string)
-// Extracts text server-side with pdf-parse, sends text to Claude (avoids base64 token bloat)
+// Text PDFs are read with pdf-parse. Industry reports whose text layer is only a
+// repeated footer (jsPDF image pages) are OCR'd, then mapped or sent to a vision model.
 const pdfUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 30 * 1024 * 1024 } });
 
 router.post('/pdf', pdfUpload.single('file'), async (req, res) => {
@@ -314,56 +315,14 @@ router.post('/pdf', pdfUpload.single('file'), async (req, res) => {
   if (!req.file || !prompt) {
     return res.status(400).json({ error: 'file (PDF) and prompt are required.' });
   }
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured on server.' });
-  }
   try {
-    // Extract text from PDF server-side — far more token-efficient than base64
-    const parsed = await pdfParse(req.file.buffer);
-    const pdfText = parsed.text?.trim();
-    if (!pdfText) {
-      return res.status(422).json({ error: 'Could not extract text from PDF. The file may be scanned/image-only. Try a searchable PDF.' });
-    }
-
-    // Truncate to ~120K chars (~30K tokens) to stay well inside context limits
-    const MAX_CHARS = 120000;
-    const truncated = pdfText.length > MAX_CHARS
-      ? pdfText.slice(0, MAX_CHARS) + '\n\n[Document truncated — first 120,000 characters used]'
-      : pdfText;
-
-    const upstream = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-5',
-        max_tokens: 2048,
-        messages: [{
-          role: 'user',
-          content: `${prompt}\n\n<document>\n${truncated}\n</document>`,
-        }],
-      }),
-      signal: AbortSignal.timeout(120000),
-    });
-
-    if (!upstream.ok) {
-      const err = await upstream.json().catch(() => ({}));
-      return res.status(upstream.status).json({ error: err.error?.message || `Anthropic error ${upstream.status}` });
-    }
-    const data = await upstream.json();
-    const raw = (data.content || []).find(b => b.type === 'text')?.text || '';
-    // Strip markdown code fences Claude sometimes wraps JSON in (```json ... ``` or ``` ... ```)
-    const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
-    res.json({ result: text });
+    const result = await extractAnalyzerPdf(req.file.buffer, prompt);
+    res.json({ result });
   } catch (err) {
     const msg = (err.name === 'TimeoutError' || err.name === 'AbortError')
       ? 'Extraction timed out. Please retry.'
       : (err.message || 'Unexpected error during extraction.');
-    res.status(500).json({ error: msg });
+    res.status(err.statusCode || 500).json({ error: msg });
   }
 });
 

@@ -13,6 +13,7 @@ import {
 } from './dealSync.js';
 import ProjectionsTab from './ProjectionsTab.jsx';
 import { fallbackSignInProvider, isAnalyzerUserAllowed } from './analyzerAccess.js';
+import industryBenchmarks from '../../../../shared/industryBenchmarks.cjs';
 
 if (!firebase.apps.length) {
   firebase.initializeApp({
@@ -3446,20 +3447,26 @@ const INDUSTRY_PROMPT=`Extract industry benchmark data from this business refere
 {"name":"industry name as shown in the report","naics":"NAICS or SIC code if shown, otherwise null","source":"report publisher and edition (e.g. Business Brokerage Press 2026, BizMiner 2025, RMA Annual Statement Studies)","reportYear":number or null,"grossMarginPct":number or null,"cogsPct":number or null,"preTaxProfitPct":number or null,"netMarginPct":number or null,"sdeMult":number or null,"revenueMultPct":number or null,"ebitMult":number or null,"ebitdaMult":number or null,"sdeMultUnder1M":number or null,"sdeMult1to5M":number or null,"sdeMultOver5M":number or null,"ebitdaMultUnder1M":number or null,"ebitdaMult1to5M":number or null,"ebitdaMultOver5M":number or null}
 FIELD DEFINITIONS:
 - grossMarginPct: Gross Profit as % of revenue (e.g. 35.1 for 35.1%). Look in "Financial Ratios" Income Statement section or "Expenses" section for Gross Profit %.
-- cogsPct: Cost of Goods / Cost of Sales as % of revenue (e.g. 64.9). Look in same sections.
-- preTaxProfitPct: Pre-tax profit or operating profit as % of revenue. Look in "Expenses (% of Annual Sales)" section for "Profit (pretax)" line.
-- netMarginPct: Net income as % of revenue. Look in Income Statement ratios for "Net Income" row, use the 3-Year or 5-Year average column.
-- sdeMult: SDE multiple from "Rules of Thumb" section (e.g. 3.5 for "3.5 x SDE").
-- revenueMultPct: Revenue/sales multiple from Rules of Thumb "% of annual sales" (e.g. 42 for "42% of annual sales").
-- ebitMult: EBIT multiple from Rules of Thumb (e.g. 4 for "4 x EBIT").
-- ebitdaMult: EBITDA multiple from Rules of Thumb (e.g. 4.5 for "4.5 x EBITDA").
-- sdeMultUnder1M: MVIC/SDE ratio for businesses under $1M net sales from "Industry Multiples" section.
-- sdeMult1to5M: MVIC/SDE ratio for $1M–$5M net sales tier.
-- sdeMultOver5M: MVIC/SDE ratio for over $5M net sales tier.
-- ebitdaMultUnder1M: MVIC/EBITDA ratio for under $1M net sales tier.
-- ebitdaMult1to5M: MVIC/EBITDA ratio for $1M–$5M net sales tier.
-- ebitdaMultOver5M: MVIC/EBITDA ratio for over $5M net sales tier.
-IMPORTANT: All percentage fields (grossMarginPct, cogsPct, preTaxProfitPct, netMarginPct, revenueMultPct) are plain percentage numbers like 35.1, not decimals like 0.351.`;
+- cogsPct: Cost of Goods / Cost of Sales as % of revenue (e.g. 64.9). Look in the same income-statement section as gross margin. If that table has Gross Profit as a percent of net sales and no cost-of-goods line, set cogsPct to 100 minus grossMarginPct.
+- preTaxProfitPct: Pre-tax profit as % of revenue. In an "Income Data (as a percentage of Net Sales)" table, use Profit Before Taxes from the most recent year (rightmost column). If that table has no pretax line, use "Profit (pretax)" from "Expenses (% of Annual Sales)".
+- netMarginPct: Net income as % of revenue. Use Net Income or Net Profit from the income-data table (most recent year). If the report has a single 3-year or 5-year average column and no year columns, use that average. Leave null when only pretax profit is shown.
+- sdeMult: SDE multiple from a "Rules of Thumb" section only when it states one figure (e.g. 2.5 for "2.5 x SDE"). Leave null for a range ("3 to 3.5 x SDE") or when the report only gives tiered MVIC/SDE ratios.
+- revenueMultPct: Revenue/sales multiple from Rules of Thumb "% of annual sales" (e.g. 42 for "42% of annual sales"). Leave null when the report only gives tiered MVIC/Net Sales ratios.
+- ebitMult: EBIT multiple from Rules of Thumb when it states one figure (e.g. 4 for "4 x EBIT"). Do not use an EBITDA multiple here.
+- ebitdaMult: EBITDA multiple from Rules of Thumb when it states one figure (e.g. 4.5 for "4.5 x EBITDA"). Do not copy a tiered MVIC/EBITDA ratio into this field.
+- sdeMultUnder1M: MVIC/SDE for the under $1 million net sales tier in "Industry Multiples".
+- sdeMult1to5M: MVIC/SDE for the $1 million–$5 million net sales tier.
+- sdeMultOver5M: MVIC/SDE for the over $5 million net sales tier.
+- ebitdaMultUnder1M: MVIC/EBITDA for the under $1 million net sales tier.
+- ebitdaMult1to5M: MVIC/EBITDA for the $1 million–$5 million net sales tier.
+- ebitdaMultOver5M: MVIC/EBITDA for the over $5 million net sales tier.
+DEAL STUDIO / BUSINESS REFERENCE GUIDE LAYOUT:
+- name is the industry title above "Industry Quick View".
+- naics is the code in that quick view or beside a NAICS/SIC label.
+- source is the copyright publisher and edition year, such as "Business Brokerage Press 2026". reportYear is that year.
+- Map each Industry Multiples block ("Under $1 Million Net Sales", "$1 Million - $5 Million Net Sales", "Over $5 Million Net Sales") to the matching tier fields. A page break may put the tier heading at the bottom of one page and the MVIC ratios on the next.
+- Ignore narrative pricing tips and expert ranges. Do not guess.
+IMPORTANT: All percentage fields (grossMarginPct, cogsPct, preTaxProfitPct, netMarginPct, revenueMultPct) are plain percentage numbers like 35.1, not decimals like 0.351. Multiples are plain numbers like 1.66.`;
 
 const fileToBase64=file=>new Promise((res,rej)=>{
   const r=new FileReader();
@@ -4371,8 +4378,15 @@ function App() {
     input.type='file';input.accept='.pdf';
     input.onchange=async e=>{
       const file=e.target.files[0];if(!file)return;
-      setExtracting(true);
-      try{const data=await extractFromPDF(file,INDUSTRY_PROMPT);setReviewData({type:'industry',data});}
+      setExtracting('industry');
+      try{
+        const data=await extractFromPDF(file,INDUSTRY_PROMPT);
+        if(!industryBenchmarks.industryExtractionIsUseful(data)){
+          alert(industryBenchmarks.INDUSTRY_EXTRACT_FAILED);
+          return;
+        }
+        setReviewData({type:'industry',data});
+      }
       catch(err){alert('Extraction failed: '+err.message);}
       finally{setExtracting(false);}
     };
@@ -4550,7 +4564,7 @@ function App() {
         <div style={{position:'fixed',inset:0,background:'rgba(48, 32, 22, 0.4)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:2000}}>
           <div style={{background:'rgba(255,255,255,0.92)',border:'1px solid #e6dfd6',borderRadius:10,padding:32,textAlign:'center'}}>
             <div style={{color:'#C4592F',fontSize:14,marginBottom:8}}>Extracting data from PDF…</div>
-            <div style={{color:'#44403c',fontSize:11}}>Claude is reading your tax return. This takes 10–20 seconds.</div>
+            <div style={{color:'#44403c',fontSize:11}}>{extracting==='industry'?'Reading the industry report. Image-only files can take up to a minute.':'Claude is reading your tax return. This takes 10–20 seconds.'}</div>
           </div>
         </div>
       )}
