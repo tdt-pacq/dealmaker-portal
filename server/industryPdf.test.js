@@ -9,6 +9,12 @@ const {
   parseBrgIndustryReport,
   INDUSTRY_EXTRACT_FAILED,
 } = require('../shared/industryBenchmarks.cjs');
+const {
+  parseFinancialRatios,
+  parseExpertRatings,
+  summarizeExpertInsights,
+  dealRatioActual,
+} = require('../shared/industryExtras.cjs');
 const { extractAnalyzerPdf, extractEmbeddedPageJpegs } = require('./industryPdf');
 
 const INDUSTRY_PROMPT = 'Extract industry benchmarks including sdeMultUnder1M.';
@@ -85,6 +91,8 @@ test('maps a Deal Studio Business Reference Guide into the review fields', () =>
   assert.equal(data.revenueMultPct, null);
   assert.equal(data.ebitMult, null);
   assert.equal(data.ebitdaMult, null);
+  assert.equal(data.cogsPct, 67.2);
+  assert.equal(data.expertExpenses, undefined);
 });
 
 test('rules of thumb use a single figure and ignore ranges', () => {
@@ -108,6 +116,61 @@ Pricing Tips
 
   const ranged = parseBrgIndustryReport(`${BRG_FIXTURE}\nRules of Thumb\n3 to 3.5 x SDE\n`);
   assert.equal(ranged.sdeMult, null);
+});
+
+test('ratio quartiles keep the report scale and recover a dropped decimal', () => {
+  const table = parseFinancialRatios(`
+Ratios (providing the upper quartile, median, and lower quartile values)
+2023-24 2024-25 2025-26
+Current upper 3.4 3.9 4.4
+median 2.0 2.1 2.3
+lower 1.3 1.4 1.4
+Debt/Worth upper 0.5 0.5 0.4
+median 1.1 0.9 0.9
+lower 24 28 22
+EBITDA/Sales upper 13.5 14.7 14.3
+median 7.9 9.1 8.7
+lower 3.7 4.6 4.3
+Type of Statement
+`);
+  assert.deepEqual(table.years, ['2023-24', '2024-25', '2025-26']);
+  const current = table.rows.find((row) => row.label === 'Current');
+  assert.deepEqual(current.upper, [3.4, 3.9, 4.4]);
+  assert.deepEqual(current.median, [2, 2.1, 2.3]);
+  assert.deepEqual(current.lower, [1.3, 1.4, 1.4]);
+  const debt = table.rows.find((row) => row.label === 'Debt/Worth');
+  assert.deepEqual(debt.lower, [2.4, 2.8, 2.2]);
+  const ebitda = table.rows.find((row) => row.label === 'EBITDA/Sales');
+  assert.deepEqual(ebitda.upper, [13.5, 14.7, 14.3]);
+  assert.equal(dealRatioActual('Current', { ca: 220, cl: 100 }), 2.2);
+  assert.equal(dealRatioActual('EBITDA/Sales', { rev: 1000, ebitda: 143 }), 14.3);
+  assert.equal(dealRatioActual('Current', {}), null);
+});
+
+test('expert ratings and narrative summary stay inside the report', () => {
+  const text = `
+Ratings from Our Industry Experts
+Amount of Competition
+3.5 (Very low = 0.0 : Very high = 4.0)
+Amount of Risk
+3.0 (Very low = 0.0 : Very high = 4.0)
+Expenses (% of Annual Sales) from Our Industry Experts
+Pricing Tips
+A broker noted a letter of intent is common. Activity is around 3 to 3.5 x SDE.
+Questions from Our Industry Experts
+Why are you selling?
+Industry Demographics
+`;
+  const ratings = parseExpertRatings(text);
+  assert.equal(ratings[0].score, 3.5);
+  assert.match(ratings[0].scale, /Very low = 0.0/);
+  assert.equal(ratings[1].score, 3);
+  const insights = summarizeExpertInsights(text);
+  const pricing = insights.find((section) => section.heading === 'Pricing tips');
+  assert.match(pricing.text, /offer/i);
+  assert.doesNotMatch(pricing.text, /LOI|letter of intent/i);
+  assert.equal(insights.some((section) => section.heading === 'Advantages'), false);
+  assert.match(insights.find((section) => section.heading === 'Expert due-diligence questions').text, /Why are you selling/);
 });
 
 test('source and year alone are not a successful extraction', () => {
@@ -244,7 +307,8 @@ async function postPdf(buffer, prompt) {
   }
 }
 
-test('attached Business Reference Guide PDF populates the benchmark form', { timeout: 120000, skip: !process.env.BRG_PDF }, async () => {
+test('attached Business Reference Guide PDF populates the benchmark form', { timeout: 180000, skip: !process.env.BRG_PDF }, async () => {
+  delete process.env.ANTHROPIC_API_KEY;
   const buffer = fs.readFileSync(process.env.BRG_PDF);
   const images = extractEmbeddedPageJpegs(buffer);
   assert.ok(images.length >= 15, `expected at least 15 page images, got ${images.length}`);
@@ -272,7 +336,32 @@ test('attached Business Reference Guide PDF populates the benchmark form', { tim
     assert.equal(data.ebitdaMultOver5M, 4.04);
     assert.equal(data.netMarginPct, null);
     assert.equal(data.sdeMult, null);
+    assert.equal(data.cogsPct, 67.2);
     assert.equal(industryExtractionIsUseful(data), true);
+    const latest = (label) => {
+      const row = data.financialRatios.rows.find((item) => item.label === label);
+      assert.ok(row, label);
+      return [row.upper.at(-1), row.median.at(-1), row.lower.at(-1)];
+    };
+    assert.deepEqual(latest('Current'), [4.4, 2.3, 1.4]);
+    assert.deepEqual(latest('Sales/Receivables (Days)'), [17, 47, 81]);
+    assert.deepEqual(latest('EBIT/Interest'), [70.7, 21.2, 4.2]);
+    assert.deepEqual(latest('Debt/Worth'), [0.4, 0.9, 2.2]);
+    assert.deepEqual(latest('EBITDA/Sales'), [14.3, 8.7, 4.3]);
+    assert.deepEqual(latest("% Officers', Directors', Owners' Comp/Sales"), [1.3, 2.1, 3.6]);
+    assert.equal(data.expertExpenses.cogsPct, 38);
+    assert.equal(data.expertExpenses.occupancyPct, 1);
+    assert.equal(data.expertExpenses.payrollPct, 25);
+    assert.equal(data.expertExpenses.preTaxProfitPct, 10);
+    assert.equal(data.expertRatings.find((row) => row.label === 'Amount of Competition').score, 3.5);
+    assert.equal(data.expertRatings.find((row) => row.label === 'Amount of Risk').score, 3);
+    assert.match(data.expertBenchmarks.join(' '), /50 percent of sales not from the owner/);
+    assert.match(data.expertBenchmarks.join(' '), /40 percent/);
+    const headings = data.expertInsights.map((section) => section.heading);
+    assert.ok(headings.includes('Pricing tips'));
+    assert.ok(headings.includes('Financing and deal terms'));
+    assert.equal(JSON.stringify(data).includes('letter of intent'), false);
+    assert.equal(Object.keys(data).some((key) => /mvic/i.test(key) && /sale|profit/i.test(key)), false);
   } finally {
     global.fetch = previous;
   }

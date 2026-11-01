@@ -14,6 +14,7 @@ import {
 import ProjectionsTab from './ProjectionsTab.jsx';
 import { fallbackSignInProvider, isAnalyzerUserAllowed } from './analyzerAccess.js';
 import industryBenchmarks from '../../../../shared/industryBenchmarks.cjs';
+import { IndustryExtraSections, IndustryReviewExtras } from './IndustryExtras.jsx';
 
 if (!firebase.apps.length) {
   firebase.initializeApp({
@@ -170,7 +171,7 @@ const initState = () => ({
   bs:[{cash:'',ar:'',inv:'',ca:'',ta:'',ap:'',cl:'',tl:'',nw:'',capex:''},{cash:'',ar:'',inv:'',ca:'',ta:'',ap:'',cl:'',tl:'',nw:'',capex:''},{cash:'',ar:'',inv:'',ca:'',ta:'',ap:'',cl:'',tl:'',nw:'',capex:''}],
   np:{gross:'',cash:'',ap:'',ltd:'',mortgage:'',commission:'10',legal:'',sbaFee:'',closingCosts:'',taxRate:'',customDeds:[]},
   nlb:{pct:20,nextSDE:''},
-  ind:{name:'',naics:'',source:'',reportYear:'',grossMarginPct:'',cogsPct:'',preTaxProfitPct:'',netMarginPct:'',sdeMult:'',revenueMultPct:'',ebitMult:'',ebitdaMult:'',sdeMultUnder1M:'',sdeMult1to5M:'',sdeMultOver5M:'',ebitdaMultUnder1M:'',ebitdaMult1to5M:'',ebitdaMultOver5M:''},
+  ind:{name:'',naics:'',source:'',reportYear:'',grossMarginPct:'',cogsPct:'',preTaxProfitPct:'',netMarginPct:'',sdeMult:'',revenueMultPct:'',ebitMult:'',ebitdaMult:'',sdeMultUnder1M:'',sdeMult1to5M:'',sdeMultOver5M:'',ebitdaMultUnder1M:'',ebitdaMult1to5M:'',ebitdaMultOver5M:'',financialRatios:null,expertRatings:null,expertExpenses:null,expertBenchmarks:null,expertInsights:null},
   roi:{growthPct:'0',exitYears:'10',exitMultiple:''},
   seller:{askingPrice:'',contingencyPct:'10'},
   buyerSalary:'75000',
@@ -1578,9 +1579,24 @@ const TIndustry = ({state,set,importIndustryReport}) => {
           </table>
         </div>
       )}
+
+      <IndustryExtraSections ind={ind} fin={industryFin(state, recY)} />
     </div>
   );
 };
+
+function industryFin(state, recY) {
+  const years = state.years || [];
+  const recIdx = recY ? years.findIndex((year) => year === recY) : -1;
+  const bs = (recIdx >= 0 ? state.bs?.[recIdx] : null) || {};
+  const calc = recY ? calcSDE(recY) : {};
+  return {
+    rev: calc.rev, cogs: calc.cogs, ebitda: calc.ebitda, interest: calc.int,
+    dep: calc.dep, amor: calc.amor, ownerComp: calc.oc,
+    cash: bs.cash, ar: bs.ar, inv: bs.inv, ca: bs.ca, ta: bs.ta,
+    ap: bs.ap, cl: bs.cl, tl: bs.tl, nw: bs.nw,
+  };
+}
 
 /* ── Buyer ROI Tab ─────────────────────────────────── */
 const TBuyerROI = ({state,set}) => {
@@ -3466,7 +3482,14 @@ DEAL STUDIO / BUSINESS REFERENCE GUIDE LAYOUT:
 - source is the copyright publisher and edition year, such as "Business Brokerage Press 2026". reportYear is that year.
 - Map each Industry Multiples block ("Under $1 Million Net Sales", "$1 Million - $5 Million Net Sales", "Over $5 Million Net Sales") to the matching tier fields. A page break may put the tier heading at the bottom of one page and the MVIC ratios on the next.
 - Ignore narrative pricing tips and expert ranges. Do not guess.
-IMPORTANT: All percentage fields (grossMarginPct, cogsPct, preTaxProfitPct, netMarginPct, revenueMultPct) are plain percentage numbers like 35.1, not decimals like 0.351. Multiples are plain numbers like 1.66.`;
+IMPORTANT: All percentage fields (grossMarginPct, cogsPct, preTaxProfitPct, netMarginPct, revenueMultPct) are plain percentage numbers like 35.1, not decimals like 0.351. Multiples are plain numbers like 1.66.
+ALSO include these keys when the report shows them. Use null when a section is not in the report. Do not guess. Do not add MVIC/Net Sales or MVIC/Gross Profit.
+"financialRatios": {"years":["2023-24","2024-25","2025-26"],"rows":[{"label":"Current","upper":[number or null, number or null, number or null],"median":[...],"lower":[...]}]} or null
+Include every ratio row in the upper/median/lower table (current, quick, days receivable, days inventory, days payables, EBIT/interest, debt/worth, fixed/worth, sales/assets, EBITDA/sales, owner or officer compensation as a percent of sales, and any other row printed there). Values stay in the report's units. One entry per year, left to right.
+"expertRatings": [{"label":"Amount of Competition","score":3.5,"scale":"Very low = 0.0 : Very high = 4.0"}] or null. Scores are on the report's 0 to 4 scale.
+"expertExpenses": {"cogsPct":38,"occupancyPct":1,"payrollPct":25,"preTaxProfitPct":10} or null. These are the separate "Expenses (% of Annual Sales) from Our Industry Experts" figures, not the income-statement table.
+"expertBenchmarks": ["one expert benchmark statement"] or null.
+"expertInsights": [{"heading":"Pricing tips","text":"one bullet per line"}] or null. Summarize only narrative sections that are present: pricing tips, financing and deal terms, industry trends and forecast, advice for buyers and sellers, expert due-diligence questions, business model, advantages, disadvantages. Omit empty sections. Plain business language. Never write "LOI" or "letter of intent"; write "offer".`;
 
 const fileToBase64=file=>new Promise((res,rej)=>{
   const r=new FileReader();
@@ -3492,8 +3515,8 @@ const ReviewModal=({reviewData,onApply,onCancel})=>{
   const [incVals,setIncVals]=useState(reviewData.income||{});
   const [bsVals,setBsVals]=useState(reviewData.balance||{});
   const [vals,setVals]=useState(isCombined?{}:{...(reviewData.data||{})});
-  const overlay={position:'fixed',inset:0,background:'rgba(48, 32, 22, 0.4)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:2000};
-  const modal={background:'rgba(255,255,255,0.92)',border:'1px solid #e6dfd6',borderRadius:10,padding:24,width:480,maxHeight:'85vh',overflowY:'auto'};
+  const overlay={position:'fixed',inset:0,background:'rgba(48, 32, 22, 0.4)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:2000,padding:'24px 16px'};
+  const modal={background:'rgba(255,255,255,0.92)',border:'1px solid #e6dfd6',borderRadius:10,padding:24,width:isIndustry?'min(920px, calc(100vw - 48px))':480,maxWidth:'100%',maxHeight:'85vh',overflowY:'auto',boxSizing:'border-box'};
   const btnBase={border:'none',borderRadius:5,padding:'7px 16px',fontSize:12,fontWeight:600,cursor:'pointer'};
   const renderField=(k,label,valObj,setValObj)=>(
     <div key={k} style={{marginBottom:10}}>
@@ -3531,6 +3554,7 @@ const ReviewModal=({reviewData,onApply,onCancel})=>{
             {industryFields.slice(12,15).map(([k,label])=>renderField(k,label,vals,setVals))}
             <div style={{fontSize:12,fontWeight:700,color:'#dc2626',margin:'16px 0 10px',paddingBottom:6,borderBottom:'1px solid #e6dfd6'}}>Valuation — MVIC/EBITDA by Revenue Tier</div>
             {industryFields.slice(15).map(([k,label])=>renderField(k,label,vals,setVals))}
+            <IndustryReviewExtras vals={vals} setVals={setVals}/>
           </>
         ):(
           fields.map(([k,label])=>(

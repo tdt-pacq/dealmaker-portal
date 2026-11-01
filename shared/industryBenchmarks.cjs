@@ -249,4 +249,80 @@ module.exports = {
   pdfTextIsSparse,
   industryExtractionIsUseful,
   parseBrgIndustryReport,
+  dealRatioActual,
+  fmtRatio,
 };
+
+function round1(n) {
+  return Math.round(n * 10) / 10;
+}
+
+function numOrNull(value) {
+  if (value == null || value === '') return null;
+  const n = Number(String(value).replace(/[$,]/g, ''));
+  return Number.isFinite(n) ? n : null;
+}
+
+function safeRatio(numerator, denominator) {
+  if (numerator == null || denominator == null || denominator === 0) return null;
+  return round1(numerator / denominator);
+}
+
+function daysRatio(numerator, denominator) {
+  if (numerator == null || denominator == null || denominator === 0) return null;
+  return round1((numerator / denominator) * 365);
+}
+
+function dealRatioActual(label, fin) {
+  if (!fin || !label) return null;
+  const key = String(label).toLowerCase().replace(/[^a-z0-9]+/g, '');
+  const rev = numOrNull(fin.rev);
+  const cogs = numOrNull(fin.cogs);
+  const ebitda = numOrNull(fin.ebitda);
+  const interest = numOrNull(fin.interest);
+  const dep = numOrNull(fin.dep) || 0;
+  const amor = numOrNull(fin.amor) || 0;
+  const ownerComp = numOrNull(fin.ownerComp);
+  const cash = numOrNull(fin.cash);
+  const ar = numOrNull(fin.ar);
+  const inv = numOrNull(fin.inv);
+  const ca = numOrNull(fin.ca);
+  const ta = numOrNull(fin.ta);
+  const ap = numOrNull(fin.ap);
+  const cl = numOrNull(fin.cl);
+  const tl = numOrNull(fin.tl);
+  const nw = numOrNull(fin.nw);
+  if (key === 'current') return safeRatio(ca, cl);
+  if (key === 'quick') {
+    if (cl == null || cl === 0) return null;
+    if (cash == null && ar == null && (ca == null || inv == null)) return null;
+    const assets = (cash != null || ar != null) ? (cash || 0) + (ar || 0) : ca - inv;
+    return round1(assets / cl);
+  }
+  if (key.includes('receivable') && key.includes('day')) return daysRatio(ar, rev);
+  if (key.includes('inventory') && key.includes('day')) return daysRatio(inv, cogs);
+  if (key.includes('payable') && key.includes('day')) return daysRatio(ap, cogs);
+  if (key.includes('ebit') && key.includes('interest') && !key.includes('ebitda')) {
+    if (ebitda == null || interest == null || interest === 0) return null;
+    return round1((ebitda - dep - amor) / interest);
+  }
+  if (key.includes('debt') && key.includes('worth')) return safeRatio(tl, nw);
+  if (key.includes('fixed') && key.includes('worth')) {
+    if (ta == null || ca == null) return null;
+    return safeRatio(ta - ca, nw);
+  }
+  if (key.includes('sales') && key.includes('totalasset')) return safeRatio(rev, ta);
+  if (key.includes('ebitda') && key.includes('sales')) return rev ? round1((ebitda / rev) * 100) : null;
+  if ((key.includes('officer') || key.includes('owner') || key.includes('comp')) && key.includes('sales')) {
+    return ownerComp == null || !rev ? null : round1((ownerComp / rev) * 100);
+  }
+  return null;
+}
+
+function fmtRatio(value) {
+  if (value == null || value === '') return '—';
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  const rounded = round1(n);
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
