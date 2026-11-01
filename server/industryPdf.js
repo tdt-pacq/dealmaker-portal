@@ -17,9 +17,14 @@ const {
   ratioCellCount,
   INSIGHTS_PROMPT,
 } = require('../shared/industryExtras.cjs');
-const { readFinancialRatiosFromImages } = require('./industryRatioOcr');
+const {
+  readFinancialRatiosFromImages,
+  preparePageFiles,
+  ratioStepBlocked,
+} = require('./industryRatioOcr');
 
 const MAX_PAGES = 20;
+const OCR_CONCURRENCY = 2;
 const MAX_TEXT_CHARS = 120000;
 const TEXT_MODEL = 'claude-opus-4-5';
 const VISION_MODEL = 'claude-sonnet-4-6';
@@ -147,14 +152,21 @@ async function mapPool(items, limit, fn) {
 }
 
 async function ocrWithSystemTesseract(images) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pacq-ocr-'));
+  const missing = images.some((image) => !image || !image.file);
+  const dir = missing ? fs.mkdtempSync(path.join(os.tmpdir(), 'pacq-ocr-')) : null;
   try {
-    const files = images.map((image, index) => {
+    const files = [];
+    for (let index = 0; index < images.length; index += 1) {
+      const image = images[index] || {};
+      if (image.file) {
+        files.push(image.file);
+        continue;
+      }
       const file = path.join(dir, `page-${String(index).padStart(2, '0')}.jpg`);
-      fs.writeFileSync(file, image.bytes);
-      return file;
-    });
-    const texts = await mapPool(files, 4, (file) => execFileAsync(
+      if (image.bytes) fs.writeFileSync(file, image.bytes);
+      files.push(file);
+    }
+    return mapPool(files, OCR_CONCURRENCY, (file) => execFileAsync(
       'tesseract',
       [file, 'stdout', '--psm', '6', '-l', 'eng'],
       {
@@ -162,15 +174,14 @@ async function ocrWithSystemTesseract(images) {
         env: { ...process.env, OMP_THREAD_LIMIT: '1', OMP_NUM_THREADS: '1' },
       }
     ));
-    return texts;
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    if (dir) fs.rmSync(dir, { recursive: true, force: true });
   }
 }
 
 async function ocrWithTesseractJs(images) {
   const { createWorker } = require('tesseract.js');
-  const workerCount = Math.min(2, images.length);
+  const workerCount = Math.min(1, images.length);
   const workers = await Promise.all(Array.from({ length: workerCount }, () => createWorker('eng', 1, {
     cachePath: path.join(os.tmpdir(), 'pacq-tesseract'),
     logger: () => {},
@@ -182,7 +193,8 @@ async function ocrWithTesseractJs(images) {
       while (cursor < images.length) {
         const index = cursor;
         cursor += 1;
-        const result = await worker.recognize(images[index].bytes);
+        const image = images[index] || {};
+        const result = await worker.recognize(image.file || image.bytes);
         texts[index] = result?.data?.text || '';
       }
     }
@@ -358,36 +370,65 @@ async function extractAnalyzerPdf(buffer, prompt, options = {}) {
     throw fail(422, 'This PDF has almost no selectable text, and its pages could not be read as images. Upload a text-based report or enter the benchmarks manually.');
   }
 
-  let pageTexts;
-  let ocrText;
-  if (options.ocrImages) {
-    const ocrResult = await readText(images);
-    pageTexts = Array.isArray(ocrResult) ? ocrResult : [ocrResult || ''];
-    ocrText = pageTexts.join('\n\n');
-  } else {
-    pageTexts = await ocrPageTexts(images);
-    ocrText = pageTexts.join('\n\n');
+  const workDir = options.ocrImages ? null : fs.mkdtempSync(path.join(os.tmpdir(), 'pacq-pages-'));
+  try {
+    if (workDir) await preparePageFiles(images, workDir);
+
+    let pageTexts;
+    let ocrText;
+    if (options.ocrImages) {
+      const ocrResult = await readText(images);
+      pageTexts = Array.isArray(ocrResult) ? ocrResult : [ocrResult || ''];
+      ocrText = pageTexts.join('\n\n');
+    } else {
+      pageTexts = await ocrPageTexts(images);
+      ocrText = pageTexts.join('\n\n');
+    }
+    const combined = [pdfText, ocrText].filter((part) => part && part.trim()).join('\n\n');
+    const parsed = parseBrgIndustryReport(combined);
+    if (parsed) {
+      Object.assign(parsed, extractIndustryExtras(combined));
+      let fromImages = null;
+      try {
+        if (!ratioStepBlocked()) {
+          fromImages = options.readFinancialRatios
+            ? await options.readFinancialRatios(images, pageTexts)
+            : await readFinancialRatiosFromImages(images, pageTexts);
+        }
+      } catch (err) {
+        console.error(`[extract/pdf] financial ratio OCR skipped: ${err.message}`);
+      }
+      parsed.financialRatios = chooseRatios(parsed.financialRatios, fromImages);
+      parsed.expertInsights = await resolveExpertInsights(combined, fetchImpl);
+      console.log(`[extract/pdf] image-only industry report: ${images.length} page image(s), mapped from OCR`);
+      return JSON.stringify(normalizeIndustryImport(parsed));
+    }
+    if (ocrText && !pdfTextIsSparse(ocrText, images.length)) {
+      console.log(`[extract/pdf] image-only industry report: sending ${ocrText.length} OCR chars to the text model`);
+      const modelText = await completeFromText(prompt, combined, fetchImpl, 4096);
+      return gateIndustryResult(prompt, modelText);
+    }
+    console.log(`[extract/pdf] image-only industry report: vision fallback for ${images.length} page(s)`);
+    const visionImages = images.map((image) => {
+      if (image && image.bytes && image.bytes.length) return image;
+      if (image && image.file && fs.existsSync(image.file)) {
+        return {
+          bytes: fs.readFileSync(image.file),
+          mediaType: image.mediaType || 'image/jpeg',
+          width: image.width,
+          height: image.height,
+        };
+      }
+      return null;
+    }).filter((image) => image && image.bytes && image.bytes.length);
+    const visionText = await completeFromImages(prompt, visionImages, fetchImpl);
+    return gateIndustryResult(prompt, visionText);
+  } finally {
+    for (const image of images) {
+      if (image) image.bytes = null;
+    }
+    if (workDir) fs.rmSync(workDir, { recursive: true, force: true });
   }
-  const combined = [pdfText, ocrText].filter((part) => part && part.trim()).join('\n\n');
-  const parsed = parseBrgIndustryReport(combined);
-  if (parsed) {
-    Object.assign(parsed, extractIndustryExtras(combined));
-    const fromImages = options.readFinancialRatios
-      ? await options.readFinancialRatios(images, pageTexts)
-      : await readFinancialRatiosFromImages(images, pageTexts);
-    parsed.financialRatios = chooseRatios(parsed.financialRatios, fromImages);
-    parsed.expertInsights = await resolveExpertInsights(combined, fetchImpl);
-    console.log(`[extract/pdf] image-only industry report: ${images.length} page image(s), mapped from OCR`);
-    return JSON.stringify(normalizeIndustryImport(parsed));
-  }
-  if (ocrText && !pdfTextIsSparse(ocrText, images.length)) {
-    console.log(`[extract/pdf] image-only industry report: sending ${ocrText.length} OCR chars to the text model`);
-    const modelText = await completeFromText(prompt, combined, fetchImpl, 4096);
-    return gateIndustryResult(prompt, modelText);
-  }
-  console.log(`[extract/pdf] image-only industry report: vision fallback for ${images.length} page(s)`);
-  const visionText = await completeFromImages(prompt, images, fetchImpl);
-  return gateIndustryResult(prompt, visionText);
 }
 
 module.exports = {
@@ -397,4 +438,5 @@ module.exports = {
   ocrPageImages,
   ocrPageTexts,
   MAX_PAGES,
+  OCR_CONCURRENCY,
 };
