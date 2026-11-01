@@ -15,7 +15,8 @@ const {
   summarizeExpertInsights,
   dealRatioActual,
 } = require('../shared/industryExtras.cjs');
-const { extractAnalyzerPdf, extractEmbeddedPageJpegs } = require('./industryPdf');
+const { extractAnalyzerPdf, extractEmbeddedPageJpegs, OCR_CONCURRENCY } = require('./industryPdf');
+const { assembleRatioText, sourceCap, upscaleFor, MAX_UPSCALE } = require('./industryRatioOcr');
 
 const INDUSTRY_PROMPT = 'Extract industry benchmarks including sdeMultUnder1M.';
 const TAX_PROMPT = 'Extract the tax return income statement.';
@@ -222,6 +223,79 @@ test('a text industry PDF still goes to the text model', async () => {
   assert.match(calls[0].messages[0].content, /Gross profit note 0/);
 });
 
+test('oversized pages stay near 200 dpi and ratio upscale stays at 1.5x', () => {
+  const letter300 = sourceCap(2550, 3300);
+  assert.ok(letter300.scale < 1);
+  assert.ok(letter300.width <= 1700);
+  assert.ok(letter300.height <= 2200);
+  const roofing = sourceCap(1330, 1734);
+  assert.equal(roofing.scale, 1);
+  assert.equal(roofing.width, 1330);
+  assert.equal(roofing.height, 1734);
+  assert.equal(MAX_UPSCALE, 1.5);
+  assert.ok(upscaleFor(1330, 1734) <= MAX_UPSCALE);
+  assert.equal(upscaleFor(4000, 4000), 1);
+  assert.ok(OCR_CONCURRENCY >= 1 && OCR_CONCURRENCY <= 2);
+});
+
+test('a stitched Current row survives a misread header on the next page', () => {
+  const text = assembleRatioText(
+    [[
+      'Ourrent el Pee',
+      'median 2.0 2.1 2.3',
+      'lower 1.3 1.4 1.4',
+      'Quick upper 2.6 3.3 3.8',
+      'median 1.5 1.6 1.8',
+      'lower 1.0 1.0 1.2',
+      'EBITDA/Sales upper 13.5 14.7 14.3',
+      'median 7.9 9.1 8.7',
+      'lower 3.7 4.6 4.3',
+    ]],
+    'Current upper 3.4 3.9 44'
+  );
+  const table = parseFinancialRatios(text);
+  const current = table.rows.find((row) => row.label === 'Current');
+  assert.deepEqual(current.upper, [3.4, 3.9, 4.4]);
+  assert.deepEqual(current.median, [2, 2.1, 2.3]);
+  assert.deepEqual(current.lower, [1.3, 1.4, 1.4]);
+});
+
+test('a garbage line between quartiles does not drop the upper values', () => {
+  const text = assembleRatioText([[
+    'Debt/Worth upper 0.5 0.5 0.4',
+    'median 1.1 0.9 0.9',
+    'lower 2.4 2.8 2.2',
+    'Of Dentit hafnrn Tavac upper 78.5 93.7 76.2',
+    'PMP GE PRATER BENE PRA EAE ba ala PUN PPE a',
+    'median 41.8 47.5 40.4',
+    'lower 17.5 22.8 16.2',
+    '% Profit before Taxes/Total Assets upper 36.3 40.1 41.0',
+    'median 18.2 21.3 20.0',
+    'lower 6.1 7.9 7.5',
+  ]], '');
+  const table = parseFinancialRatios(text);
+  const tangible = table.rows.find((row) => row.label === '% Profit before Taxes/Tangible Net Worth');
+  assert.deepEqual(tangible.upper, [78.5, 93.7, 76.2]);
+  assert.deepEqual(tangible.median, [41.8, 47.5, 40.4]);
+  assert.deepEqual(tangible.lower, [17.5, 22.8, 16.2]);
+});
+
+test('a small-ratio row gets a dropped decimal back', () => {
+  const text = assembleRatioText([[
+    '% Depr, Depl, Amort/Sales upper 0.6 0.6 0.6',
+    'median 1.0 1.0 11',
+    'lower 1.9 1.6 1.6',
+    'Quick upper 2.6 3.3 3.8',
+    'median 1.5 1.6 1.8',
+    'lower 1.0 1.0 1.2',
+    'EBITDA/Sales upper 13.5 14.7 14.3',
+    'median 7.9 9.1 8.7',
+    'lower 3.7 4.6 4.3',
+  ]], '');
+  const depr = parseFinancialRatios(text).rows.find((row) => row.label === '% Depr, Depl, Amort/Sales');
+  assert.deepEqual(depr.median, [1, 1, 1.1]);
+});
+
 test('an image-only industry PDF is mapped from OCR without calling the model', async () => {
   const result = await extractAnalyzerPdf(Buffer.from('%PDF'), INDUSTRY_PROMPT, {
     readPdfText: async () => ({ text: footerOnly(8), numpages: 8 }),
@@ -233,6 +307,42 @@ test('an image-only industry PDF is mapped from OCR without calling the model', 
   assert.equal(data.name, 'Roofing Contractors');
   assert.equal(data.sdeMult1to5M, 2.07);
   assert.equal(data.grossMarginPct, 32.8);
+});
+
+test('a ratio OCR failure still returns the industry benchmarks', async () => {
+  const result = await extractAnalyzerPdf(Buffer.from('%PDF'), INDUSTRY_PROMPT, {
+    readPdfText: async () => ({ text: footerOnly(8), numpages: 8 }),
+    loadPageImages: async () => [{ bytes: Buffer.from([0xff, 0xd8]), mediaType: 'image/jpeg' }],
+    ocrImages: async () => BRG_FIXTURE,
+    readFinancialRatios: async () => { throw new Error('ratio boom'); },
+    fetchImpl: async () => { throw new Error('model should not be called'); },
+  });
+  const data = JSON.parse(result);
+  assert.equal(data.name, 'Roofing Contractors');
+  assert.equal(data.sdeMult1to5M, 2.07);
+  assert.equal(data.financialRatios, null);
+});
+
+test('high memory skips ratio OCR and the import still succeeds', async () => {
+  const previous = process.env.RATIO_RSS_LIMIT_MB;
+  process.env.RATIO_RSS_LIMIT_MB = '1';
+  let called = false;
+  try {
+    const result = await extractAnalyzerPdf(Buffer.from('%PDF'), INDUSTRY_PROMPT, {
+      readPdfText: async () => ({ text: footerOnly(8), numpages: 8 }),
+      loadPageImages: async () => [{ bytes: Buffer.from([0xff, 0xd8]), mediaType: 'image/jpeg' }],
+      ocrImages: async () => BRG_FIXTURE,
+      readFinancialRatios: async () => { called = true; throw new Error('should not run'); },
+      fetchImpl: async () => { throw new Error('model should not be called'); },
+    });
+    const data = JSON.parse(result);
+    assert.equal(called, false);
+    assert.equal(data.name, 'Roofing Contractors');
+    assert.equal(data.financialRatios, null);
+  } finally {
+    if (previous == null) delete process.env.RATIO_RSS_LIMIT_MB;
+    else process.env.RATIO_RSS_LIMIT_MB = previous;
+  }
 });
 
 test('image-only industry extraction that finds nothing returns a clear error', async () => {
