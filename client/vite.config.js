@@ -3,6 +3,20 @@ import { fileURLToPath } from 'url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import esbuild from 'esbuild';
+
+function sharedCjsToEsm() {
+  return {
+    name: 'shared-cjs-to-esm',
+    enforce: 'pre',
+    async transform(code, id) {
+      const file = id.split('?')[0];
+      if (!file.includes(`${path.sep}shared${path.sep}`) || !file.endsWith('.cjs')) return null;
+      const result = await esbuild.transform(code, { loader: 'js', format: 'esm' });
+      return { code: result.code, map: result.map || null };
+    },
+  };
+}
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -13,6 +27,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    sharedCjsToEsm(),
     tailwindcss(),
     react(),
     {

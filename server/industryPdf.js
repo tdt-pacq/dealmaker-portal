@@ -10,6 +10,14 @@ const {
   industryExtractionIsUseful,
   parseBrgIndustryReport,
 } = require('../shared/industryBenchmarks.cjs');
+const {
+  normalizeIndustryImport,
+  summarizeExpertInsights,
+  extractIndustryExtras,
+  ratioCellCount,
+  INSIGHTS_PROMPT,
+} = require('../shared/industryExtras.cjs');
+const { readFinancialRatiosFromImages } = require('./industryRatioOcr');
 
 const MAX_PAGES = 20;
 const MAX_TEXT_CHARS = 120000;
@@ -154,7 +162,7 @@ async function ocrWithSystemTesseract(images) {
         env: { ...process.env, OMP_THREAD_LIMIT: '1', OMP_NUM_THREADS: '1' },
       }
     ));
-    return texts.join('\n\n');
+    return texts;
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -179,21 +187,26 @@ async function ocrWithTesseractJs(images) {
       }
     }
     await Promise.all(workers.map(run));
-    return texts.join('\n\n');
+    return texts;
   } finally {
     await Promise.all(workers.map((worker) => worker.terminate().catch(() => {})));
   }
 }
 
-async function ocrPageImages(images) {
-  if (!images.length) return '';
+async function ocrPageTexts(images) {
+  if (!images.length) return [];
   try {
     if (await systemTesseractAvailable()) return await ocrWithSystemTesseract(images);
     return await ocrWithTesseractJs(images);
   } catch (err) {
     console.error('Industry PDF OCR failed:', err.message);
-    return '';
+    return [];
   }
+}
+
+async function ocrPageImages(images) {
+  const pages = await ocrPageTexts(images);
+  return pages.join('\n\n');
 }
 
 function stripFences(raw) {
@@ -235,10 +248,10 @@ async function anthropicMessage(body, fetchImpl, timeoutMs) {
   return stripFences((data.content || []).find((block) => block.type === 'text')?.text || '');
 }
 
-function completeFromText(prompt, pdfText, fetchImpl) {
+function completeFromText(prompt, pdfText, fetchImpl, maxTokens = 2048) {
   return anthropicMessage({
     model: TEXT_MODEL,
-    max_tokens: 2048,
+    max_tokens: maxTokens,
     messages: [{
       role: 'user',
       content: `${prompt}\n\n<document>\n${truncate(pdfText)}\n</document>`,
@@ -286,8 +299,30 @@ function gateIndustryResult(prompt, modelText) {
   } catch {
     throw fail(422, INDUSTRY_EXTRACT_FAILED);
   }
-  if (!industryExtractionIsUseful(parsed)) throw fail(422, INDUSTRY_EXTRACT_FAILED);
-  return modelText;
+  const normalized = normalizeIndustryImport(parsed);
+  if (!industryExtractionIsUseful(normalized)) throw fail(422, INDUSTRY_EXTRACT_FAILED);
+  return JSON.stringify(normalized);
+}
+
+async function resolveExpertInsights(sourceText, fetchImpl) {
+  const extractive = summarizeExpertInsights(sourceText);
+  if (!process.env.ANTHROPIC_API_KEY || !extractive) return extractive;
+  const excerpt = sourceText.slice(0, 50000);
+  try {
+    const raw = await completeFromText(INSIGHTS_PROMPT, excerpt, fetchImpl, 2500);
+    const parsed = JSON.parse(raw);
+    const normalized = normalizeIndustryImport({ expertInsights: parsed.sections || parsed.expertInsights || parsed });
+    if (normalized.expertInsights && normalized.expertInsights.length) return normalized.expertInsights;
+  } catch (err) {
+    console.error('Expert insights summary failed:', err.message);
+  }
+  return extractive;
+}
+
+function chooseRatios(fromText, fromImages) {
+  if (fromImages && Array.isArray(fromImages.rows) && fromImages.rows.length >= 8) return fromImages;
+  if (ratioCellCount(fromImages) > ratioCellCount(fromText)) return fromImages;
+  return fromText || fromImages || null;
 }
 
 async function extractAnalyzerPdf(buffer, prompt, options = {}) {
@@ -314,7 +349,7 @@ async function extractAnalyzerPdf(buffer, prompt, options = {}) {
     if (!pdfText) {
       throw fail(422, 'Could not extract text from PDF. The file may be scanned/image-only. Try a searchable PDF.');
     }
-    const modelText = await completeFromText(prompt, pdfText, fetchImpl);
+    const modelText = await completeFromText(prompt, pdfText, fetchImpl, isIndustryPrompt(prompt) ? 4096 : 2048);
     return gateIndustryResult(prompt, modelText);
   }
 
@@ -323,16 +358,31 @@ async function extractAnalyzerPdf(buffer, prompt, options = {}) {
     throw fail(422, 'This PDF has almost no selectable text, and its pages could not be read as images. Upload a text-based report or enter the benchmarks manually.');
   }
 
-  const ocrText = await readText(images);
+  let pageTexts;
+  let ocrText;
+  if (options.ocrImages) {
+    const ocrResult = await readText(images);
+    pageTexts = Array.isArray(ocrResult) ? ocrResult : [ocrResult || ''];
+    ocrText = pageTexts.join('\n\n');
+  } else {
+    pageTexts = await ocrPageTexts(images);
+    ocrText = pageTexts.join('\n\n');
+  }
   const combined = [pdfText, ocrText].filter((part) => part && part.trim()).join('\n\n');
   const parsed = parseBrgIndustryReport(combined);
   if (parsed) {
+    Object.assign(parsed, extractIndustryExtras(combined));
+    const fromImages = options.readFinancialRatios
+      ? await options.readFinancialRatios(images, pageTexts)
+      : await readFinancialRatiosFromImages(images, pageTexts);
+    parsed.financialRatios = chooseRatios(parsed.financialRatios, fromImages);
+    parsed.expertInsights = await resolveExpertInsights(combined, fetchImpl);
     console.log(`[extract/pdf] image-only industry report: ${images.length} page image(s), mapped from OCR`);
-    return JSON.stringify(parsed);
+    return JSON.stringify(normalizeIndustryImport(parsed));
   }
   if (ocrText && !pdfTextIsSparse(ocrText, images.length)) {
     console.log(`[extract/pdf] image-only industry report: sending ${ocrText.length} OCR chars to the text model`);
-    const modelText = await completeFromText(prompt, combined, fetchImpl);
+    const modelText = await completeFromText(prompt, combined, fetchImpl, 4096);
     return gateIndustryResult(prompt, modelText);
   }
   console.log(`[extract/pdf] image-only industry report: vision fallback for ${images.length} page(s)`);
@@ -345,5 +395,6 @@ module.exports = {
   extractEmbeddedPageJpegs,
   loadPageImages,
   ocrPageImages,
+  ocrPageTexts,
   MAX_PAGES,
 };
