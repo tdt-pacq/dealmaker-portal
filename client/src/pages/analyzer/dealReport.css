@@ -1,0 +1,401 @@
+/* Deal report preview. Print CSS improves pagination; it does not remove
+   the browser's own date, title, or URL. Those come from the print dialog.
+   The Download PDF button builds the file with pdfkit instead. */
+
+.deal-report {
+  min-width: 0;
+  color: #1c1917;
+  font-variant-numeric: tabular-nums;
+}
+
+.deal-report-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--gap-section);
+  padding: var(--pad-card);
+  border: 1px solid #e8cfc3;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.deal-report-toolbar p {
+  margin: 0;
+  max-width: 68ch;
+  color: #57534e;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.deal-report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.deal-report-actions button {
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.deal-report-actions button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.deal-report-download {
+  background: #C4592F;
+  color: #fff;
+}
+
+.deal-report-print {
+  background: #f4efe9;
+  color: #1c1917;
+}
+
+.deal-report-error {
+  color: #b91c1c;
+  font-size: 12px;
+  margin: var(--space-2) 0 0;
+}
+
+.deal-report-mast,
+.deal-report-section {
+  background: #fff;
+  border: 1px solid #e6dfd6;
+  border-radius: 8px;
+  padding: var(--pad-card);
+  margin-bottom: var(--gap-section);
+  min-width: 0;
+}
+
+@media (min-width: 1025px) {
+  .deal-report-toolbar,
+  .deal-report-mast,
+  .deal-report-section {
+    padding: var(--pad-card-desktop);
+  }
+}
+
+.deal-report-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin-bottom: var(--space-4);
+}
+
+.deal-report-phoenix {
+  display: block;
+  height: 32px;
+  width: auto;
+  flex: 0 0 auto;
+  background: none;
+  border: none;
+}
+
+/* The stored lockup also contains The Deal Team and a second phoenix.
+   This window shows only the PETERSON ACQUISITIONS wordmark pixels. */
+.deal-report-wordmark {
+  position: relative;
+  width: 217px;
+  height: 22px;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.deal-report-wordmark img {
+  position: absolute;
+  height: 115px;
+  width: 458px;
+  max-width: none;
+  left: -233px;
+  top: -46px;
+  background: none;
+  border: none;
+}
+
+.deal-report-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #C4592F;
+  margin: 0 0 4px;
+}
+
+.deal-report h1 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.deal-report h2 {
+  margin: 0 0 var(--space-3);
+  font-size: 18px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.deal-report-meta,
+.deal-report p,
+.deal-report-note {
+  margin: var(--space-2) 0 0;
+  color: #57534e;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.deal-report-rule {
+  height: 3px;
+  background: #C4592F;
+  border: none;
+  margin: var(--space-4) 0;
+}
+
+.deal-report-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.deal-report-fig {
+  min-width: 0;
+  background: #f8efe8;
+  border-radius: 8px;
+  padding: var(--space-3) var(--space-4);
+}
+
+.deal-report-fig span {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #57534e;
+  margin-bottom: 4px;
+}
+
+.deal-report-fig strong {
+  display: block;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.deal-report-fig small {
+  display: block;
+  margin-top: 4px;
+  color: #57534e;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.deal-report-table-wrap {
+  min-width: 0;
+  margin-top: var(--space-3);
+}
+
+.deal-report-table-title {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #57534e;
+}
+
+.deal-report table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.deal-report th,
+.deal-report td {
+  padding: 8px 10px;
+  text-align: right;
+  vertical-align: top;
+  border-bottom: 1px solid #efe8e0;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.deal-report th:first-child,
+.deal-report td:first-child {
+  text-align: left;
+  font-weight: 600;
+  color: #44403c;
+}
+
+.deal-report th {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #57534e;
+  font-weight: 700;
+}
+
+.deal-report tr.deal-report-sde td {
+  background: #f8efe8;
+  color: #9a3412;
+  font-weight: 700;
+}
+
+.deal-report .num-neg { color: #b91c1c; }
+
+.deal-report-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.deal-report-card {
+  flex: 1 1 140px;
+  min-width: 0;
+  text-align: center;
+  border: 1px solid #e6dfd6;
+  border-radius: 8px;
+  padding: var(--space-3) var(--space-4);
+}
+
+.deal-report-card.is-selected {
+  border-color: #C4592F;
+  background: #f8efe8;
+}
+
+.deal-report-card b {
+  display: block;
+  margin-top: 6px;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.deal-report-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+  margin-top: var(--space-3);
+}
+
+.deal-report-split h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #C4592F;
+}
+
+.deal-report-kv {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 8px 0;
+  border-bottom: 1px solid #efe8e0;
+  min-width: 0;
+}
+
+.deal-report-kv span:first-child {
+  color: #57534e;
+  min-width: 0;
+}
+
+.deal-report-kv span:last-child {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.deal-report-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.deal-report-chart {
+  min-width: 0;
+  border: 1px solid #e6dfd6;
+  border-radius: 8px;
+  padding: var(--space-3) var(--space-4) var(--space-2);
+}
+
+.deal-report-chart h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 13px;
+  color: #57534e;
+}
+
+.deal-report-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.deal-report-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.deal-report-total {
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+  background: #f8efe8;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  align-items: baseline;
+}
+
+.deal-report-total strong {
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .deal-report-split,
+  .deal-report-kpis,
+  .deal-report-charts {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  .deal-report-toolbar { display: none !important; }
+  .deal-report-mast,
+  .deal-report-section,
+  .deal-report-fig,
+  .deal-report-chart,
+  .deal-report-card.is-selected,
+  .deal-report tr.deal-report-sde td,
+  .deal-report-total {
+    background: #fff !important;
+  }
+  .deal-report-fig,
+  .deal-report tr.deal-report-sde td,
+  .deal-report-total,
+  .deal-report-card.is-selected {
+    background: #f8efe8 !important;
+  }
+  .deal-report-section { break-inside: auto; }
+  .deal-report-h { break-after: avoid; }
+  .deal-report-charts,
+  .deal-report-kpis { grid-template-columns: 1fr 1fr !important; }
+  .deal-report h1 { font-size: 22px; }
+  @page { size: letter; margin: 0.6in 0.5in 0.7in 0.5in; }
+}

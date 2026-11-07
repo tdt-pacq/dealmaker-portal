@@ -20,6 +20,7 @@
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^1.1.1",
     "pdfjs-dist": "^3.11.174",
+    "pdfkit": "^0.15.2",
     "puppeteer": "^22.4.0",
     "sharp": "^0.33.5",
     "tesseract.js": "^5.1.1",

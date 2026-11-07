@@ -15,6 +15,8 @@ import ProjectionsTab from './ProjectionsTab.jsx';
 import { fallbackSignInProvider, isAnalyzerUserAllowed } from './analyzerAccess.js';
 import industryBenchmarks from '../../../../shared/industryBenchmarks.cjs';
 import { IndustryExtraSections, IndustryReviewExtras } from './IndustryExtras.jsx';
+import DealReportView from './DealReportView.jsx';
+import { buildDealReport, computeNetProceeds, buildNlb } from '@shared/dealReport.cjs';
 
 if (!firebase.apps.length) {
   firebase.initializeApp({
@@ -2177,43 +2179,28 @@ const TSeller = ({state, set}) => {
 const T7 = ({state,set}) => {
   const np=state.np||{}, setNP=(f,v)=>set({...state,np:{...np,[f]:v}});
 
-  // Gross: auto from S&U market price → fallback to basis SDE × 3 → manual
-  const basisSDE=resolveSDE(state).basis;
-  const suPrice=pn(state.su?.marketPrice);
-  const autoGross=suPrice>0?suPrice:(basisSDE>0?basisSDE*3:0);
-  const gross=autoGross>0?autoGross:pn(np.gross);
-  const grossIsAuto=autoGross>0;
-  const basisLbl7=state.sdeBasis==='weighted'?'Weighted Avg':'Most Recent';
-  const grossLabel=suPrice>0?'Auto from Sources & Uses market price'
-    :(basisSDE>0?`Auto: ${basisLbl7} SDE × 3.0×`:'');
-
-  // Auto-fill SBA fee & closing from S&U
-  const dpPct=(state.dpPct||10)/100;
-  const suMP=pn(state.su?.marketPrice);
-  const suTotal=suMP+pn(state.su?.reVal)+pn(state.su?.wc)+pn(state.su?.arVal)+pn(state.su?.invVal);
-  const suBaseLoan=suTotal*(1-dpPct);
-  const autoSbaFee=suBaseLoan*0.75*0.035;
-  const autoClosing=(state.su?.closing===''||state.su?.closing===undefined)?15000:pn(state.su?.closing);
-
-  // Computed values
-  const cashAdj=pn(np.cash);
-  const apDeduct=pn(np.ap);
-  const ltdDeduct=pn(np.ltd);
-  const mort=pn(np.mortgage);
-  const commPct=pn(np.commission)/100;
-  const commAmt=gross*commPct;
-  const legal=pn(np.legal);
-  const sbaFeeVal=np.sbaFee===''||np.sbaFee===undefined?autoSbaFee:pn(np.sbaFee);
-  const sbaIsAuto=(np.sbaFee===''||np.sbaFee===undefined)&&autoSbaFee>0;
-  const closingVal=np.closingCosts===''||np.closingCosts===undefined?autoClosing:pn(np.closingCosts);
-  const closingIsAuto=(np.closingCosts===''||np.closingCosts===undefined)&&autoClosing>0;
-  const taxRate=pn(np.taxRate)/100;
-  const customDeds=np.customDeds||[];
-  const customTotal=customDeds.reduce((s,d)=>s+pn(d.amount),0);
-
-  const preTax=gross+cashAdj-mort-apDeduct-ltdDeduct-commAmt-legal-sbaFeeVal-closingVal-customTotal;
-  const taxAmt=preTax>0?preTax*taxRate:0;
-  const net=preTax-taxAmt;
+  const computed = computeNetProceeds(state);
+  const gross = computed.gross;
+  const grossIsAuto = computed.grossIsAuto;
+  const grossLabel = computed.grossLabel;
+  const cashAdj = computed.cash;
+  const apDeduct = computed.ap;
+  const ltdDeduct = computed.ltd;
+  const mort = computed.mortgage;
+  const commPct = computed.commissionRate;
+  const commAmt = computed.commissionAmt;
+  const legal = computed.legal;
+  const sbaFeeVal = computed.sbaFee;
+  const sbaIsAuto = computed.sbaIsAuto;
+  const autoSbaFee = computed.autoSbaFee;
+  const closingVal = computed.closing;
+  const closingIsAuto = computed.closingIsAuto;
+  const autoClosing = computed.autoClosing;
+  const taxRate = computed.taxRate;
+  const taxAmt = computed.taxAmt;
+  const customDeds = computed.customDeds;
+  const preTax = computed.preTax;
+  const net = computed.net;
   useEffect(()=>{set(prev=>({...prev,_net:net}));},[net]);
 
   const addDed=()=>set({...state,np:{...np,customDeds:[...customDeds,{id:Date.now(),label:'',amount:''}]}});
@@ -2229,8 +2216,7 @@ const T7 = ({state,set}) => {
     ...(ltdDeduct>0?[{l:'Less: Long-Term Debt',v:ltdDeduct,c:'#dc2626',sign:'-'}]:[]),
     ...(commAmt>0?[{l:`Less: Commission (${(commPct*100).toFixed(0)}%)`,v:commAmt,c:'#dc2626',sign:'-'}]:[]),
     ...(legal>0?[{l:'Less: Legal / Attorney Fees',v:legal,c:'#dc2626',sign:'-'}]:[]),
-    ...(sbaFeeVal>0?[{l:`Less: SBA Fee${sbaIsAuto?' (auto)':''}`,v:sbaFeeVal,c:'#dc2626',sign:'-'}]:[]),
-    ...(closingVal>0?[{l:`Less: Closing Costs${closingIsAuto?' (auto)':''}`,v:closingVal,c:'#dc2626',sign:'-'}]:[]),
+    ...(computed.sellerClosingEntered?[{l:'Less: Seller Closing Costs',v:computed.sellerClosing,c:'#dc2626',sign:'-'}]:[]),
     ...customDeds.filter(d=>pn(d.amount)>0).map(d=>({l:`Less: ${d.label||'Custom'}`,v:pn(d.amount),c:'#dc2626',sign:'-'})),
     {l:'Pre-Tax Proceeds',v:preTax,c:preTax>=0?'#b45309':'#dc2626',sign:'+',bold:true},
     ...(taxAmt>0?[{l:`Less: Tax on Gain (${(taxRate*100).toFixed(0)}%)`,v:taxAmt,c:'#dc2626',sign:'-'}]:[]),
@@ -2302,18 +2288,21 @@ const T7 = ({state,set}) => {
                 <NI value={np.legal} onChange={v=>setNP('legal',v)} placeholder="0"/>
               </div>
               <div>
-                <span className="lbl">SBA Guarantee Fee{sbaIsAuto&&<span className="text-gray-600 font-normal"> — auto from S&amp;U</span>}</span>
+                <span className="lbl">SBA Guarantee Fee{sbaIsAuto&&<span className="text-gray-600 font-normal"> — buyer cost from S&amp;U</span>}</span>
                 {sbaIsAuto
-                  ?<><CF v={sbaFeeVal}/><div className="text-xs text-gray-600 mt-0.5">To override: <NI value={np.sbaFee} onChange={v=>setNP('sbaFee',v)} placeholder={`${Math.round(autoSbaFee)} (auto)`}/></div></>
-                  :<NI value={np.sbaFee} onChange={v=>setNP('sbaFee',v)} placeholder={autoSbaFee>0?`${Math.round(autoSbaFee)} (auto)`:'0'}/>
+                  ?<><CF v={sbaFeeVal}/><div className="text-xs text-gray-600 mt-0.5">Buyer financing cost. Not deducted from the seller. <NI value={np.sbaFee} onChange={v=>setNP('sbaFee',v)} placeholder={`${Math.round(autoSbaFee)} (auto)`}/></div></>
+                  :<><NI value={np.sbaFee} onChange={v=>setNP('sbaFee',v)} placeholder={autoSbaFee>0?`${Math.round(autoSbaFee)} (auto)`:'0'}/><div className="text-xs text-gray-600 mt-0.5">Buyer financing cost. Not deducted from the seller.</div></>
                 }
               </div>
               <div>
-                <span className="lbl">Closing Costs{closingIsAuto&&<span className="text-gray-600 font-normal"> — auto from S&amp;U</span>}</span>
-                {closingIsAuto
-                  ?<><CF v={closingVal}/><div className="text-xs text-gray-600 mt-0.5">To override: <NI value={np.closingCosts} onChange={v=>setNP('closingCosts',v)} placeholder={`${Math.round(autoClosing)} (auto)`}/></div></>
-                  :<NI value={np.closingCosts} onChange={v=>setNP('closingCosts',v)} placeholder={autoClosing>0?`${Math.round(autoClosing)} (auto)`:'0'}/>
-                }
+                <span className="lbl">Buyer Closing Costs{closingIsAuto&&<span className="text-gray-600 font-normal"> — from S&amp;U</span>}</span>
+                <CF v={computed.buyerClosing}/>
+                <div className="text-xs text-gray-600 mt-0.5">Stays in Sources &amp; Uses and buyer cash to close. Not deducted from the seller.</div>
+              </div>
+              <div>
+                <span className="lbl">Seller Closing Costs</span>
+                <NI value={np.closingCosts} onChange={v=>setNP('closingCosts',v)} placeholder="0"/>
+                <div className="text-xs text-gray-600 mt-0.5">Deducted only when a seller closing cost is entered.</div>
               </div>
             </div>
           </Sec>
@@ -2388,19 +2377,22 @@ const T7 = ({state,set}) => {
 /* ── Tab 8: QSI NLB ────────────────────────────────── */
 const T8 = ({state,set}) => {
   const nlb=state.nlb, setNLB=(f,v)=>set({...state,nlb:{...nlb,[f]:v}});
-  const net=state._net||0, pct=pn(nlb.pct)||20;
-  const dp=net*(pct/100), target=dp/0.10;
-  const estNext=target/3;
-  const nextSDE=pn(nlb.nextSDE)||estNext;
-  const curSDE=recentSDE(state.years);
-  const delta=nextSDE-curSDE;
+  const model=buildNlb(state, computeNetProceeds(state));
+  const pct=model.pct;
+  const dp=model.available?model.downPayment:undefined;
+  const target=model.available?model.target:undefined;
+  const estNext=model.available&&model.nextSdeEstimated?model.nextSDE:(model.available?model.target/3:0);
+  const nextSDE=model.available?model.nextSDE:undefined;
+  const curSDE=model.curSDE;
+  const delta=model.incomeIncrease;
+  const money=v=>(v==null||!Number.isFinite(v))?'—':fmtD(v);
   return (
     <div>
       <h2 className="text-lg font-bold text-white mb-1">QSI™ NLB — Next Larger Business</h2>
       <p className="text-xs text-gray-500 mb-4">Scenario modeler: reinvest proceeds into a quantum-leap acquisition</p>
       <div className="grid grid-cols-2 gap-4">
         <div className="card p-4 space-y-4">
-          <div><span className="lbl">Net Proceeds (from Tab 7)</span><div className="calc-field text-green-400 font-bold">{fmtD(net)}</div></div>
+          <div><span className="lbl">Net Proceeds</span><div className="calc-field text-green-400 font-bold">{money(model.net)}</div>{!model.available&&<div className="text-xs text-gray-500 mt-1">{model.reason}</div>}</div>
           <div>
             <span className="lbl">% of Proceeds as Down Payment</span>
             <div className="flex items-center gap-3 mt-1">
@@ -2426,20 +2418,20 @@ const T8 = ({state,set}) => {
             </div>
             <div className="rounded p-3 text-center border border-blue-700/50" style={{background:'rgba(196,89,47,0.15)'}}>
               <div className="text-xs text-blue-300 mb-2">Next Business SDE</div>
-              <div className="mono text-xl font-bold text-blue-400">{fmtD(nextSDE)}</div>
+              <div className="mono text-xl font-bold text-blue-400">{money(nextSDE)}</div>
               <div className="text-xs text-gray-500 mt-1">Estimated</div>
             </div>
           </div>
           <div className="bg-gray-900 rounded p-3 mb-4">
             <span className="lbl">Annual Cash Flow Increase</span>
-            <div className={`mono text-xl font-bold ${delta>=0?'text-green-400':'text-red-400'}`}>{fmtD(delta)}</div>
-            {delta>0&&curSDE>0&&<div className="text-xs text-gray-400 mt-1">+{((delta/curSDE)*100).toFixed(0)}% vs current</div>}
+            <div className={`mono text-xl font-bold ${delta>=0?'text-green-400':'text-red-400'}`}>{money(delta)}</div>
+            {model.available&&delta>0&&curSDE>0&&<div className="text-xs text-gray-400 mt-1">+{((delta/curSDE)*100).toFixed(0)}% vs current</div>}
           </div>
           <div className="text-xs space-y-1 text-gray-400">
-            <div className="flex justify-between"><span>Net Proceeds</span><span className="mono text-green-400">{fmtD(net)}</span></div>
-            <div className="flex justify-between"><span>Down Payment ({pct}%)</span><span className="mono text-yellow-400">{fmtD(dp)}</span></div>
-            <div className="flex justify-between"><span>Target Acquisition</span><span className="mono text-blue-400">{fmtD(target)}</span></div>
-            <div className="flex justify-between"><span>Remaining Proceeds</span><span className="mono text-gray-300">{fmtD(net-dp)}</span></div>
+            <div className="flex justify-between"><span>Net Proceeds</span><span className="mono text-green-400">{money(model.net)}</span></div>
+            <div className="flex justify-between"><span>Down Payment ({pct}%)</span><span className="mono text-yellow-400">{money(dp)}</span></div>
+            <div className="flex justify-between"><span>Target Acquisition</span><span className="mono text-blue-400">{money(target)}</span></div>
+            <div className="flex justify-between"><span>Remaining Proceeds</span><span className="mono text-gray-300">{money(model.available?model.remaining:undefined)}</span></div>
           </div>
         </div>
       </div>
@@ -2692,117 +2684,44 @@ const REPORT_SECTIONS=[
   {id:'narrative', label:'Narrative Analysis',       seller:false},
 ];
 const T9 = ({state,narrative,narrativeStatus}) => {
-  const {years,ytdEnabled,ytdData,sdeBasis,customMults,loanRate,loanAmort,dpPct,su,loanStructure,re504Rate,ppLoan,ppRate,ppAmort}=state;
-  const dscrMin=state.dscrMin||1.25;
-  const sellerData=state.seller||{askingPrice:'',contingencyPct:'10'};
-  const reAmort=state.reAmort||25;
   const [vis,setVis]=useState(()=>Object.fromEntries(REPORT_SECTIONS.map(s=>[s.id,true])));
+  const [downloading,setDownloading]=useState(false);
+  const [downloadError,setDownloadError]=useState(false);
   const toggle=id=>setVis(v=>({...v,[id]:!v[id]}));
-  const setBuyer=()=>setVis(v=>Object.fromEntries(REPORT_SECTIONS.map(s=>[s.id,!s.seller])));
-  const setSeller=()=>setVis(v=>Object.fromEntries(REPORT_SECTIONS.map(s=>[s.id,true])));
-
-  const {rec,ann,rawWt,rawRec,buyerSalary,basis,rawBasis,basisKey}=resolveSDE(state);
-  const base=basis;
-  // Fair market copy and multiples use the latest-year (or weighted) column SDE.
-  const marketSde=rawBasis;
-  // Raw (pre-buyer-salary) SDE — the Seller Reality section below does its own
-  // salary breakdown, so it needs the unadjusted figure to avoid subtracting twice.
-  const baseRaw=rawBasis;
-  const basisLabel=basisKey==='weighted'?'Weighted Average':'Most Recent';
-  const mults=[2.5,3.0,3.5,...(customMults||[]).map(m=>parseFloat(m)).filter(m=>m>0)];
-  const dp=(dpPct||10)/100, r=(loanRate||10.75)/100/12, n=(loanAmort||10)*12;
-  const pmtFn=loan=>r===0?loan/n:loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
-
-  // Sources & Uses amounts
-  const mp=pn(su?.marketPrice);
-  const reVal=pn(su?.reVal), wcVal=pn(su?.wc), arVal=pn(su?.arVal), invVal=pn(su?.invVal);
-  const totalProject=mp+reVal+wcVal+arVal+invVal;
-  const downAmt=totalProject*dp;
-  const baseLoanSU=totalProject*(1-dp);
-  const guarFee=baseLoanSU*0.75*0.035;
-  const closingAmt=(su?.closing===''||su?.closing===undefined)?15000:pn(su?.closing);
-  const totalLoan=baseLoanSU+guarFee+closingAmt;
-
-  // Seller note
-  const sfAmt=pn(su?.sellerFin), sfR=(pn(su?.sfRate)||0)/100/12, sfN=(pn(su?.sfAmort)||0)*12;
-  const sfPmt=(sfAmt>0&&sfR>0&&sfN>0)?sfAmt*sfR*Math.pow(1+sfR,sfN)/(Math.pow(1+sfR,sfN)-1):0;
-
-  // Seller Reality — report section computed values
-  const sellerAskP=pn(sellerData.askingPrice);
-  const sellerSal=buyerSalary;
-  const sellerContP=pn(sellerData.contingencyPct)||10;
-  // Blended amort for report (uses totalProject from S&U)
-  const blendedAmortR9=totalProject>0&&reVal>0
-    ?Math.min(25,Math.max(10,Math.round((reVal/totalProject)*(reAmort||25)+((totalProject-reVal)/totalProject)*(loanAmort||10))))
-    :(loanAmort||10);
-  const nBlendR9=blendedAmortR9*12;
-  const blendedPmtR9=loan=>r===0?loan/nBlendR9:loan*r*Math.pow(1+r,nBlendR9)/(Math.pow(1+r,nBlendR9)-1);
-  const r504R9=(re504Rate||6.5)/100/12, n504R9=(reAmort||25)*12;
-  const pmt504R9=loan=>r504R9===0?loan/n504R9:loan*r504R9*Math.pow(1+r504R9,n504R9)/(Math.pow(1+r504R9,n504R9)-1);
-  const rPPR9=(ppRate||7.5)/100/12, nPPR9=(ppAmort||10)*12;
-  const ppMoR9=(ppLoan||0)>0?(rPPR9===0?(ppLoan||0)/nPPR9:(ppLoan||0)*rPPR9*Math.pow(1+rPPR9,nPPR9)/(Math.pow(1+rPPR9,nPPR9)-1)):0;
-  const monthlyAtPriceR9=price=>{
-    if(!price||price<=0)return ppMoR9;
-    if((loanStructure||'7a')==='504'&&reVal>0){
-      const reComp=Math.min(reVal,price),bizComp=price-reComp;
-      return pmtFn(bizComp*(1-dp))+pmt504R9(reComp*(1-dp))+ppMoR9;
+  const setBuyer=()=>setVis(Object.fromEntries(REPORT_SECTIONS.map(s=>[s.id,!s.seller])));
+  const setSeller=()=>setVis(Object.fromEntries(REPORT_SECTIONS.map(s=>[s.id,true])));
+  const narrativeText=narrativeStatus==='done'?narrative:'';
+  const report=useMemo(()=>buildDealReport(state,{sections:vis,narrative:narrativeText}),[state,vis,narrativeText]);
+  const download=async()=>{
+    setDownloading(true);
+    setDownloadError(false);
+    try{
+      const auth=sessionStorage.getItem('pacq_auth');
+      const headers={'Content-Type':'application/json'};
+      if(auth) headers.Authorization=`Basic ${auth}`;
+      const res=await fetch('/api/analyzer/report.pdf',{
+        method:'POST',
+        headers,
+        body:JSON.stringify({state,narrative:narrativeText,sections:vis}),
+      });
+      if(!res.ok) throw new Error('pdf');
+      const blob=await res.blob();
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;
+      a.download=`${report.meta.fileSlug}-market-price-report.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }catch{
+      setDownloadError(true);
+    }finally{
+      setDownloading(false);
     }
-    return blendedPmtR9(price*(1-dp))+ppMoR9;
   };
-  const sDscrM=price=>{
-    if(!price||price<=0)return null;
-    const mo=monthlyAtPriceR9(price);
-    const ann=mo*12;
-    return{loan:price*(1-dp),mo,ann,rawD:ann>0?baseRaw/ann:0,adjD:ann>0?(baseRaw-sellerSal)/ann:0,cont:baseRaw*(sellerContP/100),cash:baseRaw-sellerSal-ann-baseRaw*(sellerContP/100)};
-  };
-  const sMax125=(()=>{
-    const a=baseRaw-sellerSal;if(a<=0)return 0;
-    let lo=0,hi=20000000,iters=0;
-    while(hi-lo>100&&iters++<60){const mid=(lo+hi)/2;if(monthlyAtPriceR9(mid)*12<a/dscrMin)lo=mid;else hi=mid;}
-    return(lo+hi)/2;
-  })();
-  const sAskM=sDscrM(sellerAskP),sAdvM=sDscrM(mp),sMaxM=sDscrM(sMax125);
-  const sDC=d=>d>=1.5?'#A34826':d>=dscrMin?'#b45309':'#dc2626';
-  const sCC=v=>v>0?'#A34826':'#dc2626';
-  const sStatus=m=>!m?'—':m.adjD>=1.5?'✅ Strong':m.adjD>=dscrMin?'⚠ Marginal':'❌ Below Min';
-  const sfAnn=sfPmt*12;
-
-  // DSCR loan sizing (3× SDE basis, matching T5)
-  const dscrLoan=base*3*(1-dp);
-  const dscrAnn=pmtFn(dscrLoan)*12;
-  const totalDscrAnn=dscrAnn+sfAnn;
-
-  // Net proceeds
-  const net=state._net||0;
-  const nlb=state.nlb||{}, nlbPct=pn(nlb.pct)||20;
-  const nlbDp=net*(nlbPct/100), nlbTarget=nlbDp/0.10;
-  const nextSDE=pn(nlb.nextSDE)||(nlbTarget/3), curSDE=recentSDE(years);
-
-  const allYears=ytdEnabled?[...years,{...ytdData,year:'YTD'}]:years;
-
-  const SH=({n,title,color='#A34826'})=>(
-    <div style={{borderLeft:`4px solid ${color}`,paddingLeft:12,marginBottom:14}}>
-      <div className="rpt-muted" style={{fontSize:9,textTransform:'uppercase',letterSpacing:'0.1em',fontWeight:600,color:'#57534e'}}>Section {n}</div>
-      <div style={{fontSize:15,fontWeight:800,color:'#292524',marginTop:2}}>{title}</div>
-    </div>
-  );
-  const Row=({label,val,color='#57534e',bold=false,top=false})=>{
-    const isGreen=color==='#C4592F'||color==='#A34826';
-    const isRed=color==='#dc2626'||color==='#dc2626'||color==='#dc2626';
-    const isAmber=color==='#b45309'||color==='#b45309';
-    const isPurple=color==='#6d28d9'||color==='#6d28d9';
-    const cls=isGreen?'rpt-green':isRed?'rpt-red':isAmber?'rpt-amber':isPurple?'rpt-purple':'rpt-muted';
-    return (
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'5px 0',borderTop:top?'1px solid #e6dfd6':'none',borderBottom:'1px solid #efe8e0'}}>
-        <span style={{color:'#57534e',fontSize:11,fontWeight:bold?700:400}}>{label}</span>
-        <span className={`mono ${cls}`} style={{fontSize:11,fontWeight:bold?700:400,color}}>{val}</span>
-      </div>
-    );
-  };
-
   return (
     <div>
-      {/* Controls — hidden on print */}
       <div className="no-print card p-4 mb-4" style={{borderColor:'#e8cfc3'}}>
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs font-semibold" style={{color:'#C4592F'}}>Report Sections</span>
@@ -2814,537 +2733,14 @@ const T9 = ({state,narrative,narrativeStatus}) => {
         <div className="flex flex-wrap gap-x-6 gap-y-2">
           {REPORT_SECTIONS.map(s=>(
             <label key={s.id} className="flex items-center gap-2 cursor-pointer select-none text-xs">
-              <input type="checkbox" checked={vis[s.id]} onChange={()=>toggle(s.id)} className="accent-green-500"/>
+              <input type="checkbox" checked={!!vis[s.id]} onChange={()=>toggle(s.id)} className="accent-green-500"/>
               <span className={vis[s.id]?'text-gray-200':'text-gray-500'}>{s.label}</span>
               {s.seller&&<span className="text-yellow-600 text-xs">(seller)</span>}
             </label>
           ))}
         </div>
       </div>
-
-      {/* ── Printable Report ───────────────────────── */}
-      <div className="report-body">
-        {/* Header */}
-        <div style={{borderBottom:'3px solid #A34826',paddingBottom:16,marginBottom:24,display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
-          <div>
-            <div style={{fontSize:22,fontWeight:900,color:'#292524',letterSpacing:'-0.02em'}}>{state.dealName||'Business Acquisition Analysis'}</div>
-            <div style={{fontSize:13,color:'#57534e',marginTop:4}}>
-              {state.advisorName?<span>Prepared by <strong style={{color:'#57534e'}}>{state.advisorName}</strong> &nbsp;·&nbsp; </span>:null}
-              {new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}
-            </div>
-            <div style={{fontSize:10,color:'#44403c',marginTop:4,letterSpacing:'0.05em'}}>CONFIDENTIAL &nbsp;·&nbsp; QSI™ MARKET PRICE ANALYZER</div>
-          </div>
-          <button className="no-print" onClick={()=>window.print()}
-            style={{background:'#C4592F',color:'#ffffff',border:'none',borderRadius:6,padding:'9px 18px',cursor:'pointer',fontSize:13,fontWeight:600}}>
-             Print / Export PDF
-          </button>
-        </div>
-
-        {/* Intro banner */}
-        <div className="card p-4 mb-5" style={{borderColor:'#e8cfc3',background:'#f8efe8'}}>
-          <div style={{fontSize:12,lineHeight:1.75,color:'#57534e'}}>
-            <strong style={{color:'#C4592F'}}>About This Report — </strong>
-            This analysis was prepared using the QSI™ Market Price Analyzer to evaluate the financial performance, fair market value,
-            and SBA acquisition feasibility of <strong style={{color:'#1c1917'}}>{state.dealName||'this business'}</strong>.
-            All figures are derived from the financial data provided and are intended as a guide for discussion.
-            Actual transaction terms, tax consequences, and lender requirements may vary.
-          </div>
-        </div>
-
-        {/* Section 1 — Financial Performance */}
-        {vis.spread&&<div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
-          <SH n={1} title="Financial Performance & Seller's Discretionary Earnings"/>
-          <p style={{fontSize:12,lineHeight:1.75,color:'#57534e',marginBottom:16}}>
-            <strong style={{color:'#1c1917'}}>Seller's Discretionary Earnings (SDE)</strong> is the standard measure of cash flow used to value small businesses.
-            It represents the total financial benefit available to a full-time working owner — calculated as the business's net income,
-            plus the owner's salary, non-cash charges (depreciation and amortization), interest expense, taxes, and any legitimate
-            personal or non-recurring expenses run through the business known as "add-backs."
-            SDE is the foundation for every valuation and debt-coverage calculation in this report.
-            A consistent or growing SDE trend signals a healthy, transferable business; a declining trend warrants further investigation.
-          </p>
-          <FinancialSpreadTable years={allYears} ytdThrough={ytdEnabled?state.ytdThrough:''}/>
-          <div style={{marginTop:14,paddingTop:10,borderTop:'1px solid #e6dfd6',display:'flex',gap:28,fontSize:11,flexWrap:'wrap'}}>
-            <div><span style={{color:'#57534e'}}>Weighted Avg SDE: </span><span style={{fontFamily:'monospace',color:'#C4592F',fontWeight:700}}>{fmtD(rawWt)}</span></div>
-            <div><span style={{color:'#57534e'}}>Most Recent SDE: </span><span style={{fontFamily:'monospace',color:'#C4592F',fontWeight:700}}>{fmtD(rawRec)}</span></div>
-            {ann>0&&<div><span style={{color:'#57534e'}}>Ann. YTD SDE: </span><span style={{fontFamily:'monospace',color:'#6d28d9',fontWeight:700}}>{fmtD(ann)}</span></div>}
-            <div style={{marginLeft:'auto'}}><span style={{color:'#57534e'}}>Valuation Basis: </span><span style={{fontFamily:'monospace',color:'#C4592F',fontWeight:700}}>{basisLabel} — {fmtD(marketSde)}</span></div>
-          </div>
-          {buyerSalary>0&&<div style={{marginTop:8,fontSize:10,color:'#44403c'}}>
-            Most Recent SDE is the latest year column above, before the {fmtD(buyerSalary)} buyer's salary. That salary is subtracted in the DSCR and cash-flow sections ({fmtD(rec)} after salary).
-          </div>}
-        </div>}
-
-        {/* Section 2 — Fair Market Value */}
-        {vis.fmv&&<div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
-          <SH n={2} title="Fair Market Value Range"/>
-          <p style={{fontSize:12,lineHeight:1.75,color:'#57534e',marginBottom:16}}>
-            Small businesses are valued as a <strong style={{color:'#1c1917'}}>multiple of SDE</strong> — essentially, how many years of earnings a buyer
-            is willing to pay. A <strong style={{color:'#1c1917'}}>3.0× multiple</strong> means the buyer pays three times the annual earnings,
-            which is the most common benchmark for stable, owner-operated businesses.
-            Higher multiples (3.5×–4.0×) reflect favorable factors such as strong growth, recurring revenue, or proprietary systems.
-            Lower multiples (2.0×–2.5×) may reflect elevated risk, owner dependency, or declining revenue.
-            The range below is based on the <strong style={{color:'#C4592F'}}>{basisLabel} SDE of {fmtD(marketSde)}</strong>.
-          </p>
-          <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
-            {mults.map(m=>{
-              const price=marketSde*m, sel=mp>0&&Math.abs(mp-price)<1;
-              return (
-                <div key={m} style={{background:sel?'#f8efe8':'#ffffff',border:`1px solid ${sel?'#C4592F':'#e6dfd6'}`,borderRadius:8,padding:'12px 16px',textAlign:'center',minWidth:110,flex:'1'}}>
-                  <div style={{fontSize:10,color:sel?'#C4592F':'#44403c',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em'}}>{m.toFixed(1)}× SDE</div>
-                  <div style={{fontFamily:'monospace',fontWeight:800,fontSize:15,color:sel?'#C4592F':'#44403c',marginTop:6}}>{fmtD(price)}</div>
-                  {sel&&<div style={{fontSize:9,color:'#C4592F',marginTop:4,fontWeight:600}}>★ SELECTED</div>}
-                </div>
-              );
-            })}
-          </div>
-          {mp>0&&<div style={{marginTop:10,fontSize:11,color:'#57534e'}}>
-            Market price selected: <strong style={{fontFamily:'monospace',color:'#C4592F'}}>{fmtD(mp)}</strong>
-            {marketSde>0&&<span> ({(mp/marketSde).toFixed(2)}× {basisLabel} SDE)</span>}
-          </div>}
-        </div>}
-
-        {/* Section 3 — Industry Comparison */}
-        {vis.industry&&(()=>{
-          const ind=state.ind||{};
-          const indYears=state.years;
-          const indActuals=indYears.map((yd,i)=>{
-            const s=calcSDE(yd);
-            return {year:yd.year,rev:s.rev,grossMarginPct:s.rev>0?(s.gp/s.rev)*100:null,ebitdaPct:s.rev>0?(s.ebitda/s.rev)*100:null,netMarginPct:s.rev>0?(s.noi/s.rev)*100:null};
-          });
-          const recY2=mostRecentYearData(indYears)||indYears[indYears.length-1];
-          const recSDE2=recY2?calcSDE(recY2).sde:0;
-          const recEBITDA2=recY2?calcSDE(recY2).ebitda:0;
-          const recRev2=recY2?calcSDE(recY2).rev:0;
-          const tierSDE2=recRev2>5000000?pn(ind.sdeMultOver5M):recRev2>1000000?pn(ind.sdeMult1to5M):pn(ind.sdeMultUnder1M);
-          const tierLbl2=recRev2>5000000?'Over $5M':recRev2>1000000?'$1M–$5M':'Under $1M';
-          const askP=pn(state.su?.marketPrice);
-          return (
-            <div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
-              <SH n={3} title="Industry Comparison"/>
-              {!ind.name?(
-                <p style={{fontSize:12,color:'#57534e',fontStyle:'italic'}}>No industry data imported. Upload an industry report in the Industry tab to enable this section.</p>
-              ):(
-                <>
-                  <div style={{marginBottom:12}}>
-                    <span style={{fontWeight:700,color:'#6d28d9',fontSize:13}}>{ind.name}</span>
-                    {ind.naics&&<span style={{color:'#57534e',fontSize:11,marginLeft:8}}>NAICS {ind.naics}</span>}
-                    {ind.source&&<span style={{color:'#57534e',fontSize:11,marginLeft:8}}>· {ind.source}{ind.reportYear?` ${ind.reportYear}`:''}</span>}
-                  </div>
-                  <div style={{marginBottom:16}}>
-                    <div style={{fontSize:11,fontWeight:700,color:'#57534e',marginBottom:8}}>INCOME BENCHMARKS</div>
-                    <table style={{width:'100%',borderCollapse:'collapse',fontSize:11}}>
-                      <thead><tr style={{borderBottom:'1px solid #e6dfd6'}}>
-                        <th style={{textAlign:'left',color:'#44403c',paddingBottom:5,width:'35%'}}>Metric</th>
-                        <th style={{textAlign:'right',color:'#6d28d9',paddingBottom:5,paddingLeft:8}}>Industry</th>
-                        {indYears.map((y,i)=><th key={i} style={{textAlign:'right',color:'#1d4ed8',paddingBottom:5,paddingLeft:8}}>{y.year}</th>)}
-                      </tr></thead>
-                      <tbody>
-                        {[['Gross Margin %','grossMarginPct',ind.grossMarginPct,true],['EBITDA %','ebitdaPct',null,true],['Net Income %','netMarginPct',ind.netMarginPct,true]].map(([lbl,key,bench,hi])=>(
-                          <tr key={lbl} style={{borderBottom:'1px solid #e6dfd6'}}>
-                            <td style={{padding:'5px 0',color:'#57534e'}}>{lbl}</td>
-                            <td style={{textAlign:'right',fontFamily:'monospace',color:'#6d28d9',paddingLeft:8}}>{bench?pn(bench)+'%':'—'}</td>
-                            {indActuals.map((a,i)=>{
-                              const v=a[key];
-                              const better=bench&&v!==null?(hi?v>=pn(bench):v<=pn(bench)):null;
-                              return <td key={i} style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:v!==null?'#1c1917':'#44403c'}}>
-                                {v!==null?v.toFixed(1)+'%':'—'}{better!==null&&<span style={{marginLeft:4,color:better?'#C4592F':'#dc2626'}}>{better?'▲':'▼'}</span>}
-                              </td>;
-                            })}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div>
-                    <div style={{fontSize:11,fontWeight:700,color:'#57534e',marginBottom:8}}>VALUATION CHECK — {tierLbl2} REVENUE TIER</div>
-                    <table style={{width:'100%',borderCollapse:'collapse',fontSize:11}}>
-                      <thead><tr style={{borderBottom:'1px solid #e6dfd6'}}>
-                        <th style={{textAlign:'left',color:'#44403c',paddingBottom:5}}>Multiple</th>
-                        <th style={{textAlign:'right',color:'#6d28d9',paddingBottom:5,paddingLeft:8}}>Industry</th>
-                        <th style={{textAlign:'right',color:'#1d4ed8',paddingBottom:5,paddingLeft:8}}>This Deal</th>
-                        <th style={{textAlign:'right',color:'#1d4ed8',paddingBottom:5,paddingLeft:8}}>Implied Value</th>
-                      </tr></thead>
-                      <tbody>
-                        <tr style={{borderBottom:'1px solid #e6dfd6'}}>
-                          <td style={{padding:'5px 0',color:'#57534e'}}>MVIC/SDE ({tierLbl2})</td>
-                          <td style={{textAlign:'right',fontFamily:'monospace',color:'#6d28d9',paddingLeft:8}}>{tierSDE2>0?tierSDE2.toFixed(2)+'×':'—'}</td>
-                          <td style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:'#1c1917'}}>{askP>0&&recSDE2>0?(askP/recSDE2).toFixed(2)+'×':'—'}</td>
-                          <td style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:'#6d28d9'}}>{tierSDE2>0&&recSDE2>0?fmtD(recSDE2*tierSDE2):'—'}</td>
-                        </tr>
-                        <tr style={{borderBottom:'1px solid #e6dfd6'}}>
-                          <td style={{padding:'5px 0',color:'#57534e'}}>Rules of Thumb — x SDE</td>
-                          <td style={{textAlign:'right',fontFamily:'monospace',color:'#6d28d9',paddingLeft:8}}>{ind.sdeMult?pn(ind.sdeMult).toFixed(1)+'×':'—'}</td>
-                          <td style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:'#1c1917'}}>{askP>0&&recSDE2>0?(askP/recSDE2).toFixed(2)+'×':'—'}</td>
-                          <td style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:'#6d28d9'}}>{ind.sdeMult&&recSDE2>0?fmtD(recSDE2*pn(ind.sdeMult)):'—'}</td>
-                        </tr>
-                        <tr style={{borderBottom:'1px solid #e6dfd6'}}>
-                          <td style={{padding:'5px 0',color:'#57534e'}}>Rules of Thumb — % of Revenue</td>
-                          <td style={{textAlign:'right',fontFamily:'monospace',color:'#6d28d9',paddingLeft:8}}>{ind.revenueMultPct?pn(ind.revenueMultPct)+'%':'—'}</td>
-                          <td style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:'#1c1917'}}>{askP>0&&recRev2>0?(askP/recRev2*100).toFixed(1)+'%':'—'}</td>
-                          <td style={{textAlign:'right',fontFamily:'monospace',paddingLeft:8,color:'#6d28d9'}}>{ind.revenueMultPct&&recRev2>0?fmtD(recRev2*pn(ind.revenueMultPct)/100):'—'}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                    {askP>0&&<div style={{marginTop:8,fontSize:11,color:'#57534e'}}>Asking price: <strong style={{fontFamily:'monospace',color:'#b45309'}}>{fmtD(askP)}</strong></div>}
-                  </div>
-                </>
-              )}
-            </div>
-          );
-        })()}
-
-        {/* Section 4 — DSCR */}
-        {vis.dscr&&<div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
-          <SH n={4} title="Debt Service Coverage Ratio (DSCR)"/>
-          <p style={{fontSize:12,lineHeight:1.75,color:'#57534e',marginBottom:16}}>
-            The <strong style={{color:'#1c1917'}}>Debt Service Coverage Ratio (DSCR)</strong> is the lender's primary underwriting test:
-            does the business generate enough cash flow to comfortably make its own loan payments?
-            It is calculated by dividing the business's SDE by the total annual loan payments.
-            A DSCR of <strong style={{color:'#1c1917'}}>1.00</strong> means the business exactly covers its debt — nothing left over.
-            <strong style={{color:'#1c1917'}}> {dscrMin}</strong> is the required minimum — {((dscrMin-1)*100).toFixed(0)} cents of cushion for every dollar of payment.
-            <strong style={{color:'#C4592F'}}> 2.00 or above</strong> is considered strong and signals that the buyer will have healthy cash flow after servicing the debt.
-            The loan modeled here assumes a <strong style={{color:'#1c1917'}}>3× SDE price{buyerSalary>0?' after buyer\'s salary':''} at {loanRate}% over {loanAmort} years with {dpPct}% down</strong>{reVal>0?<span> (real estate included — actual deal uses <strong style={{color:'#1c1917'}}>{(loanStructure||'7a')==='504'?`7(a)+504 structure`:`${blendedAmortR9}yr blended term`}</strong>)</span>:''}.
-          </p>
-          <table style={{width:'100%',fontSize:11,borderCollapse:'collapse'}}>
-            <thead>
-              <tr style={{borderBottom:'2px solid #e6dfd6'}}>
-                {['Year','SDE','SBA Annual DS',...(sfAnn>0?['Seller Note DS']:[]),'Total DS','DSCR','Assessment'].map((h,i)=>(
-                  <th key={h} style={{textAlign:i===0?'left':'right',padding:'6px '+(i===0?'0':'8px'),color:'#44403c',fontSize:10,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600}}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {years.map((y,i)=>{
-                const sde=calcSDE(y).sde;
-                const d=totalDscrAnn>0?sde/totalDscrAnn:0;
-                // Mirrors the DSCR Analysis tab: once a buyer's salary is entered, every year
-                // drops to the flat 1.25 SBA minimum instead of the escalating scale.
-                const thresholds=buyerSalary>0
-                  ? [{g:1.5,y:dscrMin},{g:1.5,y:dscrMin},{g:1.5,y:dscrMin}]
-                  : [{g:1.5,y:dscrMin},{g:1.7,y:dscrMin},{g:2.0,y:Math.max(1.8,dscrMin)}];
-                const t=thresholds[i]||thresholds[2];
-                const clr=d>=t.g?'#A34826':d>=t.y?'#b45309':'#dc2626';
-                const lbl=d>=t.g?'✓ Strong':d>=t.y?'⚠ Marginal':'✗ Below Min';
-                return (
-                  <tr key={`nlb-${i}`} style={{borderBottom:'1px solid #e6dfd6'}}>
-                    <td style={{padding:'7px 0',color:'#1c1917',fontWeight:700}}>{y.year}</td>
-                    <td className="rpt-green mono" style={{textAlign:'right',padding:'7px 8px',color:'#C4592F'}}>{fmtD(sde)}</td>
-                    <td className="rpt-red mono" style={{textAlign:'right',padding:'7px 8px',color:'#dc2626'}}>{fmtD(dscrAnn)}</td>
-                    {sfAnn>0&&<td className="rpt-red mono" style={{textAlign:'right',padding:'7px 8px',color:'#dc2626'}}>{fmtD(sfAnn)}</td>}
-                    <td className="rpt-red mono" style={{textAlign:'right',padding:'7px 8px',color:'#dc2626',fontWeight:700}}>{fmtD(totalDscrAnn)}</td>
-                    <td className={`mono ${d>=t.g?'rpt-green':d>=t.y?'rpt-amber':'rpt-red'}`} style={{textAlign:'right',padding:'7px 8px',fontWeight:800,fontSize:14,color:clr}}>{d>0?d.toFixed(2):'—'}</td>
-                    <td className={d>=t.g?'rpt-green':d>=t.y?'rpt-amber':'rpt-red'} style={{textAlign:'right',padding:'7px 0',fontSize:11,color:clr,fontWeight:600}}>{lbl}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {sfAnn>0&&<div style={{marginTop:8,fontSize:11,color:'#57534e'}}>
-            Seller note of {fmtD(sfAmt)} at {su?.sfRate}% / {su?.sfAmort}yr adds {fmtD(sfAnn)}/yr to total debt service.
-          </div>}
-        </div>}
-
-        {/* Section 5 — Seller Reality Check */}
-        {vis.seller&&sellerAskP>0&&(
-          <div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
-            <SH n={5} title="Seller Reality Check"/>
-            <p style={{fontSize:12,lineHeight:1.75,color:'#57534e',marginBottom:14}}>
-              This analysis requires a <strong style={{color:'#1c1917'}}>DSCR of at least {dscrMin}×</strong> — the business must generate
-              ${dscrMin.toFixed(2)} of cash flow for every $1.00 of loan payment. After deducting a buyer salary and contingency reserve,
-              the adjusted DSCR shows true borrower capacity. The table below compares the seller's asking price,
-              the advisor's recommended price, and the maximum price the business can mathematically support.
-            </p>
-            {(()=>{
-              const sprices=[sellerAskP,mp,sMax125];
-              const slabels=["Seller's Price","Advisor's Price",`Max @ ${dscrMin}×`];
-              const smets=[sAskM,sAdvM,sMaxM];
-              const shdrC=['#dc2626','#A34826','#1d4ed8'];
-              const srow=(lbl,vals,colFn,bold)=>(
-                <tr style={{borderBottom:'1px solid #e6dfd6',background:bold?'#f8efe8':'transparent'}}>
-                  <td style={{padding:'4px 0',color:'#57534e',fontSize:11,fontWeight:bold?700:400}}>{lbl}</td>
-                  {vals.map((v,i)=><td key={i} style={{textAlign:'right',fontFamily:'monospace',fontSize:11,padding:'4px 8px',color:typeof colFn==='function'?colFn(v,i):'#1c1917',fontWeight:bold?700:400}}>{v!=null?fmtD(v):'—'}</td>)}
-                </tr>
-              );
-              const sdRow=(lbl,vals)=>(
-                <tr style={{borderBottom:'1px solid #e6dfd6'}}>
-                  <td style={{padding:'4px 0',color:'#57534e',fontSize:11,fontWeight:700}}>{lbl}</td>
-                  {vals.map((d,i)=><td key={i} style={{textAlign:'right',fontFamily:'monospace',fontSize:13,fontWeight:800,padding:'4px 8px',color:d!=null?sDC(d):'#44403c'}}>{d!=null?d.toFixed(2):'—'}</td>)}
-                </tr>
-              );
-              return (
-                <table style={{width:'100%',borderCollapse:'collapse',marginBottom:14}}>
-                  <thead>
-                    <tr style={{borderBottom:'2px solid #e6dfd6'}}>
-                      <th style={{textAlign:'left',color:'#44403c',fontSize:10,textTransform:'uppercase',padding:'4px 0',width:'35%'}}>Metric</th>
-                      {slabels.map((l,i)=><th key={i} style={{textAlign:'right',color:shdrC[i],fontSize:10,fontWeight:700,padding:'4px 8px',textTransform:'uppercase'}}>{l}</th>)}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {srow('Asking Price',sprices.map(p=>p>0?p:null),()=>'#1c1917',true)}
-                    {srow(`Down Payment (${dpPct||10}%)`,sprices.map(p=>p>0?p*dp:null),()=>'#57534e')}
-                    {srow('SBA Loan',sprices.map(p=>p>0?p*(1-dp):null),()=>'#57534e')}
-                    {srow('Monthly Payment',smets.map(m=>m?m.mo:null),()=>'#b45309')}
-                    {srow('Annual Debt Service',smets.map(m=>m?m.ann:null),()=>'#dc2626')}
-                    {srow('SDE Available',sprices.map(()=>baseRaw),()=>'#C4592F',true)}
-                    {srow('− Buyer Salary',sprices.map(()=>sellerSal||0),()=>'#57534e')}
-                    {srow('= Adjusted SDE',sprices.map(()=>baseRaw-sellerSal),(v)=>v>=0?'#C4592F':'#dc2626',true)}
-                    {sdRow('Raw DSCR',smets.map(m=>m?m.rawD:null))}
-                    {sdRow('Adj. DSCR',smets.map(m=>m?m.adjD:null))}
-                    {srow(`− Contingency (${sellerContP}%)`,sprices.map(()=>baseRaw*(sellerContP/100)),()=>'#57534e')}
-                    <tr style={{borderBottom:'1px solid #e6dfd6',background:'#f8efe8'}}>
-                      <td style={{padding:'4px 0',color:'#57534e',fontSize:11,fontWeight:700}}>= Cash Left Over</td>
-                      {smets.map((m,i)=><td key={i} style={{textAlign:'right',fontFamily:'monospace',fontSize:13,fontWeight:800,padding:'4px 8px',color:m?sCC(m.cash):'#44403c'}}>{m?fmtD(m.cash):'—'}</td>)}
-                    </tr>
-                    <tr>
-                      <td style={{padding:'5px 0',color:'#57534e',fontSize:11,fontWeight:700}}>Status</td>
-                      {smets.map((m,i)=><td key={i} style={{textAlign:'right',padding:'5px 8px',fontSize:11,fontWeight:700,color:m?(m.adjD>=1.5?'#A34826':m.adjD>=dscrMin?'#b45309':'#dc2626'):'#44403c'}}>{sStatus(m)}</td>)}
-                    </tr>
-                  </tbody>
-                </table>
-              );
-            })()}
-            {(()=>{
-              const slines=[];
-              if(sellerAskP>0&&sAskM){
-                slines.push(`At the seller's asking price of ${fmtD(sellerAskP)}, the raw DSCR is ${sAskM.rawD.toFixed(2)}${sAskM.rawD<dscrMin?` — well below the ${dscrMin}× required minimum`:sAskM.rawD<1.5?` — near the required minimum of ${dscrMin}×`:''}.`);
-                if(sellerSal>0)slines.push(`After deducting a ${fmtD(sellerSal)} buyer salary, the adjusted DSCR drops to ${sAskM.adjD.toFixed(2)}${sAskM.adjD<dscrMin?', making loan approval unlikely at this price':''}.`);
-              }
-              if(sMax125>0)slines.push(`The maximum supportable price at ${dscrMin}× DSCR${sellerSal>0?` with a ${fmtD(sellerSal)} buyer salary`:''} is ${fmtD(sMax125)}.`);
-              if(!slines.length)return null;
-              return <div style={{background:'#f8efe8',border:'1px solid #e8cfc3',borderRadius:7,padding:'12px 14px',fontSize:12,color:'#57534e',lineHeight:1.8,fontStyle:'italic'}}>{slines.join(' ')}</div>;
-            })()}
-          </div>
-        )}
-
-        {/* Section 6 — Buyer ROI */}
-        {vis.roi&&(()=>{
-          const rmp=pn(su?.marketPrice), rdp=(dpPct||10)/100;
-          const rr=(loanRate||10.75)/100/12, rn=(loanAmort||10)*12;
-          const rpmt=loan=>rr===0?loan/rn:loan*rr*Math.pow(1+rr,rn)/(Math.pow(1+rr,rn)-1);
-          const rsfAmt=pn(su?.sellerFin),rsfR=(pn(su?.sfRate)||0)/100/12,rsfN=(pn(su?.sfAmort)||0)*12;
-          const rsbaLoan=Math.max(0,rmp*(1-rdp)-rsfAmt);
-          const rsbaAnn=rpmt(rsbaLoan)*12;
-          const rsfAnn=(rsfAmt>0&&rsfR>0&&rsfN>0?(rsfAmt*rsfR*Math.pow(1+rsfR,rsfN)/(Math.pow(1+rsfR,rsfN)-1)):0)*12;
-          const rTotalDS=rsbaAnn+rsfAnn;
-          const rClose=(su?.closing===''||su?.closing===undefined)?15000:pn(su?.closing);
-          const rFee=rsbaLoan*0.75*0.035;
-          const rTotalCash=rmp*rdp+rClose+rFee+pn(su?.wc);
-          const rsde=resolveSDE(state).basis;
-          const rNetCF=rsde-rTotalDS;
-          const rCoC=rTotalCash>0?rNetCF/rTotalCash*100:0;
-          const rroi2=state.roi||{};
-          const rGrowth=pn(rroi2.growthPct||'0')/100;
-          const rExitYrs=Math.max(1,pn(rroi2.exitYears||'10'));
-          const rExitMult=pn(rroi2.exitMultiple)||pn(state.ind?.sdeMult)||3.5;
-          const rRemBal=(loan,rate,mo,yrs)=>{let b=loan;if(!rate||!mo||b<=0)return 0;for(let m=0;m<yrs*12;m++){b-=(mo-b*rate);if(b<=0)return 0;}return Math.max(0,b);};
-          const rExitSDE=rsde*Math.pow(1+rGrowth,rExitYrs-1);
-          let rCumCF=0;for(let y=1;y<=rExitYrs;y++)rCumCF+=Math.max(0,rsde*Math.pow(1+rGrowth,y-1)-rTotalDS);
-          const rSbaRem=rRemBal(rsbaLoan,rr,rpmt(rsbaLoan),rExitYrs);
-          const rScen=mult=>{const tv=rExitSDE*mult;const net=tv-rSbaRem-(rsfAmt>0?rRemBal(rsfAmt,rsfR,(rsfAmt>0&&rsfR>0&&rsfN>0?rsfAmt*rsfR*Math.pow(1+rsfR,rsfN)/(Math.pow(1+rsfR,rsfN)-1):0),rExitYrs):0);const tot=rCumCF+net;return{tv,tot,roi:rTotalCash>0?tot/rTotalCash*100:0,cagr:rTotalCash>0?Math.pow(tot/rTotalCash,1/rExitYrs)-1:0};};
-          if(rmp===0||rsde===0)return null;
-          return (
-            <div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
-              <SH n={6} title="Buyer ROI Summary"/>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:14}}>
-                {[['Total Cash to Close',fmtD(rTotalCash),'#C4592F'],['Cash-on-Cash Return',rCoC.toFixed(1)+'%',rCoC>=15?'#C4592F':rCoC>=10?'#b45309':'#dc2626'],['Leverage Ratio',`${(rmp/rTotalCash).toFixed(1)}:1`,'#1d4ed8']].map(([l,v,c])=>(
-                  <div key={l} style={{textAlign:'center',padding:'10px',background:'#f7f3ee',borderRadius:6,border:'1px solid #e6dfd6'}}>
-                    <div style={{fontSize:9,color:'#57534e',marginBottom:3,fontWeight:600,textTransform:'uppercase'}}>{l}</div>
-                    <div style={{fontFamily:'monospace',fontWeight:800,fontSize:16,color:c}}>{v}</div>
-                  </div>
-                ))}
-              </div>
-              <table style={{width:'100%',fontSize:11,borderCollapse:'collapse',marginBottom:14}}>
-                <thead><tr style={{borderBottom:'1px solid #e6dfd6'}}>
-                  <th style={{textAlign:'left',color:'#44403c',paddingBottom:5,fontSize:10,fontWeight:600}}>Year 1 Returns</th>
-                  <th style={{textAlign:'right',color:'#57534e',paddingBottom:5,fontSize:10}}>Annual</th>
-                  <th style={{textAlign:'right',color:'#57534e',paddingBottom:5,fontSize:10}}>Monthly</th>
-                </tr></thead>
-                <tbody>
-                  {[['Seller\'s Discretionary Earnings',rsde,true,'#C4592F'],['− SBA Loan Payment',-rsbaAnn,false,'#dc2626'],...(rsfAnn>0?[['− Seller Financing',-rsfAnn,false,'#dc2626']]:[]),['Net Cash Flow',rNetCF,true,rNetCF>=0?'#C4592F':'#dc2626']].map(([l,v,bold,c])=>(
-                    <tr key={l} style={{borderBottom:'1px solid #e6dfd6'}}>
-                      <td style={{padding:'5px 0',color:'#57534e',fontWeight:bold?700:400}}>{l}</td>
-                      <td style={{textAlign:'right',fontFamily:'monospace',color:c,fontWeight:bold?700:400,paddingLeft:8}}>{v>=0?fmtD(v):`(${fmtD(Math.abs(v))})`}</td>
-                      <td style={{textAlign:'right',fontFamily:'monospace',color:c,fontWeight:bold?700:400,paddingLeft:8}}>{v>=0?fmtD(v/12):`(${fmtD(Math.abs(v)/12)})`}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div style={{fontSize:10,fontWeight:700,color:'#57534e',marginBottom:6}}>EXIT SCENARIOS — YEAR {rExitYrs} (SDE: {fmtD(rExitSDE)} · Exit multiples based on {rExitMult.toFixed(1)}× market)</div>
-              <table style={{width:'100%',fontSize:11,borderCollapse:'collapse'}}>
-                <thead><tr style={{borderBottom:'1px solid #e6dfd6'}}>
-                  <th style={{textAlign:'left',color:'#44403c',fontWeight:600,paddingBottom:4}}>Scenario</th>
-                  {[['Conservative',rExitMult-1],['Market',rExitMult],['Premium',rExitMult+1]].map(([l])=><th key={l} style={{textAlign:'right',color:l==='Market'?'#b45309':'#57534e',fontWeight:700,paddingBottom:4,paddingLeft:8}}>{l}</th>)}
-                </tr></thead>
-                <tbody>
-                  {[['Multiple',m=>m.toFixed(1)+'×','#57534e'],['Total Return',m=>fmtD(rScen(m).tot),'#b45309'],['Total ROI',m=>rScen(m).roi.toFixed(0)+'%','#6d28d9'],['CAGR',m=>(rScen(m).cagr*100).toFixed(1)+'%','#C4592F']].map(([l,fn,c])=>(
-                    <tr key={l} style={{borderBottom:'1px solid #e6dfd6'}}>
-                      <td style={{padding:'5px 0',color:'#57534e'}}>{l}</td>
-                      {[rExitMult-1,rExitMult,rExitMult+1].map(m=><td key={m} style={{textAlign:'right',fontFamily:'monospace',color:c,paddingLeft:8}}>{fn(m)}</td>)}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          );
-        })()}
-
-        {/* Section 6 — Sources & Uses */}
-        {vis.sources&&<div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
-          <SH n={7} title="Sources & Uses of Funds"/>
-          <p style={{fontSize:12,lineHeight:1.75,color:'#57534e',marginBottom:16}}>
-            Every acquisition has two sides: <strong style={{color:'#1c1917'}}>Sources</strong> (where the money comes from)
-            and <strong style={{color:'#1c1917'}}>Uses</strong> (where every dollar goes).
-            The <strong style={{color:'#1c1917'}}>SBA 7(a) loan</strong> is the primary financing vehicle for acquisitions of this type,
-            enabling buyers to acquire a business with as little as {dpPct}% down.
-            The SBA guarantee fee — charged by the federal government for backing the loan — and closing costs
-            are typically rolled into the loan amount, minimizing cash needed at closing.
-            For the deal to be fully funded, Total Sources must equal or exceed Total Uses.
-          </p>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
-            <div>
-              <div style={{fontSize:10,fontWeight:700,color:'#C4592F',textTransform:'uppercase',letterSpacing:'0.08em',paddingBottom:8,marginBottom:8,borderBottom:'2px solid #e8cfc3'}}>SOURCES — How It's Funded</div>
-              <Row label={`SBA Loan (${(100-dpPct)}% of project + fee + closing)`} val={fmtD(totalLoan)} color='#C4592F'/>
-              <Row label={`Buyer Down Payment (${dpPct}% of total project)`} val={fmtD(downAmt)} color='#44403c'/>
-              {sfAmt>0&&<Row label="Seller Financing Note" val={fmtD(sfAmt)} color='#b45309'/>}
-              <Row label="Total Sources" val={fmtD(totalLoan+downAmt+sfAmt)} color='#C4592F' bold top/>
-            </div>
-            <div>
-              <div style={{fontSize:10,fontWeight:700,color:'#dc2626',textTransform:'uppercase',letterSpacing:'0.08em',paddingBottom:8,marginBottom:8,borderBottom:'2px solid #e6dfd6'}}>USES — Where It Goes</div>
-              <Row label="Market Price" val={fmtD(mp)} color='#44403c'/>
-              {reVal>0&&<Row label="Real Estate" val={fmtD(reVal)} color='#44403c'/>}
-              {wcVal>0&&<Row label="Working Capital" val={fmtD(wcVal)} color='#44403c'/>}
-              {arVal>0&&<Row label="Accounts Receivable" val={fmtD(arVal)} color='#44403c'/>}
-              {invVal>0&&<Row label="Inventory" val={fmtD(invVal)} color='#44403c'/>}
-              <Row label="SBA Guarantee Fee (3.5% of 75% of loan)" val={fmtD(guarFee)} color='#57534e'/>
-              <Row label="Closing Costs" val={fmtD(closingAmt)} color='#57534e'/>
-              <Row label="Total Uses" val={fmtD(totalProject+guarFee+closingAmt)} color='#dc2626' bold top/>
-            </div>
-          </div>
-        </div>}
-
-        {/* Section 5 — Net Proceeds */}
-        {vis.proceeds&&<div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
-          <SH n={8} title="Net Proceeds to Seller" color='#b45309'/>
-          <p style={{fontSize:12,lineHeight:1.75,color:'#57534e',marginBottom:16}}>
-            The gross sale price is rarely what a seller takes home. Several obligations are settled at closing before the seller receives their check.
-            Any outstanding <strong style={{color:'#1c1917'}}>business debt or mortgage</strong> is paid off first.
-            The <strong style={{color:'#1c1917'}}>broker's commission</strong> — typically 8–12% of the sale price — compensates the intermediary who brought the deal together.
-            <strong style={{color:'#1c1917'}}> Legal and closing fees</strong> cover attorney review, due diligence, and transaction costs.
-            Finally, <strong style={{color:'#1c1917'}}>capital gains taxes</strong> apply to any gain above the seller's adjusted cost basis in the business.
-            What remains after all deductions is the seller's <em>true</em> take-home amount.
-          </p>
-          {(()=>{
-            const gross=mp||pn(state.np?.gross);
-            const mortgage=pn(state.np?.mortgage);
-            const commPct=pn(state.np?.commission)/100;
-            const comm=gross*commPct;
-            const legal=pn(state.np?.legal);
-            const taxRate=pn(state.np?.taxRate)/100;
-            const taxable=gross-mortgage-comm-legal;
-            const tax=taxable>0?taxable*taxRate:0;
-            return (
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,alignItems:'center'}}>
-                <div>
-                  <Row label="Gross Sale Price" val={fmtD(gross)} color='#C4592F' bold/>
-                  <Row label="Less: Debt / Mortgage Payoff" val={`(${fmtD(mortgage)})`} color='#dc2626'/>
-                  <Row label={`Less: Broker Commission (${(commPct*100).toFixed(0)}%)`} val={`(${fmtD(comm)})`} color='#dc2626'/>
-                  <Row label="Less: Legal & Closing Fees" val={`(${fmtD(legal)})`} color='#dc2626'/>
-                  <Row label={`Less: Estimated Tax (${(taxRate*100).toFixed(0)}%)`} val={`(${fmtD(tax)})`} color='#dc2626'/>
-                </div>
-                <div style={{textAlign:'center',background:'#f8efe8',border:'1px solid #e8cfc3',borderRadius:10,padding:'24px 16px'}}>
-                  <div style={{fontSize:11,color:'#57534e',marginBottom:6,textTransform:'uppercase',letterSpacing:'0.08em',fontWeight:600}}>Estimated Net Proceeds</div>
-                  <div style={{fontFamily:'monospace',fontWeight:900,fontSize:32,color:net>=0?'#C4592F':'#dc2626'}}>{fmtD(net)}</div>
-                  <div style={{fontSize:10,color:'#44403c',marginTop:6}}>after all deductions at closing</div>
-                </div>
-              </div>
-            );
-          })()}
-        </div>}
-
-        {/* Section 6 — QSI NLB */}
-        {vis.nlb&&<div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
-          <SH n={9} title="QSI™ Next Larger Business (NLB) Strategy" color='#6d28d9'/>
-          <p style={{fontSize:12,lineHeight:1.75,color:'#57534e',marginBottom:16}}>
-            Rather than leaving sale proceeds in low-yield savings or investments, the <strong style={{color:'#1c1917'}}>QSI™ NLB Strategy</strong> shows
-            how a seller can put their net proceeds to work by using them as a down payment on a <em>larger, more profitable business</em>.
-            By leveraging the SBA's minimum 10% down payment requirement, even a modest set of proceeds can unlock access to a significantly
-            larger acquisition — amplifying the seller's future income without requiring them to spend their entire liquidity.
-            The "Annual Cash Flow Increase" below represents the estimated difference in owner earnings between the business being sold
-            and the next business the seller could acquire using this strategy.
-          </p>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
-            <div>
-              <div style={{fontSize:10,fontWeight:700,color:'#6d28d9',textTransform:'uppercase',letterSpacing:'0.08em',paddingBottom:8,marginBottom:8,borderBottom:'2px solid #e6dfd6'}}>STRATEGY INPUTS</div>
-              <Row label="Net Proceeds from Sale" val={fmtD(net)} color='#C4592F'/>
-              <Row label={`Down Payment for Next Acquisition (${nlbPct}%)`} val={fmtD(nlbDp)} color='#b45309'/>
-              <Row label="Remaining Liquid Proceeds After DP" val={fmtD(net-nlbDp)} color='#57534e'/>
-              <Row label="Current Business SDE" val={fmtD(curSDE)} color='#C4592F'/>
-            </div>
-            <div>
-              <div style={{fontSize:10,fontWeight:700,color:'#6d28d9',textTransform:'uppercase',letterSpacing:'0.08em',paddingBottom:8,marginBottom:8,borderBottom:'2px solid #e6dfd6'}}>NEXT BUSINESS PROJECTION</div>
-              <Row label="Target Acquisition Price (10% down)" val={fmtD(nlbTarget)} color='#6d28d9'/>
-              <Row label="Estimated Next Business SDE (3× value)" val={fmtD(nextSDE)} color='#6d28d9'/>
-              <div style={{marginTop:10,padding:'10px 0',borderTop:'2px solid #e6dfd6',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                <span style={{color:'#1c1917',fontWeight:700,fontSize:12}}>Estimated Annual Income Increase</span>
-                <span style={{fontFamily:'monospace',fontWeight:800,fontSize:14,color:nextSDE-curSDE>=0?'#C4592F':'#dc2626'}}>{fmtD(nextSDE-curSDE)}</span>
-              </div>
-            </div>
-          </div>
-        </div>}
-
-        {/* Section: Narrative Analysis */}
-        {vis.narrative&&(()=>{
-          const withData=[...sortedByYear(years)].filter(y=>pn(y.revenue)>0);
-          const c0=withData.length>0?calcSDE(withData[0]):null;
-          const c1=withData.length>1?calcSDE(withData[1]):null;
-          const yoy=(cur,prev)=>prev&&Math.abs(prev)>0?((cur-prev)/Math.abs(prev)*100):null;
-          const chartData=[...withData].reverse().map(y=>{const c=calcSDE(y);return{year:String(y.year),revenue:c.rev,sde:c.sde,gm:c.rev>0?+(c.gp/c.rev*100).toFixed(1):0,em:c.rev>0?+(c.ebitda/c.rev*100).toFixed(1):0,sm:c.rev>0?+(c.sde/c.rev*100).toFixed(1):0};});
-          const pctFmt=v=>v.toFixed(1)+'%';
-          const wfSteps=c0?(()=>{const idao=c0.int+c0.taxes+c0.dep+c0.amor,ab=c0.ab+c0.rentAB,s=[{label:'Revenue',val:c0.rev,type:'start'},{label:'− COGS',val:-c0.cogs,type:'step'},{label:'Gr. Profit',val:c0.gp,type:'total'},{label:'− OpEx',val:-c0.opx,type:'step'},{label:'NOI',val:c0.noi,type:'total'}];if(idao>0)s.push({label:'+I/T/D&A',val:idao,type:'step'});s.push({label:'EBITDA',val:c0.ebitda,type:'total'});if(c0.oc>0)s.push({label:'+OC',val:c0.oc,type:'step'});if(ab>0)s.push({label:'+Add-Backs',val:ab,type:'step'});s.push({label:'SDE',val:c0.sde,type:'total'});return s;})():[];
-          const KpiCard=({label,value,pctOfRev,yoyPct,color='#1c1917'})=>{const up=yoyPct!=null&&yoyPct>=0;return(<div className="card p-4" style={{flex:1}}><div style={{fontSize:10,color:'#44403c',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>{label}</div><div style={{fontFamily:'monospace',fontSize:16,fontWeight:800,color,marginBottom:4}}>{value}</div><div style={{display:'flex',gap:8,flexWrap:'wrap'}}>{pctOfRev!=null&&<span style={{fontSize:10,color:'#57534e'}}>{pctOfRev.toFixed(1)}% of rev</span>}{yoyPct!=null&&<span style={{fontSize:10,color:up?'#C4592F':'#dc2626',fontWeight:600}}>{up?'▲':'▼'}{Math.abs(yoyPct).toFixed(1)}% YoY</span>}</div></div>);};
-          return (
-            <div className="card p-5 mb-4" style={{pageBreakInside:'avoid'}}>
-              <SH n={10} title="Financial Narrative Analysis"/>
-              {c0&&(<>
-                {/* KPI cards */}
-                <div style={{display:'flex',gap:10,marginBottom:14}}>
-                  <KpiCard label="Revenue" value={fmtD(c0.rev)} yoyPct={yoy(c0.rev,c1?.rev)} color="#1c1917"/>
-                  <KpiCard label="Gross Profit" value={fmtD(c0.gp)} pctOfRev={c0.rev>0?c0.gp/c0.rev*100:null} yoyPct={yoy(c0.gp,c1?.gp)} color="#1d4ed8"/>
-                  <KpiCard label="EBITDA" value={fmtD(c0.ebitda)} pctOfRev={c0.rev>0?c0.ebitda/c0.rev*100:null} yoyPct={yoy(c0.ebitda,c1?.ebitda)} color="#6d28d9"/>
-                  <KpiCard label="SDE" value={fmtD(c0.sde)} pctOfRev={c0.rev>0?c0.sde/c0.rev*100:null} yoyPct={yoy(c0.sde,c1?.sde)} color="#C4592F"/>
-                </div>
-                {/* Trend charts */}
-                <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:14}}>
-                  {[{l:'Revenue Trend',k:'revenue',c:'#1d4ed8',f:undefined},{l:'Gross Margin %',k:'gm',c:'#1d4ed8',f:pctFmt},{l:'EBITDA Margin %',k:'em',c:'#6d28d9',f:pctFmt},{l:'SDE Trend',k:'sde',c:'#C4592F',f:undefined}].map(ch=>(
-                    <div key={ch.k} className="card p-3">
-                      <div style={{fontSize:10,color:'#57534e',fontWeight:600,marginBottom:6}}>{ch.l}</div>
-                      <BarChart data={chartData} dataKey={ch.k} color={ch.c} fmtAxis={ch.f}/>
-                    </div>
-                  ))}
-                </div>
-                {/* Waterfall */}
-                {wfSteps.length>0&&<div style={{marginBottom:14}}>
-                  <div style={{fontSize:10,color:'#44403c',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>Revenue → SDE Bridge — {withData[0]?.year}</div>
-                  <WaterfallChart steps={wfSteps}/>
-                </div>}
-              </>)}
-              {/* Narrative text */}
-              {narrativeStatus==='done'
-                ? <div style={{borderTop:'1px solid #e6dfd6',paddingTop:14,marginTop:4}}>{renderNarrative(narrative)}</div>
-                : <p className="no-print" style={{color:'#44403c',fontSize:12,fontStyle:'italic',marginTop:8}}>
-                    Narrative text not yet generated — go to the <strong style={{color:'#57534e'}}>Narrative Report</strong> tab and click Generate to populate this section.
-                  </p>
-              }
-            </div>
-          );
-        })()}
-
-        {/* Footer */}
-        <div style={{marginTop:20,paddingTop:12,borderTop:'1px solid #e6dfd6',display:'flex',justifyContent:'space-between',fontSize:10,color:'#44403c'}}>
-          <span>QSI™ Market Price Analyzer &nbsp;·&nbsp; Confidential &nbsp;·&nbsp; For Discussion Purposes Only</span>
-          <span>{new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</span>
-        </div>
-      </div>
+      <DealReportView report={report} onDownload={download} downloading={downloading} downloadError={downloadError}/>
     </div>
   );
 };
