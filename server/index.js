@@ -42,6 +42,7 @@ const otpRouter         = require('./routes/otp');
 const redactRouter      = require('./routes/redact');
 const proposalsRouter   = require('./routes/proposals');
 const successPlansRouter = require('./routes/success-plans');
+const analyzerReportRouter = require('./routes/analyzerReport');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -115,6 +116,7 @@ app.use('/api/otp',          otpRouter);
 app.use('/api/redact',       redactRouter);
 app.use('/api/proposals',    proposalsRouter);
 app.use('/api/success-plans', successPlansRouter);
+app.use('/api/analyzer', analyzerReportRouter);
 
 // Serve generated output files (auth required)
 app.use('/output', basicAuth, express.static(OUTPUT_ROOT));
