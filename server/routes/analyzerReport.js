@@ -1,5 +1,5 @@
 const express = require('express');
-const { buildDealReport } = require('../../shared/dealReport.cjs');
+const { buildDealReport } = require('../../shared/dealReport.mjs');
 const { renderDealReportPdf } = require('../dealReportPdf');
 
 const router = express.Router();

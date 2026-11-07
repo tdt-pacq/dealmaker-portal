@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { buildDealReport, computeNetProceeds, fmtMoney } = require('./dealReport.cjs');
+const { buildDealReport, computeNetProceeds, fmtMoney } = require('./dealReport.mjs');
 const { willowAshSampleState } = require('./willowAshSample.cjs');
 
 const round = n => Math.round(n);

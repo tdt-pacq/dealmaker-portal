@@ -28,7 +28,7 @@ const RED = '#b91c1c';
 const BLUE = '#1d4ed8';
 const PURPLE = '#6d28d9';
 
-const { fmtMoney, fmtParen, fmtPct } = require('../shared/dealReport.cjs');
+const { fmtMoney, fmtParen, fmtPct } = require('../shared/dealReport.mjs');
 
 function logoPaths() {
   const root = path.join(__dirname, '..');

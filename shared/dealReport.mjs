@@ -3,6 +3,12 @@
  * One calculation feeds the on-screen report and the PDF, so a section
  * cannot show a stale total or a different loan than the tab it claims to match.
  *
+ * This file is ESM on purpose. Vite's shared CJS plugin turns
+ * `module.exports = { fmtMoney }` into a default-only module, and the
+ * production Rollup build then rejects `import { fmtMoney }`. Named
+ * `export` matches shared/wtfMath.mjs, which the client already builds.
+ * Node still loads it with require(), the same way the server loads wtfMath.
+ *
  * SDE helpers match client/src/pages/analyzer/sdeBasis.js. A parity test locks that.
  */
 
@@ -750,7 +756,7 @@ function buildDealReport(state, options = {}) {
   };
 }
 
-module.exports = {
+export {
   pn, calcSDE, wtdSDE, recentSDE, fairMarketSde, sortedByYear,
   fmtMoney, fmtParen, fmtPct,
   computeNetProceeds, buildNlb, buildDealReport, monthlyPayment,
