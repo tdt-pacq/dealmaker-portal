@@ -180,8 +180,10 @@ export default function DealReportView({ report, onDownload, downloading, downlo
 
       <header className="deal-report-mast">
         <div className="deal-report-brand">
-          <img src="/phoenix-icon.svg" alt="" />
-          <img src={LOGO_SRC} alt="Peterson Acquisitions" />
+          <img className="deal-report-phoenix" src="/phoenix-icon.svg" alt="" />
+          <span className="deal-report-wordmark" role="img" aria-label="Peterson Acquisitions">
+            <img src={LOGO_SRC} alt="" />
+          </span>
         </div>
         <p className="deal-report-kicker">Confidential · QSI™ Market Price Analyzer</p>
         <h1>{report.meta.dealName}</h1>
@@ -426,8 +428,8 @@ export default function DealReportView({ report, onDownload, downloading, downlo
       {proceeds && (
         <Section section={proceeds}>
           <p>
-            Net proceeds use the Net Proceeds tab. The SBA guarantee fee and closing costs are deducted here even though Sources &amp; Uses finances those same buyer costs inside the loan.
-            Debt, commission, legal fees, and tax are listed even when they are zero so the total can be checked.
+            Seller proceeds deduct debt, commission, legal fees, tax, and a seller closing cost only when one is entered.
+            The buyer SBA guarantee fee and buyer closing costs stay in Sources &amp; Uses and buyer cash to close.
             A missing sale price is not reported as $0.
           </p>
           {p.available ? (

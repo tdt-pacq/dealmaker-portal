@@ -43,24 +43,29 @@ test('Willow Ash net proceeds follow the Net Proceeds tab and ignore stale _net'
   const proceeds = computeNetProceeds(state);
   assert.equal(round(proceeds.gross), 458708);
   assert.equal(round(proceeds.commissionAmt), 45871);
-  assert.equal(round(proceeds.sbaFee), 10837);
-  assert.equal(round(proceeds.closing), 15000);
-  assert.equal(round(proceeds.net), 387000);
+  assert.equal(round(proceeds.buyerSbaFee), 10837);
+  assert.equal(round(proceeds.buyerClosing), 15000);
+  assert.equal(proceeds.sellerClosing, 0);
+  assert.equal(round(proceeds.net), 412837);
+  assert.equal(round(proceeds.gross - proceeds.commissionAmt), 412837);
   assert.notEqual(proceeds.net, 0);
   assert.equal(state._net, 0);
+  assert.equal(proceeds.lines.some(line => /SBA|buyer/i.test(line.label)), false);
   const signed = proceeds.lines.reduce((s, line) => s + (line.sign === '-' ? -line.amount : line.amount), 0);
   assert.ok(Math.abs(signed - proceeds.net) < 0.01);
   state._net = 999999;
-  assert.equal(round(buildDealReport(state).proceeds.net), 387000);
+  assert.equal(round(buildDealReport(state).proceeds.net), 412837);
+  assert.equal(round(buildDealReport(state).summary.find(fig => fig.label === 'Net proceeds to seller').value.replace(/[$,]/g, '')), 412837);
 });
 
 test('Willow Ash NLB uses the computed proceeds and does not print a loss of current SDE', () => {
   const report = buildDealReport(willowAshSampleState(), { preparedDate: '2026-11-07' });
   assert.equal(report.nlb.available, true);
   assert.equal(report.nlb.pct, 100);
-  assert.equal(round(report.nlb.target), 3870002);
-  assert.equal(round(report.nlb.nextSDE), 1290001);
-  assert.equal(round(report.nlb.incomeIncrease), 1137098);
+  assert.equal(round(report.nlb.net), 412837);
+  assert.equal(round(report.nlb.target), 4128372);
+  assert.equal(round(report.nlb.nextSDE), 1376124);
+  assert.equal(round(report.nlb.incomeIncrease), 1223221);
   assert.ok(report.nlb.incomeIncrease > 0);
   assert.notEqual(round(report.nlb.incomeIncrease), -152903);
 });
@@ -156,5 +161,30 @@ test('explicit zero debt stays visible and does not get replaced with an invente
   state.np.taxRate = 0;
   const debt = computeNetProceeds(state).lines.find(l => l.label.startsWith('Debt'));
   assert.equal(debt.amount, 0);
-  assert.equal(round(computeNetProceeds(state).net), 387000);
+  assert.equal(round(computeNetProceeds(state).net), 412837);
+});
+
+test('buyer guarantee fee and buyer closing do not change seller proceeds; entered seller costs do', () => {
+  const base = round(computeNetProceeds(willowAshSampleState()).net);
+  const buyerCosts = willowAshSampleState();
+  buyerCosts.su.closing = 40000;
+  buyerCosts.np.sbaFee = 25000;
+  const afterBuyer = computeNetProceeds(buyerCosts);
+  assert.equal(round(afterBuyer.net), base);
+  assert.equal(round(afterBuyer.buyerSbaFee), 25000);
+  assert.equal(round(afterBuyer.buyerClosing), 40000);
+  assert.equal(afterBuyer.sellerClosing, 0);
+
+  const sellerCosts = willowAshSampleState();
+  sellerCosts.np.mortgage = 10000;
+  sellerCosts.np.legal = 2500;
+  sellerCosts.np.closingCosts = 1500;
+  sellerCosts.np.taxRate = 10;
+  const afterSeller = computeNetProceeds(sellerCosts);
+  const preTax = 458708 - (458708 * 0.1) - 10000 - 2500 - 1500;
+  assert.ok(Math.abs(afterSeller.preTax - preTax) < 0.01);
+  assert.equal(round(afterSeller.net), round(preTax - preTax * 0.1));
+  assert.ok(afterSeller.net < base);
+  assert.equal(afterSeller.lines.some(line => line.label === 'Seller closing costs'), true);
+  assert.equal(afterSeller.lines.some(line => line.label === 'Legal / attorney fees' && line.amount === 2500), true);
 });

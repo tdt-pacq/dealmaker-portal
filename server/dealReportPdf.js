@@ -9,6 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
+const sharp = require('sharp');
 
 const PAGE_W = 612;
 const PAGE_H = 792;
@@ -33,14 +34,24 @@ function logoPaths() {
   const root = path.join(__dirname, '..');
   return {
     phoenix: path.join(root, 'client', 'public', 'phoenix-icon.png'),
-    wordmark: path.join(root, 'client', 'src', 'assets', 'peterson-logo.png'),
+    // Full cobrand strip. Only the Peterson wordmark pixels are drawn.
+    lockup: path.join(root, 'client', 'src', 'assets', 'peterson-logo.png'),
   };
 }
 
-function renderDealReportPdf(report, assets = logoPaths()) {
-  for (const file of [assets.phoenix, assets.wordmark]) {
+// Glyph bounds of "PETERSON ACQUISITIONS" inside peterson-logo.png.
+// The same file also holds The Deal Team and a second phoenix; those are not used.
+const PETERSON_WORDMARK = { left: 508, top: 100, width: 474, height: 48 };
+
+async function loadBrand(assets = logoPaths()) {
+  for (const file of [assets.phoenix, assets.lockup]) {
     if (!fs.existsSync(file)) throw new Error(`Brand asset missing: ${file}`);
   }
+  const wordmark = await sharp(assets.lockup).extract(PETERSON_WORDMARK).png().toBuffer();
+  return { phoenix: assets.phoenix, wordmark };
+}
+
+function renderDealReportPdf(report, assets) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       size: 'LETTER',
@@ -57,13 +68,15 @@ function renderDealReportPdf(report, assets = logoPaths()) {
     doc.on('data', c => chunks.push(c));
     doc.on('error', reject);
     doc.on('end', () => resolve(Buffer.concat(chunks)));
-    try {
-      draw(doc, report, assets);
-      stampFooters(doc, report);
-      doc.end();
-    } catch (err) {
-      reject(err);
-    }
+    loadBrand(assets).then(brand => {
+      try {
+        draw(doc, report, brand);
+        stampFooters(doc, report);
+        doc.end();
+      } catch (err) {
+        reject(err);
+      }
+    }).catch(reject);
   });
 }
 
@@ -84,11 +97,18 @@ function draw(doc, report, assets) {
   if (byId.narrative) narrative(page, report, byId.narrative);
 }
 
+const CONTENT_H = BOTTOM - TOP;
+
 function need(page, h) {
   if (page.y + h <= BOTTOM) return;
   page.doc.addPage();
   page.index += 1;
   page.y = TOP;
+}
+
+// Move a block that fits on one page onto the next page instead of starting it in the leftover space.
+function ensureBlock(page, h) {
+  if (h <= CONTENT_H && page.y + h > BOTTOM) need(page, CONTENT_H);
 }
 
 function gap(page, h) { page.y += h; }
@@ -137,14 +157,14 @@ function paragraph(page, str, size = 9) {
 }
 
 function masthead(page, report, assets) {
-  const phoenixH = 38;
+  const phoenixH = 22;
   const phoenixW = phoenixH * (110 / 128);
+  const wordH = 13;
   page.doc.image(assets.phoenix, ML, page.y, { height: phoenixH });
-  const wordH = 30;
-  page.doc.image(assets.wordmark, ML + phoenixW + 10, page.y + 4, { height: wordH });
-  text(page, 'CONFIDENTIAL', ML, page.y + 6, CW, { size: 8, font: 'Helvetica-Bold', color: COPPER, align: 'right' });
-  text(page, 'QSI™ MARKET PRICE ANALYZER', ML, page.y + 18, CW, { size: 8, color: MUTED, align: 'right' });
-  page.y += phoenixH + 10;
+  page.doc.image(assets.wordmark, ML + phoenixW + 8, page.y + (phoenixH - wordH) / 2, { height: wordH });
+  text(page, 'CONFIDENTIAL', ML, page.y + 2, CW, { size: 8, font: 'Helvetica-Bold', color: COPPER, align: 'right' });
+  text(page, 'QSI™ MARKET PRICE ANALYZER', ML, page.y + 12, CW, { size: 8, color: MUTED, align: 'right' });
+  page.y += phoenixH + 8;
   text(page, report.meta.dealName, ML, page.y, CW, { size: 18, font: 'Helvetica-Bold' });
   page.y += heightOf(page, report.meta.dealName, CW, { size: 18, font: 'Helvetica-Bold' }) + 3;
   const meta = [
@@ -205,9 +225,17 @@ function rowHeight(page, columns, row) {
   return h;
 }
 
-function table(page, columns, rows, caption) {
+function tableHeight(page, columns, rows, caption) {
+  const captionH = caption ? 16 : 0;
+  const body = rows.reduce((sum, row) => sum + rowHeight(page, columns, row), 0);
+  return captionH + 16 + body + 8;
+}
+
+function table(page, columns, rows, caption, keepTogether = false) {
   const headerH = 16;
   const captionH = caption ? 16 : 0;
+  const totalH = tableHeight(page, columns, rows, caption);
+  if (keepTogether) ensureBlock(page, totalH);
   if (page.y + captionH + headerH + 22 > BOTTOM) {
     page.doc.addPage();
     page.index += 1;
@@ -283,9 +311,6 @@ function financials(page, report, section) {
       : '';
     table(page, fitColumns(['Metric', ...group.columns], 150), group.rows, caption);
   });
-  if (report.spread.ytd) {
-    table(page, fitColumns(['Metric', ...report.spread.ytd.columns], 150), report.spread.ytd.rows, 'Year to date and annualized');
-  }
   const foot = [
     `Weighted average SDE ${fmtMoney(report.sde.rawWeighted)}`,
     `Most recent SDE ${fmtMoney(report.sde.rawRecent)}`,
@@ -294,7 +319,15 @@ function financials(page, report, section) {
   if (report.spread.ytd && report.spread.ytd.annualizedSde != null) {
     foot.splice(2, 0, `Annualized YTD SDE ${fmtMoney(report.spread.ytd.annualizedSde)} (before buyer salary)`);
   }
-  paragraph(page, foot.join('   ·   '), 8);
+  const footText = foot.join('   ·   ');
+  if (report.spread.ytd) {
+    const cols = fitColumns(['Metric', ...report.spread.ytd.columns], 150);
+    const block = tableHeight(page, cols, report.spread.ytd.rows, 'Year to date and annualized')
+      + heightOf(page, footText, CW, { size: 8 }) + 8;
+    ensureBlock(page, block);
+    table(page, cols, report.spread.ytd.rows, 'Year to date and annualized', true);
+  }
+  paragraph(page, footText, 8);
 }
 
 function valuation(page, report, section) {
@@ -352,7 +385,7 @@ function industry(page, report, section) {
       row('Gross margin', y => y.grossMargin, bench, true),
       row('EBITDA', y => y.ebitda, null, true),
       row('Net income', y => y.net, null, true),
-    ]);
+    ], '', true);
   }
   const dealX = ind.dealMult == null ? '—' : `${ind.dealMult.toFixed(2)}×`;
   const implied = ind.tierMult > 0 && ind.recSde ? fmtMoney(ind.recSde * ind.tierMult) : '—';
@@ -362,25 +395,29 @@ function industry(page, report, section) {
     { label: `MVIC/SDE (${ind.tierLabel})`, cells: [ind.tierMult > 0 ? `${ind.tierMult.toFixed(2)}×` : '—', dealX, implied] },
     { label: 'Rules of thumb — × SDE', cells: [ind.ruleSde ? `${ind.ruleSde.toFixed(1)}×` : '—', dealX, ruleImplied] },
     { label: 'Rules of thumb — % of revenue', cells: [ind.ruleRevenue ? `${ind.ruleRevenue}%` : '—', ind.dealRevPct == null ? '—' : `${ind.dealRevPct.toFixed(1)}%`, revImplied] },
-  ]);
+  ], '', true);
   if (ind.marketPrice > 0) paragraph(page, `Market price ${fmtMoney(ind.marketPrice)}.`, 9);
 }
 
 function dscr(page, report, section) {
-  sectionHead(page, section);
   const d = report.dscr;
-  if (d.mode === 'deal') {
-    paragraph(page, `Annual debt service is the payment on the Sources & Uses loan of ${fmtMoney(d.deal.loanAmount)} (${d.deal.detail}). Each year's SDE is before buyer salary. Strong means at least ${d.rows[0] ? d.rows[0].strongAt.toFixed(2) : (d.minimum + 0.25).toFixed(2)}×. The required minimum is ${d.minimum.toFixed(2)}×.`);
-  } else if (!d.sizing.usable) {
-    paragraph(page, `No market price is selected, and SDE after buyer salary is not positive, so no debt service is calculated. Required minimum ${d.minimum.toFixed(2)}×.`);
-  } else {
-    paragraph(page, `No market price is selected, so this table uses only the 3× after-salary sizing reference. It is not a financed Sources & Uses loan. Required minimum ${d.minimum.toFixed(2)}×.`);
-  }
-  table(page, fitColumns(['Year', 'SDE (before salary)', 'Annual debt service', 'DSCR', 'Assessment'], 70), d.rows.map(r => ({
+  const intro = d.mode === 'deal'
+    ? `Annual debt service is the payment on the Sources & Uses loan of ${fmtMoney(d.deal.loanAmount)} (${d.deal.detail}). Each year's SDE is before buyer salary. Strong means at least ${d.rows[0] ? d.rows[0].strongAt.toFixed(2) : (d.minimum + 0.25).toFixed(2)}×. The required minimum is ${d.minimum.toFixed(2)}×.`
+    : (!d.sizing.usable
+      ? `No market price is selected, and SDE after buyer salary is not positive, so no debt service is calculated. Required minimum ${d.minimum.toFixed(2)}×.`
+      : `No market price is selected, so this table uses only the 3× after-salary sizing reference. It is not a financed Sources & Uses loan. Required minimum ${d.minimum.toFixed(2)}×.`);
+  const dscrRows = d.rows.map(r => ({
     label: r.year,
     bold: true,
     cells: [fmtMoney(r.sde), r.annualDebtService > 0 ? fmtMoney(r.annualDebtService) : '—', r.ratio == null ? '—' : r.ratio.toFixed(2), r.assessment],
-  })));
+  }));
+  const cols = fitColumns(['Year', 'SDE (before salary)', 'Annual debt service', 'DSCR', 'Assessment'], 70);
+  const notesH = heightOf(page, d.sizing.note, CW, { size: 8 }) + 8
+    + (d.roiContrast ? heightOf(page, d.roiContrast, CW, { size: 8 }) + 8 : 0);
+  ensureBlock(page, 48 + heightOf(page, intro, CW, { size: 9 }) + 8 + tableHeight(page, cols, dscrRows, '') + notesH);
+  sectionHead(page, section);
+  paragraph(page, intro);
+  table(page, cols, dscrRows, '', true);
   paragraph(page, d.sizing.note, 8);
   if (d.roiContrast) paragraph(page, d.roiContrast, 8);
 }
@@ -488,7 +525,7 @@ function sources(page, report, section) {
 function proceeds(page, report, section) {
   sectionHead(page, section);
   const p = report.proceeds;
-  paragraph(page, 'Net proceeds use the Net Proceeds tab. The SBA guarantee fee and closing costs are deducted here even though Sources & Uses finances those same buyer costs inside the loan. Debt, commission, legal fees, and tax are listed even when they are zero so the total can be checked. A missing sale price is not reported as $0.');
+  paragraph(page, 'Seller proceeds deduct debt, commission, legal fees, tax, and a seller closing cost only when one is entered. The buyer SBA guarantee fee and buyer closing costs stay in Sources & Uses and buyer cash to close. A missing sale price is not reported as $0.');
   if (!p.available) {
     paragraph(page, 'Sale price is not entered, so net proceeds are not calculated.', 9);
     return;
@@ -520,16 +557,24 @@ function nlb(page, report, section) {
 }
 
 function narrative(page, report, section) {
-  sectionHead(page, section);
   const n = report.narrative;
   if (!n.hasFinancials) {
+    sectionHead(page, section);
     paragraph(page, 'No completed year with revenue is entered, so trend charts are omitted.', 9);
   } else {
-    paragraph(page, `Most recent year with revenue: ${n.year}. Charts use completed years only.`, 8);
+    const lead = `Most recent year with revenue: ${n.year}. Charts use completed years only.`;
+    const charts = n.charts || [];
+    const chH = 156;
+    const chartRows = Math.ceil(charts.length / 2);
+    const wfH = n.waterfall.length ? 190 : 0;
+    const visualH = 46 + heightOf(page, lead, CW, { size: 8 }) + 8 + 52
+      + 16 + chartRows * (chH + 8) + wfH;
+    ensureBlock(page, visualH);
+    sectionHead(page, section);
+    paragraph(page, lead, 8);
     const cols = 4;
     const gutter = 8;
     const w = (CW - gutter * (cols - 1)) / cols;
-    need(page, 48);
     n.kpis.forEach((kpi, i) => {
       const x = ML + i * (w + gutter);
       page.doc.save();
@@ -540,23 +585,31 @@ function narrative(page, report, section) {
       if (kpi.detail) text(page, kpi.detail, x + 4, page.y + 28, w - 8, { size: 6.5, color: MUTED });
     });
     page.y += 52;
-    const charts = n.charts || [];
+    if (charts.length) {
+      text(page, 'Performance charts', ML, page.y, CW, { size: 8, font: 'Helvetica-Bold', color: MUTED });
+      page.y += 14;
+    }
     for (let i = 0; i < charts.length; i += 2) {
       const pair = charts.slice(i, i + 2);
       const chW = (CW - 12) / 2;
-      const chH = 148;
-      need(page, chH + 8);
+      if (page.y + chH > BOTTOM) {
+        need(page, chH + 8);
+        text(page, 'Performance charts, continued', ML, page.y, CW, { size: 8, font: 'Helvetica-Bold', color: MUTED });
+        page.y += 14;
+      }
       pair.forEach((chart, idx) => barChart(page, ML + idx * (chW + 12), page.y, chW, chH, chart));
       page.y += chH + 8;
     }
     if (n.waterfall.length) {
-      need(page, 16);
+      if (page.y + wfH > BOTTOM) {
+        need(page, wfH);
+        text(page, 'Performance charts, continued', ML, page.y, CW, { size: 8, font: 'Helvetica-Bold', color: MUTED });
+        page.y += 14;
+      }
       text(page, `Revenue to SDE — ${n.year}`, ML, page.y, CW, { size: 8, font: 'Helvetica-Bold', color: MUTED });
       page.y += 12;
-      const wfH = 150;
-      need(page, wfH);
-      waterfall(page, ML, page.y, CW, wfH, n.waterfall);
-      page.y += wfH + 6;
+      waterfall(page, ML, page.y, CW, 168, n.waterfall);
+      page.y += 174;
     }
   }
   if (n.text) {

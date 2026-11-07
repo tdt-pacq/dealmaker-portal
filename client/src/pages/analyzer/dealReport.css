@@ -91,23 +91,34 @@
   margin-bottom: var(--space-4);
 }
 
-.deal-report-brand img {
+.deal-report-phoenix {
   display: block;
+  height: 32px;
+  width: auto;
+  flex: 0 0 auto;
   background: none;
   border: none;
-  width: auto;
 }
 
-.deal-report-brand img:first-child {
-  height: 48px;
+/* The stored lockup also contains The Deal Team and a second phoenix.
+   This window shows only the PETERSON ACQUISITIONS wordmark pixels. */
+.deal-report-wordmark {
+  position: relative;
+  width: 217px;
+  height: 22px;
+  overflow: hidden;
   flex: 0 0 auto;
 }
 
-.deal-report-brand img:last-child {
-  height: 36px;
-  max-width: min(420px, 70%);
-  object-fit: contain;
-  object-position: left center;
+.deal-report-wordmark img {
+  position: absolute;
+  height: 115px;
+  width: 458px;
+  max-width: none;
+  left: -233px;
+  top: -46px;
+  background: none;
+  border: none;
 }
 
 .deal-report-kicker {

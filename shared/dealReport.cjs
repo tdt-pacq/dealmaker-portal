@@ -334,9 +334,10 @@ function assess(ratio, threshold) {
 }
 
 /**
- * Seller net proceeds. Same formula as the Net Proceeds tab, including the
- * buyer SBA fee and closing costs that tab deducts when those fields are blank.
- * `state._net` is ignored — it stays 0 until that tab has been opened.
+ * Seller net proceeds. Buyer SBA guarantee fee and buyer closing costs stay
+ * on the buyer's Sources & Uses and cash-to-close; they are not taken from
+ * the seller's check. A closing amount typed on this tab is a seller cost.
+ * `state._net` is ignored — it stays 0 until the Net Proceeds tab has mounted.
  */
 function computeNetProceeds(state) {
   const np = state.np || {};
@@ -355,13 +356,14 @@ function computeNetProceeds(state) {
   const commissionAmt = gross * commissionRate;
   const legal = pn(np.legal);
   const sbaFeeAuto = np.sbaFee === '' || np.sbaFee === undefined;
-  const sbaFee = sbaFeeAuto ? ctx.guaranteeFee : pn(np.sbaFee);
-  const closingAuto = np.closingCosts === '' || np.closingCosts === undefined;
-  const closing = closingAuto ? ctx.closing : pn(np.closingCosts);
+  const buyerSbaFee = sbaFeeAuto ? ctx.guaranteeFee : pn(np.sbaFee);
+  const sellerClosingEntered = !(np.closingCosts === '' || np.closingCosts === undefined);
+  const sellerClosing = sellerClosingEntered ? pn(np.closingCosts) : 0;
+  const buyerClosing = ctx.closing;
   const customDeds = np.customDeds || [];
   const customTotal = customDeds.reduce((s, d) => s + pn(d.amount), 0);
   const taxRate = pn(np.taxRate) / 100;
-  const preTax = gross + cash - mortgage - ap - ltd - commissionAmt - legal - sbaFee - closing - customTotal;
+  const preTax = gross + cash - mortgage - ap - ltd - commissionAmt - legal - sellerClosing - customTotal;
   const taxAmt = preTax > 0 ? preTax * taxRate : 0;
   const net = preTax - taxAmt;
   const available = gross > 0;
@@ -379,18 +381,7 @@ function computeNetProceeds(state) {
     if (ltd !== 0) lines.push({ label: 'Long-term debt', amount: ltd, sign: '-' });
     lines.push({ label: `Broker commission (${fmtPct(commissionRate * 100, 0)})`, amount: commissionAmt, sign: '-' });
     lines.push({ label: 'Legal / attorney fees', amount: legal, sign: '-' });
-    if (sbaFee !== 0 || sbaFeeAuto) {
-      lines.push({
-        label: sbaFeeAuto ? 'SBA guarantee fee (buyer cost, auto from Sources & Uses)' : 'SBA guarantee fee (buyer cost)',
-        amount: sbaFee, sign: '-',
-      });
-    }
-    if (closing !== 0 || closingAuto) {
-      lines.push({
-        label: closingAuto ? 'Closing costs (buyer cost, auto from Sources & Uses)' : 'Closing costs (buyer cost)',
-        amount: closing, sign: '-',
-      });
-    }
+    if (sellerClosingEntered) lines.push({ label: 'Seller closing costs', amount: sellerClosing, sign: '-' });
     customDeds.forEach(d => {
       if (pn(d.amount) !== 0) lines.push({ label: d.label || 'Additional deduction', amount: pn(d.amount), sign: '-' });
     });
@@ -404,9 +395,12 @@ function computeNetProceeds(state) {
       ? 'Auto from Sources & Uses market price'
       : (autoGross > 0 ? `Auto: ${basisLbl} SDE × 3.0×` : ''),
     sbaIsAuto: sbaFeeAuto && ctx.guaranteeFee > 0,
-    closingIsAuto: closingAuto && ctx.closing > 0,
+    closingIsAuto: !sellerClosingEntered,
     cash, ap, ltd, mortgage, commissionRate, commissionAmt, legal,
-    sbaFee, sbaFeeAuto, closing, closingAuto, customDeds, customTotal,
+    sbaFee: buyerSbaFee, sbaFeeAuto, buyerSbaFee,
+    closing: sellerClosingEntered ? sellerClosing : buyerClosing,
+    sellerClosing, buyerClosing, sellerClosingEntered,
+    closingAuto: !sellerClosingEntered, customDeds, customTotal,
     autoSbaFee: ctx.guaranteeFee, autoClosing: ctx.closing,
   };
 }

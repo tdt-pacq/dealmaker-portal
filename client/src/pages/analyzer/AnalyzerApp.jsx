@@ -2216,8 +2216,7 @@ const T7 = ({state,set}) => {
     ...(ltdDeduct>0?[{l:'Less: Long-Term Debt',v:ltdDeduct,c:'#dc2626',sign:'-'}]:[]),
     ...(commAmt>0?[{l:`Less: Commission (${(commPct*100).toFixed(0)}%)`,v:commAmt,c:'#dc2626',sign:'-'}]:[]),
     ...(legal>0?[{l:'Less: Legal / Attorney Fees',v:legal,c:'#dc2626',sign:'-'}]:[]),
-    ...(sbaFeeVal>0?[{l:`Less: SBA Fee${sbaIsAuto?' (auto)':''}`,v:sbaFeeVal,c:'#dc2626',sign:'-'}]:[]),
-    ...(closingVal>0?[{l:`Less: Closing Costs${closingIsAuto?' (auto)':''}`,v:closingVal,c:'#dc2626',sign:'-'}]:[]),
+    ...(computed.sellerClosingEntered?[{l:'Less: Seller Closing Costs',v:computed.sellerClosing,c:'#dc2626',sign:'-'}]:[]),
     ...customDeds.filter(d=>pn(d.amount)>0).map(d=>({l:`Less: ${d.label||'Custom'}`,v:pn(d.amount),c:'#dc2626',sign:'-'})),
     {l:'Pre-Tax Proceeds',v:preTax,c:preTax>=0?'#b45309':'#dc2626',sign:'+',bold:true},
     ...(taxAmt>0?[{l:`Less: Tax on Gain (${(taxRate*100).toFixed(0)}%)`,v:taxAmt,c:'#dc2626',sign:'-'}]:[]),
@@ -2289,18 +2288,21 @@ const T7 = ({state,set}) => {
                 <NI value={np.legal} onChange={v=>setNP('legal',v)} placeholder="0"/>
               </div>
               <div>
-                <span className="lbl">SBA Guarantee Fee{sbaIsAuto&&<span className="text-gray-600 font-normal"> — auto from S&amp;U</span>}</span>
+                <span className="lbl">SBA Guarantee Fee{sbaIsAuto&&<span className="text-gray-600 font-normal"> — buyer cost from S&amp;U</span>}</span>
                 {sbaIsAuto
-                  ?<><CF v={sbaFeeVal}/><div className="text-xs text-gray-600 mt-0.5">To override: <NI value={np.sbaFee} onChange={v=>setNP('sbaFee',v)} placeholder={`${Math.round(autoSbaFee)} (auto)`}/></div></>
-                  :<NI value={np.sbaFee} onChange={v=>setNP('sbaFee',v)} placeholder={autoSbaFee>0?`${Math.round(autoSbaFee)} (auto)`:'0'}/>
+                  ?<><CF v={sbaFeeVal}/><div className="text-xs text-gray-600 mt-0.5">Buyer financing cost. Not deducted from the seller. <NI value={np.sbaFee} onChange={v=>setNP('sbaFee',v)} placeholder={`${Math.round(autoSbaFee)} (auto)`}/></div></>
+                  :<><NI value={np.sbaFee} onChange={v=>setNP('sbaFee',v)} placeholder={autoSbaFee>0?`${Math.round(autoSbaFee)} (auto)`:'0'}/><div className="text-xs text-gray-600 mt-0.5">Buyer financing cost. Not deducted from the seller.</div></>
                 }
               </div>
               <div>
-                <span className="lbl">Closing Costs{closingIsAuto&&<span className="text-gray-600 font-normal"> — auto from S&amp;U</span>}</span>
-                {closingIsAuto
-                  ?<><CF v={closingVal}/><div className="text-xs text-gray-600 mt-0.5">To override: <NI value={np.closingCosts} onChange={v=>setNP('closingCosts',v)} placeholder={`${Math.round(autoClosing)} (auto)`}/></div></>
-                  :<NI value={np.closingCosts} onChange={v=>setNP('closingCosts',v)} placeholder={autoClosing>0?`${Math.round(autoClosing)} (auto)`:'0'}/>
-                }
+                <span className="lbl">Buyer Closing Costs{closingIsAuto&&<span className="text-gray-600 font-normal"> — from S&amp;U</span>}</span>
+                <CF v={computed.buyerClosing}/>
+                <div className="text-xs text-gray-600 mt-0.5">Stays in Sources &amp; Uses and buyer cash to close. Not deducted from the seller.</div>
+              </div>
+              <div>
+                <span className="lbl">Seller Closing Costs</span>
+                <NI value={np.closingCosts} onChange={v=>setNP('closingCosts',v)} placeholder="0"/>
+                <div className="text-xs text-gray-600 mt-0.5">Deducted only when a seller closing cost is entered.</div>
               </div>
             </div>
           </Sec>
