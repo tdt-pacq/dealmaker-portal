@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { buildDealReport } = require('../shared/dealReport.cjs');
+const { buildDealReport } = require('../shared/dealReport.mjs');
 const { willowAshSampleState } = require('../shared/willowAshSample.cjs');
 const { renderDealReportPdf, PAGE_W, PAGE_H } = require('./dealReportPdf');
 

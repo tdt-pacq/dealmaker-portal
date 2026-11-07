@@ -1,6 +1,6 @@
 import React from 'react';
 import { LOGO_SRC } from '../../assets/logo';
-import { fmtMoney, fmtParen, fmtPct } from '@shared/dealReport.cjs';
+import { fmtMoney, fmtParen, fmtPct } from '@shared/dealReport.mjs';
 import './dealReport.css';
 
 const neg = v => typeof v === 'string' && (v.startsWith('-') || v.startsWith('('));

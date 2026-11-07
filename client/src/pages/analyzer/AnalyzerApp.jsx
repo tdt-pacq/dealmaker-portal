@@ -16,7 +16,7 @@ import { fallbackSignInProvider, isAnalyzerUserAllowed } from './analyzerAccess.
 import industryBenchmarks from '../../../../shared/industryBenchmarks.cjs';
 import { IndustryExtraSections, IndustryReviewExtras } from './IndustryExtras.jsx';
 import DealReportView from './DealReportView.jsx';
-import { buildDealReport, computeNetProceeds, buildNlb } from '@shared/dealReport.cjs';
+import { buildDealReport, computeNetProceeds, buildNlb } from '@shared/dealReport.mjs';
 
 if (!firebase.apps.length) {
   firebase.initializeApp({
