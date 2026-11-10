@@ -21,6 +21,13 @@ import {
 
 const YEARS = ['Today', 'Year 1', 'Year 2', 'Year 3'];
 
+// Panel display only. LEVERS stays price-then-growth so sequential impact
+// attribution and the presets keep their existing order.
+const PANEL_LEVERS = [
+  LEVERS.find(lever => lever.id === 'growth'),
+  ...LEVERS.filter(lever => lever.id !== 'growth'),
+];
+
 function tone(n) {
   const v = Math.round(Number(n) || 0);
   if (v > 0) return 'proj-pos';
@@ -407,7 +414,7 @@ export default function ProjectionsTab({ state, set, onSave }) {
                   <div className="proj-card-note">Toggle to include</div>
                 </div>
                 <div className="card-body proj-levers">
-                  {LEVERS.map(lever => {
+                  {PANEL_LEVERS.map(lever => {
                     const setting = view.levers[lever.id];
                     const impact = impacts.find(item => item.id === lever.id);
                     const help = typeof lever.help === 'function' ? lever.help(base) : lever.help;
