@@ -127,6 +127,31 @@ test('many years split into tables of at most three, and long names do not chang
   assert.equal(interest.cells[0], '-$500');
 });
 
+test('an empty market price is gross SDE times 3, and salary does not change it', () => {
+  const state = willowAshSampleState();
+  state.su = { ...state.su, marketPrice: '' };
+  const report = buildDealReport(state);
+  assert.equal(report.marketPriceSource, 'auto');
+  assert.equal(round(report.marketPrice), 458709);
+  assert.equal(round(report.proceeds.gross), 458709);
+  assert.equal(report.proceeds.grossAssumed, true);
+  assert.match(report.proceeds.lines[0].label, /before buyer salary/);
+  assert.equal(report.proceeds.lines.some(line => /guarantee|SBA fee|closing cost/i.test(line.label)), false);
+  state.buyerSalary = 90000;
+  assert.equal(round(buildDealReport(state).marketPrice), 458709);
+  assert.equal(report.marketPriceDrift, null);
+});
+
+test('a saved price that is not a listed multiple is flagged and left in place', () => {
+  const state = willowAshSampleState();
+  state.su = { ...state.su, marketPrice: 400000 };
+  const report = buildDealReport(state);
+  assert.equal(report.marketPrice, 400000);
+  assert.equal(round(report.proceeds.gross), 400000);
+  assert.ok(report.marketPriceDrift);
+  assert.equal(round(report.marketPriceDrift.stored), 400000);
+});
+
 test('missing sale price does not masquerade as zero proceeds or a negative NLB outcome', () => {
   const state = willowAshSampleState();
   state.su.marketPrice = '';

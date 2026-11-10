@@ -245,7 +245,7 @@ function SellerSheet({ state, base, view, rows, edited, impacts }) {
             const impact = impacts.find(item => item.id === lever.id);
             return (
               <li key={lever.id}>
-                <span>{lever.name}: {fmtLever(lever.id, view.levers[lever.id].value)}</span>
+                <span>{lever.name}{(lever.id === 'ownerComp' || lever.id === 'rent') ? ' (projection only)' : ''}: {fmtLever(lever.id, view.levers[lever.id].value)}</span>
                 <span>{lever.id === 'ownerComp' ? 'SDE-neutral' : `Year 3 SDE ${fmtSigned(impact?.delta || 0)}`}</span>
               </li>
             );
@@ -407,6 +407,7 @@ export default function ProjectionsTab({ state, set, onSave }) {
                   <div className="proj-card-note">Toggle to include</div>
                 </div>
                 <div className="card-body proj-levers">
+                  <p style={{fontSize:12,color:'#57534e',lineHeight:1.45,margin:'0 0 var(--gap-field)'}}>Owner-comp and rent are projection-only inputs. They do not change the buyer salary or the rent normalization on the income statement.</p>
                   {LEVERS.map(lever => {
                     const setting = view.levers[lever.id];
                     const impact = impacts.find(item => item.id === lever.id);

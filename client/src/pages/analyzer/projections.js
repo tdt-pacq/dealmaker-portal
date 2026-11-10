@@ -28,11 +28,11 @@ export const LEVERS = [
   { id: 'opex', name: 'Operating expense cuts', unit: '$', min: 0, max: 120000, step: 2500,
     help: 'Recurring annual savings, e.g. software, fleet, insurance.' },
   { id: 'ownerComp', name: 'Normalize owner comp to market', unit: '$', min: 60000, max: 200000, step: 5000,
-    help: 'Market salary to replace the owner. SDE-neutral; shown as Adj. EBITDA for buyers.' },
+    help: 'Projection only. This is not the buyer salary on the Income Statement. SDE-neutral; shown as Adj. EBITDA.' },
   { id: 'gm', name: 'Hire a general manager', unit: '$', min: 50000, max: 150000, step: 5000,
     help: 'Fully loaded cost, subtracted from SDE. Frees the owner from day-to-day work.' },
   { id: 'rent', name: 'Rent change', unit: '$/yr', min: -60000, max: 60000, step: 2000,
-    help: 'Negative = savings (renegotiate or move to market rent).' },
+    help: 'Projection only. This is not the income-statement rent adjustment. Negative = savings (renegotiate or move).' },
 ];
 
 const leverById = Object.fromEntries(LEVERS.map(l => [l.id, l]));
@@ -125,7 +125,7 @@ export function isScenarioEdited(projections) {
 /**
  * Fair-market multiple already used by the analyzer.
  * Selected market price ÷ valuation SDE when both exist; otherwise 3.0×,
- * the multiple Sources & Uses writes when the market price is still empty.
+ * the automatic market price used when no price has been saved.
  */
 export function fairMarketMultiple(state) {
   const basisKey = state?.sdeBasis === 'weighted' ? 'weighted' : 'recent';

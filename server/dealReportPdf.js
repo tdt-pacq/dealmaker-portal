@@ -350,8 +350,13 @@ function valuation(page, report, section) {
   });
   page.y += h + 8;
   if (report.marketPrice > 0) {
-    const line = `Market price ${fmtMoney(report.marketPrice)}${report.marketMultiple != null ? ` (${report.marketMultiple.toFixed(2)}× ${report.basisName.toLowerCase()} SDE)` : ''}.`;
+    const assumed = report.marketPriceSource === 'auto' ? ' Assumed from gross SDE × 3 because no market price is saved.' : '';
+    const line = `Market price ${fmtMoney(report.marketPrice)}${report.marketMultiple != null ? ` (${report.marketMultiple.toFixed(2)}× ${report.basisName.toLowerCase()} SDE)` : ''}.${assumed}`;
     paragraph(page, line, 9);
+  }
+  if (report.marketPriceDrift) {
+    const d = report.marketPriceDrift;
+    paragraph(page, `Saved market price ${fmtMoney(d.stored)} is ${d.multiple.toFixed(2)}× SDE (${fmtMoney(d.sde)}). It does not match a listed multiple, and it was left as entered.`, 9);
   }
 }
 

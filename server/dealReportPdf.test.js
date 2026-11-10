@@ -49,6 +49,7 @@ test('Willow Ash PDF is letter size, numbered, and does not clip or invent the o
   assert.match(all, /Willow Ash/);
   assert.match(all, /Michael R\. Moore/);
   assert.match(all, /\$152,903/);
+  assert.match(all, /Rent adjustment/);
   assert.match(all, /\$77,903/);
   assert.match(all, /\$412,837/);
   assert.equal(all.includes('Deal Team'), false);
@@ -82,7 +83,7 @@ test('Willow Ash PDF is letter size, numbered, and does not clip or invent the o
   assert.equal(all.includes('-$152,903'), false);
 });
 
-test('long names and a missing sale price stay inside the page and do not print a fake proceeds total', async () => {
+test('long names stay inside the page, and a negative basis does not invent a sale price', async () => {
   const state = willowAshSampleState();
   state.dealName = 'Willow Ash Roofing and Exterior Services of the Greater Southeast Region';
   state.advisorName = 'Alexandria Montgomery-Harrington, Certified Business Intermediary';
@@ -111,6 +112,7 @@ test('long names and a missing sale price stay inside the page and do not print 
   const flat = all.replace(/\s+/g, ' ');
   assert.match(flat, /Greater Southeast Region/);
   assert.match(all, /Alexandria Montgomery-Harrington/);
+  assert.match(all, /Rent adjustment/);
   assert.match(all, /Sale price is not entered/);
   assert.equal(all.includes('Estimated net proceeds'), false);
   assert.match(all, /-\$/); // negative gross profit or interest is visible
