@@ -15,6 +15,46 @@
 const pn = s => { const n = parseFloat(String(s ?? '').replace(/[$,]/g, '')); return Number.isNaN(n) ? 0 : n; };
 const isPT = et => ['1120-S', '1065', 'Schedule C'].includes(et);
 
+/** Market price used when the Sources & Uses price is still empty. Gross SDE × this multiple. */
+const DEFAULT_PRICE_MULTIPLE = 3;
+
+/**
+ * Rent adjustment added to SDE.
+ * Keep this in sync with rentNormalization in client/src/pages/analyzer/sdeBasis.js.
+ */
+function rentNormalization(yd) {
+  const rent = pn(yd?.rent);
+  const savedAdj = pn(yd?.rentAdj);
+  if (yd?.rentNormMode !== 'rule') {
+    return {
+      mode: 'manual',
+      rent,
+      normalizedCost: null,
+      adjustment: rent + savedAdj,
+      includedInSale: false,
+      method: null,
+      complete: true,
+    };
+  }
+  const included = yd.reIncluded === true || yd.reIncluded === 'true' || yd.reIncluded === 1;
+  const method = yd.rentNormMethod === 'cap' ? 'cap' : 'fmr';
+  if (included) {
+    return { mode: 'rule', rent, normalizedCost: 0, adjustment: rent, includedInSale: true, method, complete: true };
+  }
+  if (method === 'cap') {
+    const value = pn(yd.reNormValue);
+    const cap = pn(yd.capRate);
+    if (!(value > 0) || !(cap > 0)) {
+      return { mode: 'rule', rent, normalizedCost: rent, adjustment: 0, includedInSale: false, method, complete: false };
+    }
+    const normalizedCost = value * (cap / 100);
+    return { mode: 'rule', rent, normalizedCost, adjustment: rent - normalizedCost, includedInSale: false, method, complete: true };
+  }
+  const fmrBlank = yd.fairMarketRent === '' || yd.fairMarketRent == null;
+  const normalizedCost = fmrBlank ? rent : pn(yd.fairMarketRent);
+  return { mode: 'rule', rent, normalizedCost, adjustment: rent - normalizedCost, includedInSale: false, method, complete: !fmrBlank };
+}
+
 function calcSDE(yd) {
   const rev = pn(yd.revenue), cogs = pn(yd.cogs), opx = pn(yd.opx);
   const otherInc = pn(yd.otherIncome || 0);
@@ -22,7 +62,7 @@ function calcSDE(yd) {
   const taxes = isPT(yd.entityType) ? 0 : pn(yd.taxes);
   const oc = pn(yd.ownerComp);
   const ab = (yd.addBacks || []).reduce((s, a) => s + pn(a.amount), 0);
-  const rentAB = pn(yd.rent || 0) + pn(yd.rentAdj || 0);
+  const rentAB = rentNormalization(yd).adjustment;
   const gp = rev - cogs, noi = gp + otherInc - opx;
   const ebitda = noi + int + taxes + dep + amor;
   const adjE = ebitda + oc;
@@ -127,6 +167,12 @@ function annualizeYear(yd, months) {
     amortization: sc(yd.amortization), ownerComp: sc(yd.ownerComp),
     addBacks: (yd.addBacks || []).map(ab => ({ ...ab, amount: sc(ab.amount) })),
     rent: sc(yd.rent || 0), rentAdj: sc(yd.rentAdj || 0),
+    fairMarketRent: yd.fairMarketRent === '' || yd.fairMarketRent == null ? yd.fairMarketRent : sc(yd.fairMarketRent),
+    reNormValue: yd.reNormValue,
+    capRate: yd.capRate,
+    reIncluded: yd.reIncluded,
+    rentNormMethod: yd.rentNormMethod,
+    rentNormMode: yd.rentNormMode,
   };
 }
 
@@ -148,10 +194,15 @@ function loanContext(state) {
   const re504Rate = numOr(state.re504Rate, 6.5);
   const structure = state.loanStructure || '7a';
   const reVal = pn(su.reVal);
-  const marketPrice = pn(su.marketPrice);
   const wc = pn(su.wc);
   const arVal = pn(su.arVal);
   const invVal = pn(su.invVal);
+  const storedPrice = pn(su.marketPrice);
+  const basisKey = state.sdeBasis === 'weighted' ? 'weighted' : 'recent';
+  const grossBasis = fairMarketSde(state.years, basisKey);
+  const automaticPrice = grossBasis > 0 ? grossBasis * DEFAULT_PRICE_MULTIPLE : 0;
+  const marketPrice = storedPrice > 0 ? storedPrice : automaticPrice;
+  const marketPriceSource = storedPrice > 0 ? 'saved' : (automaticPrice > 0 ? 'auto' : 'none');
   const totalProject = marketPrice + reVal + wc + arVal + invVal;
   const closing = (su.closing === '' || su.closing === undefined) ? 15000 : pn(su.closing);
   const baseLoan = totalProject * (1 - dp);
@@ -166,7 +217,8 @@ function loanContext(state) {
   const ppLoan = pn(state.ppLoan);
   const ppMonthly = ppLoan > 0 ? monthlyPayment(ppLoan, numOr(state.ppRate, 7.5), numOr(state.ppAmort, 10)) : 0;
   return {
-    dpPct, dp, rate, amort, reAmort, re504Rate, structure, reVal, marketPrice,
+    dpPct, dp, rate, amort, reAmort, re504Rate, structure, reVal,
+    marketPrice, marketPriceSource, storedPrice, grossBasis, automaticPrice,
     wc, arVal, invVal, totalProject, closing, baseLoan, guaranteeFee, sbaLoan, blended,
     ppMonthly, ppLoan, sf: sellerNote(su),
     downPayment: totalProject * dp,
@@ -212,6 +264,72 @@ function monthlyAtPrice(ctx, price) {
   return monthlyPayment(price * (1 - ctx.dp), ctx.rate, ctx.blended) + ctx.ppMonthly;
 }
 
+function listedMultiples(state) {
+  return [2.5, 3, 3.5, ...(state?.customMults || []).map(m => parseFloat(m)).filter(m => m > 0)];
+}
+
+function automaticMarketPrice(state) {
+  const basisKey = state?.sdeBasis === 'weighted' ? 'weighted' : 'recent';
+  const sde = fairMarketSde(state?.years, basisKey);
+  return sde > 0 ? sde * DEFAULT_PRICE_MULTIPLE : 0;
+}
+
+function workingMarketPrice(state) {
+  const stored = pn(state?.su?.marketPrice);
+  return stored > 0 ? stored : automaticMarketPrice(state);
+}
+
+/** Saved price that is not one of the listed SDE multiples. Never a reason to overwrite the price. */
+function marketPriceDrift(state) {
+  const stored = pn(state?.su?.marketPrice);
+  const basisKey = state?.sdeBasis === 'weighted' ? 'weighted' : 'recent';
+  const sde = fairMarketSde(state?.years, basisKey);
+  if (!(stored > 0) || !(sde > 0)) return null;
+  if (listedMultiples(state).some(m => Math.abs(stored - sde * m) <= 1)) return null;
+  return { stored, sde, multiple: stored / sde };
+}
+
+/**
+ * Price each gross-SDE multiple, then cover it with cash flow after buyer salary.
+ * The price does not change when salary changes. Coverage and cash left do.
+ * Payments match Seller Scenario: price × (1 − down payment), before guarantee fee and closing costs.
+ */
+function stressPrices(state, multiples) {
+  const ctx = loanContext(state || {});
+  const gross = ctx.grossBasis;
+  const salary = pn(state?.buyerSalary);
+  const after = gross - salary;
+  const contPct = pn(state?.seller?.contingencyPct) || 10;
+  const dscrMin = numOr(state?.dscrMin, 1.25);
+  const at = price => monthlyAtPrice(ctx, price);
+  const pack = price => {
+    const monthly = at(price);
+    const annual = monthly * 12;
+    return {
+      price,
+      loan: price * (1 - ctx.dp),
+      monthly,
+      annual,
+      dscrBeforeSalary: annual > 0 ? gross / annual : null,
+      dscrAfterSalary: annual > 0 ? after / annual : null,
+      cashLeft: after - annual - gross * (contPct / 100),
+    };
+  };
+  const list = multiples && multiples.length ? multiples : [2, 2.5, 3, 3.5, 4, 4.5, 5];
+  return {
+    gross, salary, after, dscrMin, contingencyPct: contPct, downPct: ctx.dpPct,
+    rows: list.map(m => ({ multiple: m, ...pack(gross * m) })),
+    maxPrice: maxSupportablePrice(Math.max(0, after), dscrMin, at),
+    atWorkingPrice: pack(ctx.marketPrice),
+  };
+}
+
+function maxPriceForEarnings(state, earnings) {
+  const ctx = loanContext(state || {});
+  const dscrMin = numOr(state?.dscrMin, 1.25);
+  return maxSupportablePrice(Math.max(0, earnings), dscrMin, price => monthlyAtPrice(ctx, price));
+}
+
 function maxSupportablePrice(adjustedSde, dscrMin, priceToMonthly) {
   if (!(adjustedSde > 0) || !(dscrMin > 0)) return 0;
   let lo = 0, hi = 20000000, iters = 0;
@@ -237,6 +355,7 @@ const SPREAD_LINES = [
   ["Owner's Compensation", 'oc', false, false],
   ['Adjusted EBITDA', 'adjE', true, false],
   ['Add-Backs', 'ab', false, false],
+  ['Rent adjustment', 'rentAB', false, false],
   ["Seller's Discretionary Earnings", 'sde', true, true],
 ];
 
@@ -348,11 +467,9 @@ function assess(ratio, threshold) {
 function computeNetProceeds(state) {
   const np = state.np || {};
   const ctx = loanContext(state);
-  const basisAfterSalary = fairMarketSde(state.years, state.sdeBasis === 'weighted' ? 'weighted' : 'recent') - pn(state.buyerSalary);
   const suPrice = ctx.marketPrice;
-  const autoGross = suPrice > 0 ? suPrice : (basisAfterSalary > 0 ? basisAfterSalary * 3 : 0);
-  const gross = autoGross > 0 ? autoGross : pn(np.gross);
-  const grossAssumed = !(suPrice > 0) && autoGross > 0;
+  const gross = suPrice > 0 ? suPrice : pn(np.gross);
+  const grossAssumed = ctx.marketPriceSource === 'auto';
   const basisLabel = state.sdeBasis === 'weighted' ? 'weighted average' : 'most recent';
   const cash = pn(np.cash);
   const ap = pn(np.ap);
@@ -377,7 +494,7 @@ function computeNetProceeds(state) {
   if (available) {
     lines.push({
       label: grossAssumed
-        ? `Gross sale price (assumed 3× ${basisLabel} SDE after buyer salary — no market price entered)`
+        ? `Gross sale price (assumed ${DEFAULT_PRICE_MULTIPLE}× ${basisLabel} SDE before buyer salary — no market price entered)`
         : 'Gross sale price',
       amount: gross, sign: '+',
     });
@@ -396,10 +513,10 @@ function computeNetProceeds(state) {
   const basisLbl = state.sdeBasis === 'weighted' ? 'Weighted Avg' : 'Most Recent';
   return {
     available, gross, grossAssumed, net, preTax, taxAmt, taxRate, lines,
-    grossIsAuto: autoGross > 0,
-    grossLabel: suPrice > 0
-      ? 'Auto from Sources & Uses market price'
-      : (autoGross > 0 ? `Auto: ${basisLbl} SDE × 3.0×` : ''),
+    grossIsAuto: suPrice > 0,
+    grossLabel: ctx.marketPriceSource === 'saved'
+      ? 'From the saved Sources & Uses market price'
+      : (ctx.marketPriceSource === 'auto' ? `Auto: ${basisLbl} SDE × ${DEFAULT_PRICE_MULTIPLE.toFixed(1)}×` : ''),
     sbaIsAuto: sbaFeeAuto && ctx.guaranteeFee > 0,
     closingIsAuto: !sellerClosingEntered,
     cash, ap, ltd, mortgage, commissionRate, commissionAmt, legal,
@@ -586,7 +703,6 @@ function buildNarrative(state, text) {
     { title: 'SDE', key: 'sde', format: 'money', color: '#C4592F' },
   ].map(ch => ({ ...ch, points: points.map(p => ({ label: p.label, value: p[ch.key] })) }));
   const ida = latest.int + latest.taxes + latest.dep + latest.amor;
-  const adds = latest.ab + latest.rentAB;
   const waterfall = [{ label: 'Revenue', value: latest.rev, type: 'start' }];
   waterfall.push({ label: '- COGS', value: -latest.cogs, type: 'step' });
   waterfall.push({ label: 'Gross profit', value: latest.gp, type: 'total' });
@@ -595,7 +711,8 @@ function buildNarrative(state, text) {
   if (ida !== 0) waterfall.push({ label: '+ I/T/D&A', value: ida, type: 'step' });
   waterfall.push({ label: 'EBITDA', value: latest.ebitda, type: 'total' });
   if (latest.oc !== 0) waterfall.push({ label: '+ Owner comp', value: latest.oc, type: 'step' });
-  if (adds !== 0) waterfall.push({ label: '+ Add-backs', value: adds, type: 'step' });
+  if (latest.ab !== 0) waterfall.push({ label: '+ Add-backs', value: latest.ab, type: 'step' });
+  if (latest.rentAB !== 0) waterfall.push({ label: latest.rentAB < 0 ? '− Rent adj' : '+ Rent adj', value: latest.rentAB, type: 'step' });
   waterfall.push({ label: 'SDE', value: latest.sde, type: 'total' });
   return { hasFinancials: true, year: withData[0].year, text: text || '', kpis, charts, waterfall };
 }
@@ -709,7 +826,8 @@ function buildDealReport(state, options = {}) {
     salaryNote: hasSalary
       ? `${basisName} SDE of ${fmtMoney(rawBasis)} is before the ${fmtMoney(buyerSalary)} buyer salary. Year-by-year DSCR uses that before-salary SDE. Buyer cash flow uses ${fmtMoney(afterSalary)} after the salary.`
       : `${basisName} SDE of ${fmtMoney(rawBasis)} is the valuation basis. No buyer salary is entered, so cash flow is not reduced for a replacement owner.`,
-    multiples, marketPrice: ctx.marketPrice, marketMultiple, basisName,
+    multiples, marketPrice: ctx.marketPrice, marketPriceSource: ctx.marketPriceSource, marketMultiple, basisName,
+    marketPriceDrift: marketPriceDrift(safe),
     industry,
     dscr: {
       mode: debtMode,
@@ -759,5 +877,8 @@ function buildDealReport(state, options = {}) {
 export {
   pn, calcSDE, wtdSDE, recentSDE, fairMarketSde, sortedByYear,
   fmtMoney, fmtParen, fmtPct,
+  rentNormalization, DEFAULT_PRICE_MULTIPLE,
+  automaticMarketPrice, workingMarketPrice, marketPriceDrift,
+  stressPrices, maxPriceForEarnings,
   computeNetProceeds, buildNlb, buildDealReport, monthlyPayment,
 };

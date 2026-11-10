@@ -245,7 +245,15 @@ export default function DealReportView({ report, onDownload, downloading, downlo
             ))}
           </div>
           {report.marketPrice > 0 && (
-            <p>Market price {fmtMoney(report.marketPrice)}{report.marketMultiple != null ? ` (${report.marketMultiple.toFixed(2)}× ${report.basisName.toLowerCase()} SDE)` : ''}.</p>
+            <p>
+              Market price {fmtMoney(report.marketPrice)}{report.marketMultiple != null ? ` (${report.marketMultiple.toFixed(2)}× ${report.basisName.toLowerCase()} SDE)` : ''}.
+              {report.marketPriceSource === 'auto' ? ' Assumed from gross SDE × 3 because no market price is saved.' : ''}
+            </p>
+          )}
+          {report.marketPriceDrift && (
+            <p>
+              Saved market price {fmtMoney(report.marketPriceDrift.stored)} is {report.marketPriceDrift.multiple.toFixed(2)}× SDE ({fmtMoney(report.marketPriceDrift.sde)}). It does not match a listed multiple, and it was left as entered.
+            </p>
           )}
         </Section>
       )}

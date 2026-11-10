@@ -10,6 +10,74 @@
 export const pn = s => { const n = parseFloat(String(s||'').replace(/[$,]/g,'')); return isNaN(n)?0:n; };
 export const isPT = et => ['1120-S','1065','Schedule C'].includes(et);
 
+/**
+ * Rent adjustment added to SDE.
+ * Keep this in sync with rentNormalization in shared/dealReport.mjs.
+ *
+ * Rule mode: the adjustment is the net difference between actual rent
+ * (already inside operating expenses) and a normalized occupancy cost.
+ * Above-market rent is a positive add-back. Below-market rent is negative.
+ * Real estate included in the sale adds the full rent back.
+ * A blank fair-market rent, or an incomplete cap-rate pair, nets to zero
+ * so recording actual rent does not inflate SDE.
+ *
+ * Any other mode is a saved deal. The adjustment stays rent + rentAdj,
+ * which is what SDE used before this rule, so loading a deal does not
+ * change its SDE.
+ */
+export const rentNormalization = yd => {
+  const rent = pn(yd?.rent);
+  const savedAdj = pn(yd?.rentAdj);
+  if (yd?.rentNormMode !== 'rule') {
+    return {
+      mode: 'manual',
+      rent,
+      normalizedCost: null,
+      adjustment: rent + savedAdj,
+      includedInSale: false,
+      method: null,
+      complete: true,
+    };
+  }
+  const included = yd.reIncluded === true || yd.reIncluded === 'true' || yd.reIncluded === 1;
+  const method = yd.rentNormMethod === 'cap' ? 'cap' : 'fmr';
+  if (included) {
+    return { mode: 'rule', rent, normalizedCost: 0, adjustment: rent, includedInSale: true, method, complete: true };
+  }
+  if (method === 'cap') {
+    const value = pn(yd.reNormValue);
+    const cap = pn(yd.capRate);
+    if (!(value > 0) || !(cap > 0)) {
+      return { mode: 'rule', rent, normalizedCost: rent, adjustment: 0, includedInSale: false, method, complete: false };
+    }
+    const normalizedCost = value * (cap / 100);
+    return { mode: 'rule', rent, normalizedCost, adjustment: rent - normalizedCost, includedInSale: false, method, complete: true };
+  }
+  const fmrBlank = yd.fairMarketRent === '' || yd.fairMarketRent == null;
+  const normalizedCost = fmrBlank ? rent : pn(yd.fairMarketRent);
+  return { mode: 'rule', rent, normalizedCost, adjustment: rent - normalizedCost, includedInSale: false, method, complete: !fmrBlank };
+};
+
+export const preserveRentModel = yd => {
+  if (!yd || yd.rentNormMode === 'rule' || yd.rentNormMode === 'manual') return yd;
+  return { ...yd, rentNormMode: 'manual' };
+};
+
+/** Tax-return import: fair market rent starts equal to actual rent, so the add-back is zero. */
+export const rentFieldsFromImport = extractedRent => {
+  const rent = extractedRent == null || extractedRent === '' ? '' : extractedRent;
+  return {
+    rent,
+    rentAdj: '',
+    rentNormMode: 'rule',
+    rentNormMethod: 'fmr',
+    reIncluded: false,
+    fairMarketRent: rent === '' ? '' : pn(rent),
+    reNormValue: '',
+    capRate: '',
+  };
+};
+
 export const calcSDE = yd => {
   const rev=pn(yd.revenue), cogs=pn(yd.cogs), opx=pn(yd.opx);
   const otherInc=pn(yd.otherIncome||0);
@@ -17,7 +85,7 @@ export const calcSDE = yd => {
   const taxes=isPT(yd.entityType)?0:pn(yd.taxes);
   const oc=pn(yd.ownerComp);
   const ab=(yd.addBacks||[]).reduce((s,a)=>s+pn(a.amount),0);
-  const rentAB=pn(yd.rent||0)+pn(yd.rentAdj||0);
+  const rentAB=rentNormalization(yd).adjustment;
   const gp=rev-cogs, noi=gp+otherInc-opx;
   const ebitda=noi+int+taxes+dep+amor;
   const adjE=ebitda+oc;

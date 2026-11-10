@@ -6,6 +6,7 @@ import './analyzer.css';
 import {
   pn, isPT, calcSDE, isYtdYear, yearNum, sortedByYear, uniquifyYears,
   mostRecentYearData, mostRecentYear, wtdSDE, recentSDE, fairMarketSde,
+  rentNormalization, preserveRentModel, rentFieldsFromImport,
 } from './sdeBasis.js';
 import {
   dealSlug, toSavedAtMillis, stripDealMeta, dealForExport,
@@ -16,7 +17,7 @@ import { fallbackSignInProvider, isAnalyzerUserAllowed } from './analyzerAccess.
 import industryBenchmarks from '../../../../shared/industryBenchmarks.cjs';
 import { IndustryExtraSections, IndustryReviewExtras } from './IndustryExtras.jsx';
 import DealReportView from './DealReportView.jsx';
-import { buildDealReport, computeNetProceeds, buildNlb } from '@shared/dealReport.mjs';
+import { buildDealReport, computeNetProceeds, buildNlb, workingMarketPrice, marketPriceDrift, stressPrices, maxPriceForEarnings } from '@shared/dealReport.mjs';
 
 if (!firebase.apps.length) {
   firebase.initializeApp({
@@ -60,6 +61,12 @@ const annualizeYTD = (yd, months) => {
     amortization: sc(yd.amortization), ownerComp: sc(yd.ownerComp),
     addBacks: (yd.addBacks||[]).map(ab=>({...ab, amount: sc(ab.amount)})),
     rent: sc(yd.rent||0), rentAdj: sc(yd.rentAdj||0),
+    fairMarketRent: yd.fairMarketRent===''||yd.fairMarketRent==null ? yd.fairMarketRent : sc(yd.fairMarketRent),
+    reNormValue: yd.reNormValue,
+    capRate: yd.capRate,
+    reIncluded: yd.reIncluded,
+    rentNormMethod: yd.rentNormMethod,
+    rentNormMode: yd.rentNormMode,
   };
 };
 // Returns annualized SDE from ytdData + through string, or 0 if not computable
@@ -104,6 +111,7 @@ const SPREAD_ROWS = [
   ["Owner's Compensation",  y=>calcSDE(y).oc,    false],
   ['Adjusted EBITDA',       y=>calcSDE(y).adjE,  true],
   ['Add-Backs',             y=>calcSDE(y).ab,    false],
+  ['Rent adjustment',       y=>calcSDE(y).rentAB,false],
   ["Seller's Discretionary Earnings",y=>calcSDE(y).sde,true],
 ];
 
@@ -161,7 +169,7 @@ const FinancialSpreadTable = ({years, ytdThrough=''}) => {
 };
 
 /* ── Default state ─────────────────────────────────── */
-const blankYear = yr => ({year:yr,entityType:'1120-S',revenue:'',cogs:'',opx:'',otherIncome:'',interest:'',taxes:'',depreciation:'',amortization:'',ownerComp:'',addBacks:[],rent:'',rentAdj:'',expanded:false});
+const blankYear = yr => ({year:yr,entityType:'1120-S',revenue:'',cogs:'',opx:'',otherIncome:'',interest:'',taxes:'',depreciation:'',amortization:'',ownerComp:'',addBacks:[],rent:'',rentAdj:'',rentNormMode:'rule',rentNormMethod:'fmr',reIncluded:false,fairMarketRent:'',reNormValue:'',capRate:'',expanded:false});
 const initState = () => ({
   dealName:'', advisorName:'', ytdEnabled:false, ytdThrough:'',
   years:[blankYear(curYear-3),blankYear(curYear-2),blankYear(curYear-1)],
@@ -295,35 +303,46 @@ const LineChart = ({data,dataKey,color='#C4592F'}) => {
 
 /* ── SVG Stacked Bar ───────────────────────────────── */
 const StackedBar = ({data}) => {
-  const W=480,H=208,PAD={t:16,r:128,b:36,l:72};
-  const keys=[{k:'ebitda',c:'#C4592F',l:'EBITDA'},{k:'oc',c:'#1d4ed8',l:"Owner's Comp"},{k:'ab',c:'#b45309',l:'Add-Backs'}];
-  const totals=data.map(d=>keys.reduce((s,k)=>s+Math.max(0,d[k.k]||0),0));
-  const maxV=Math.max(...totals,1);
+  const W=480,H=228,PAD={t:16,r:128,b:44,l:72};
+  const keys=[{k:'ebitda',c:'#C4592F',l:'EBITDA'},{k:'oc',c:'#1d4ed8',l:"Owner's Comp"},{k:'ab',c:'#b45309',l:'Add-backs'},{k:'rent',c:'#6d28d9',l:'Rent adj'}];
+  const posOf=d=>keys.reduce((s,k)=>s+Math.max(0,d[k.k]||0),0);
+  const negOf=d=>Math.min(0,d.rent||0);
+  const maxV=Math.max(...data.map(posOf),1);
+  const minV=Math.min(...data.map(negOf),0);
+  const range=maxV-minV||1;
   const innerW=W-PAD.l-PAD.r, innerH=H-PAD.t-PAD.b;
+  const yAt=v=>PAD.t+innerH*(1-(v-minV)/range);
+  const zeroY=yAt(0);
   const bw=Math.floor(innerW/data.length*0.55);
   const gap=innerW/data.length;
+  const tick=v=>{const a=Math.abs(v);return (v<0?'-':'')+(a>=1000000?'$'+(a/1000000).toFixed(1)+'M':a>=1000?'$'+(a/1000).toFixed(0)+'k':'$'+Math.round(a));};
   return (
     <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{overflow:'hidden'}}>
       {[0,1,2,3,4].map(i=>{
-        const v=(maxV/4)*i; const y=PAD.t+innerH*(1-v/maxV);
-        return <g key={i}><line x1={PAD.l} x2={PAD.l+innerW} y1={y} y2={y} stroke="#a8a29e" strokeDasharray="3 3"/><text x={PAD.l-8} y={y+4} textAnchor="end" fontSize="9" fill="#57534e">{v>=1000000?'$'+(v/1000000).toFixed(1)+'M':v>=1000?'$'+(v/1000).toFixed(0)+'k':'$'+v}</text></g>;
+        const v=minV+(range/4)*i; const y=yAt(v);
+        return <g key={i}><line x1={PAD.l} x2={PAD.l+innerW} y1={y} y2={y} stroke="#a8a29e" strokeDasharray="3 3"/><text x={PAD.l-8} y={y+4} textAnchor="end" fontSize="9" fill="#57534e">{tick(v)}</text></g>;
       })}
       {data.map((d,i)=>{
         const x=PAD.l+gap*i+gap/2-bw/2;
         let cum=0;
+        const rent=d.rent||0;
         return <g key={i}>
           {keys.map(k=>{
             const val=Math.max(0,d[k.k]||0);
-            const h=innerH*val/maxV;
-            const y=PAD.t+innerH*(1-(cum+val)/maxV);
+            if(!val) return null;
+            const top=yAt(cum+val);
+            const height=yAt(cum)-top;
             cum+=val;
-            return <rect key={k.k} x={x} y={y} width={bw} height={Math.max(h,0)} fill={k.c} rx="1"/>;
+            return <rect key={k.k} x={x} y={top} width={bw} height={Math.max(height,0)} fill={k.c} rx="1"/>;
           })}
-          <text x={x+bw/2} y={PAD.t+innerH+18} textAnchor="middle" fontSize="10" fill="#57534e">{d.year}</text>
+          {rent<0 && (
+            <rect x={x} y={zeroY} width={bw} height={Math.max(yAt(rent)-zeroY,1)} fill="#6d28d9" rx="1"/>
+          )}
+          <text x={x+bw/2} y={PAD.t+innerH+16} textAnchor="middle" fontSize="10" fill="#57534e">{d.year}</text>
         </g>;
       })}
       <line x1={PAD.l} x2={PAD.l} y1={PAD.t} y2={PAD.t+innerH} stroke="#44403c"/>
-      <line x1={PAD.l} x2={PAD.l+innerW} y1={PAD.t+innerH} y2={PAD.t+innerH} stroke="#44403c"/>
+      <line x1={PAD.l} x2={PAD.l+innerW} y1={zeroY} y2={zeroY} stroke="#44403c"/>
       {/* Legend */}
       {keys.map((k,i)=>(
         <g key={k.k} transform={`translate(${PAD.l+innerW+10},${PAD.t+i*22})`}>
@@ -332,6 +351,105 @@ const StackedBar = ({data}) => {
         </g>
       ))}
     </svg>
+  );
+};
+
+/* ── Rent normalization ────────────────────────────── */
+const RentNormBlock = ({yd, onChange, reVal=0}) => {
+  const norm = rentNormalization(yd);
+  const legacy = yd.rentNormMode !== 'rule';
+  const method = yd.rentNormMethod === 'cap' ? 'cap' : 'fmr';
+  const adopt = patch => onChange({
+    ...yd,
+    rentNormMode: 'rule',
+    rentNormMethod: method,
+    reIncluded: !!yd.reIncluded,
+    ...patch,
+  });
+  return (
+    <div className="border-t border-gray-800">
+      <div style={{marginBottom:'var(--gap-field)'}}>
+        <span className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Rent normalization</span>
+        <p style={{fontSize:12,color:'#57534e',lineHeight:1.45,margin:'6px 0 0'}}>
+          Actual rent is already inside operating expenses. SDE changes by the difference between that rent and a normalized occupancy cost. Above-market rent is added back. Below-market rent is deducted. If the real estate is purchased with the business, the full rent is added back.
+        </p>
+      </div>
+      {legacy && (
+        <div role="status" style={{background:'#fff7ed',border:'1px solid #b45309',borderRadius:6,padding:'10px 12px',fontSize:12,color:'#c2410c',lineHeight:1.45,marginBottom:'var(--gap-field)'}}>
+          Saved rent adjustment of {fmtD(norm.adjustment)} is kept, so this year’s SDE does not change. Enter a market rent, a cap rate, or include the real estate to use the normalization rule.
+        </div>
+      )}
+      {reVal>0 && !yd.reIncluded && (
+        <div style={{background:'rgba(217,119,6,0.08)',border:'1px solid rgba(217,119,6,0.2)',borderRadius:6,padding:'10px 12px',fontSize:12,color:'#b45309',lineHeight:1.45,marginBottom:'var(--gap-field)'}}>
+          Sources &amp; Uses includes real estate of {fmtD(reVal)}. Turn on “Real estate included in the sale” when the buyer will own it and the rent should be added back.
+        </div>
+      )}
+      <div className="az-rent-grid">
+        <div className="field-group">
+          <span className="lbl">Actual rent paid (already in OpEx)</span>
+          <NI value={yd.rent} onChange={v=>adopt({rent:v})}/>
+        </div>
+        <div className="field-group">
+          <span className="lbl">Real estate included in the sale</span>
+          <Tog on={!!yd.reIncluded} set={v=>adopt({reIncluded:v})} label={yd.reIncluded ? 'Yes — full rent added back' : 'No'}/>
+        </div>
+      </div>
+      <div className="field-group">
+        <span className="lbl">Normalized occupancy cost</span>
+        <div className="az-seg" role="group" aria-label="Normalization method">
+          {[['fmr','Fair market rent'],['cap','Value × cap rate']].map(([id,label])=>(
+            <button key={id} type="button" className="az-seg-btn"
+              aria-pressed={method===id}
+              onClick={()=>adopt({rentNormMethod:id})}
+              style={{background:method===id?'#1d4ed8':'#f7f3ee',color:method===id?'#fff':'#57534e',border:'none',cursor:'pointer'}}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <p style={{fontSize:12,color:'#57534e',lineHeight:1.45,margin:'6px 0 0'}}>
+          Value × cap rate is optional in every case, including when the real estate is included in the sale. While the real estate is included, the add-back is still the full rent.
+        </p>
+      </div>
+      {method==='fmr' ? (
+        <div className="az-rent-grid">
+          <div className="field-group">
+            <span className="lbl">Fair market rent</span>
+            <NI value={yd.fairMarketRent} placeholder={yd.rent ? 'Same as actual until entered' : '0'} onChange={v=>adopt({fairMarketRent:v})}/>
+          </div>
+          <div className="field-group">
+            <span className="lbl">Normalized occupancy cost</span>
+            <CF v={norm.normalizedCost==null ? '' : (norm.includedInSale ? 0 : norm.normalizedCost)}/>
+          </div>
+        </div>
+      ) : (
+        <div className="az-rent-grid">
+          <div className="field-group">
+            <span className="lbl">Real estate value</span>
+            <NI value={yd.reNormValue} placeholder="0" onChange={v=>adopt({reNormValue:v})}/>
+          </div>
+          <div className="field-group">
+            <span className="lbl">Cap rate (%)</span>
+            <NI value={yd.capRate} placeholder="8" onChange={v=>adopt({capRate:v})}/>
+            <p style={{fontSize:12,color:'#57534e',lineHeight:1.45,margin:'6px 0 0'}}>8 means 8%. Occupancy cost = value × cap rate.</p>
+          </div>
+        </div>
+      )}
+      <div className="az-rent-grid">
+        <div className="field-group">
+          <span className="lbl">Rent adjustment to SDE</span>
+          <CF v={norm.adjustment}/>
+          <p style={{fontSize:12,color:'#57534e',lineHeight:1.45,margin:'6px 0 0'}}>
+            {legacy
+              ? 'Saved adjustment. It stays until a market rent, a cap rate, or included real estate is entered.'
+              : norm.includedInSale
+                ? 'Full rent is added back. Occupancy cost becomes debt service.'
+                : norm.complete
+                  ? 'Actual rent minus the normalized occupancy cost.'
+                  : 'Enter a market rent or a value and cap rate. Until then the adjustment is zero.'}
+          </p>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -428,35 +546,8 @@ const YearSec = ({yd,onChange,onImport,reVal=0,yearEditable=true}) => {
             }}/></div>
           </div>
           <div><span className="lbl">Adjusted EBITDA (auto)</span><CF v={c.adjE}/></div>
-          {/* Rent / RE Add-back */}
-          <div className="mt-3 pt-3 border-t border-gray-800">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Rent / Real Estate Add-Back</span>
-            </div>
-            {reVal>0&&(
-              <div style={{background:'rgba(217,119,6,0.08)',border:'1px solid rgba(217,119,6,0.2)',borderRadius:4,padding:'6px 10px',fontSize:12,color:'#b45309',marginBottom:8}}>
-                Real estate included in deal — if the business currently leases its space, add back the rent expense below and set RE NOI to 0 (buyer will own the property; occupancy cost becomes debt service).
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <span className="lbl">Rent Expense (from return)</span>
-                <NI value={yd.rent} onChange={v=>{
-                  const rv=pn(v);
-                  onChange({...yd,rent:v,rentAdj:rv>0?-rv:''});
-                }}/>
-              </div>
-              <div>
-                <span className="lbl">Rent Adj / RE NOI (+/-)</span>
-                <input className="input-field" type="text" value={yd.rentAdj||''} onChange={e=>set('rentAdj',e.target.value)} placeholder="0"/>
-              </div>
-            </div>
-            {(pn(yd.rent)+pn(yd.rentAdj))!==0&&(
-              <div className="grid grid-cols-2 gap-4 mt-2">
-                <div><span className="lbl">Total RE Add-Back (auto)</span><CF v={pn(yd.rent)+pn(yd.rentAdj)}/></div>
-              </div>
-            )}
-          </div>
+          {/* Rent normalization. Actual rent stays inside OpEx. */}
+          <RentNormBlock yd={yd} onChange={onChange} reVal={reVal}/>
           {/* Add-Backs */}
           <div className="mt-3 border-t border-gray-800 pt-3">
             <div className="flex items-center justify-between mb-3">
@@ -526,7 +617,12 @@ const Analysis = ({state,set,primeRate}) => {
               {basisKey==='weighted'?`Weighted Avg SDE (3×/2×/1×) ÷ 6`:`Most Recent SDE${recentYr?` (${recentYr.year})`:''}`}
             </div>
             {buyerSalary>0&&(
-              <div className="text-xs text-gray-600 mt-1">Buyer's salary {fmtD(buyerSalary)} is subtracted for DSCR and cash flow ({fmtD(basis)}), not from this SDE multiple.</div>
+              <div className="text-xs text-gray-600 mt-1">Buyer's salary {fmtD(buyerSalary)} is subtracted for coverage and cash flow ({fmtD(basis)}), not from this SDE multiple.</div>
+            )}
+            {marketPriceDrift(state)&&(
+              <div role="status" style={{marginTop:8,padding:'10px 12px',background:'#fff7ed',border:'1px solid #b45309',borderRadius:6,fontSize:12,color:'#c2410c',lineHeight:1.45}}>
+                Saved market price {fmtD(marketPriceDrift(state).stored)} is {marketPriceDrift(state).multiple.toFixed(2)}× SDE. It does not match a listed multiple, and it was left as entered.
+              </div>
             )}
             <div className="text-xs text-gray-600 mt-1">Market price uses completed tax years only — not YTD.</div>
           </div>
@@ -659,7 +755,7 @@ const T1 = ({state,set,primeRate,importTaxReturn}) => {
         <div className="card p-5" style={{marginBottom:20}}>
           <div style={{fontSize:14,fontWeight:800,color:'#292524',marginBottom:4}}>Buyer's Salary Normalization</div>
           <p style={{fontSize:12,color:'#57534e',marginBottom:12}}>
-            A replacement-owner salary the new buyer will need to pay themselves. Defaults to $75,000 and can be edited. It is subtracted from DSCR and cash-flow figures. Fair market multiples use the most recent (or weighted) SDE before this salary.
+            A replacement-owner salary the new buyer will need to pay themselves. Defaults to $75,000 and can be edited. Fair-market multiples use SDE before this salary. Coverage and cash left on the DSCR tab subtract it, the same way Seller Scenario does. Year-by-year DSCR stays on SDE before this salary.
           </p>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -716,7 +812,7 @@ const T3 = ({state}) => {
   const {years,ytdData,ytdEnabled}=state;
   const base=[...years];
   if(ytdEnabled)base.push({...ytdData,year:'YTD'});
-  const data=base.map(y=>{const c=calcSDE(y);return{year:String(y.year),ebitda:Math.max(0,c.ebitda),oc:Math.max(0,c.oc),ab:Math.max(0,c.ab),sde:c.sde};});
+  const data=base.map(y=>{const c=calcSDE(y);return{year:String(y.year),ebitda:Math.max(0,c.ebitda),oc:Math.max(0,c.oc),ab:Math.max(0,c.ab),rent:c.rentAB,sde:c.sde};});
   const wtd=wtdSDE(years), recent=recentSDE(years);
   const yearCards=data.filter(d=>d.year!=='YTD');
   const chartData=data;
@@ -744,6 +840,10 @@ const T3 = ({state}) => {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-400">Add-Backs</span>
                 <span className="mono text-yellow-400 text-base font-semibold">{fmtD(d.ab)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-400">Rent adjustment</span>
+                <span className="mono text-base font-semibold" style={{color:'#6d28d9'}}>{fmtD(d.rent)}</span>
               </div>
               <div className="flex justify-between items-center border-t border-gray-700 pt-3 mt-1">
                 <span className="text-base font-bold text-white">SDE</span>
@@ -924,10 +1024,12 @@ const T4 = ({state,set}) => {
   const base=fairMarketSde(years, sdeBasis);
   const mults=[2.5,3.0,3.5,...(customMults||[]).map(m=>parseFloat(m)).filter(m=>m>0)];
   const setSU=(f,v)=>set({...state,su:{...su,[f]:v}});
-  useEffect(()=>{ if(base>0&&!pn(su.marketPrice)) set(prev=>({...prev,su:{...prev.su,marketPrice:base*3}})); },[base]);
+  const storedMp=pn(su.marketPrice);
+  const mp=workingMarketPrice(state);
+  const usingAuto=!(storedMp>0)&&mp>0;
+  const drift=marketPriceDrift(state);
 
   const dp=(dpPct||10)/100;
-  const mp=pn(su.marketPrice);
   const reVal=pn(su.reVal), wcVal=pn(su.wc), arVal=pn(su.arVal), invVal=pn(su.invVal);
   const totalProject=mp+reVal+wcVal+arVal+invVal;
   const down=totalProject*dp;
@@ -985,8 +1087,8 @@ const T4 = ({state,set}) => {
         <span className="lbl text-blue-400 mb-2 block">Fair Market Value Range — Click to set Market Price</span>
         <div className="flex gap-2 flex-wrap">
           {mults.map(m=>(
-            <button key={m} onClick={()=>setSU('marketPrice',base*m)}
-              className={`px-3 py-2 rounded text-sm transition-colors ${Math.abs(mp-base*m)<1?'bg-blue-700 text-white':'bg-gray-800 text-blue-300 hover:bg-blue-900'}`}>
+            <button key={m} onClick={()=>setSU('marketPrice',Math.round(base*m))}
+              className={`px-3 py-2 rounded text-sm transition-colors ${(usingAuto?m===3:Math.abs(storedMp-base*m)<1)?'bg-blue-700 text-white':'bg-gray-800 text-blue-300 hover:bg-blue-900'}`}>
               {m.toFixed(1)}× — {fmtD(base*m)}
             </button>
           ))}
@@ -1045,7 +1147,16 @@ const T4 = ({state,set}) => {
         <div className="card p-4">
           <h3 className="text-sm font-bold text-red-400 mb-3 uppercase tracking-wide">Uses (Deal Costs)</h3>
           <div className="space-y-2">
-            <div><span className="lbl">Market Price</span><NI value={su.marketPrice} onChange={v=>setSU('marketPrice',v)} placeholder="0"/></div>
+            <div>
+              <span className="lbl">Market Price</span>
+              <NI value={su.marketPrice} onChange={v=>setSU('marketPrice',v)} placeholder={usingAuto?Math.round(mp).toLocaleString('en-US'):'0'}/>
+              {usingAuto&&<div className="text-xs text-gray-500 mt-1">No price saved. Using most recent or weighted SDE × 3: {fmtD(mp)}. Typing a price keeps it.</div>}
+              {drift&&(
+                <div role="status" style={{marginTop:8,padding:'10px 12px',background:'#fff7ed',border:'1px solid #b45309',borderRadius:6,fontSize:12,color:'#c2410c',lineHeight:1.45}}>
+                  Saved market price {fmtD(drift.stored)} is {drift.multiple.toFixed(2)}× SDE ({fmtD(drift.sde)}). It does not match a listed multiple. The price stays as entered.
+                </div>
+              )}
+            </div>
             <div><span className="lbl">Real Estate (if applicable)</span><NI value={su.reVal} onChange={v=>setSU('reVal',v)} placeholder="0"/></div>
             <div><span className="lbl">Working Capital</span><NI value={su.wc} onChange={v=>setSU('wc',v)} placeholder="0"/></div>
             <div><span className="lbl">Accounts Receivable (if applicable)</span><NI value={su.arVal} onChange={v=>setSU('arVal',v)} placeholder="0"/></div>
@@ -1114,9 +1225,10 @@ const T5 = ({state,set,primeRate}) => {
   const r=(loanRate||10.75)/100/12, n=(loanAmort||10)*12;
   const pmt=loan=>r===0?loan/n:loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
   const dp=(dpPct||10)/100;
-  const basisSDE=resolveSDE(state).basis;
-  // Max supportable price at required DSCR — matches loanbud.io's lending analysis.
-  const maxAtMin=sde=>{ if(!r)return(sde/dscrMin)/(12/n)/(1-dp); const pf=r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1); return((sde/dscrMin)/(pf*12))/(1-dp); };
+  const grossBasis=resolveSDE(state).rawBasis;
+  const buyerSalary=pn(state.buyerSalary);
+  const stress=stressPrices(state);
+  const maxForYear=sde=>maxPriceForEarnings(state, sde-buyerSalary);
   // Thresholds track Required DSCR so Strong / Marginal / Below Min update when the field changes.
   // Green is a cushion above the required minimum; yellow is exactly the required floor.
   const hasBuyerSalary=pn(state.buyerSalary)>0;
@@ -1136,17 +1248,15 @@ const T5 = ({state,set,primeRate}) => {
   const dbgFor=(d,idx)=>{ const t=thresholds[idx]||thresholds[2]; return d>=t.green?'bg-green-900/30':d>=t.yellow?'bg-yellow-900/30':'bg-red-900/30'; };
   const labelFor=(d,idx)=>{ const t=thresholds[idx]||thresholds[2]; return d>=t.green?'✓ Strong':d>=t.yellow?'⚠ Marginal':'✗ Below Min'; };
   const reVal=pn(su?.reVal);
-  const mp5=pn(su?.marketPrice);
-  // maxAt125x renamed maxAtMin — keep alias for any inline references below
-  const maxAt125x=maxAtMin;
+  const storedMp=pn(su?.marketPrice);
+  const mp5=workingMarketPrice(state);
+  const priceIsAuto=!(storedMp>0)&&mp5>0;
   const totalProjectEst=mp5+reVal;
   const rePct=totalProjectEst>0?(reVal/totalProjectEst)*100:0;
-  const basisLoan=basisSDE*3*(1-dp), basisMo=pmt(basisLoan), basisAnn=basisMo*12;
   // Seller note debt service (from Sources & Uses)
   const sfAmt=pn(su?.sellerFin), sfR=(pn(su?.sfRate)||0)/100/12, sfN=(pn(su?.sfAmort)||0)*12;
   const sfPmt=(sfAmt>0&&sfR>0&&sfN>0)?sfAmt*sfR*Math.pow(1+sfR,sfN)/(Math.pow(1+sfR,sfN)-1):0;
   const sfAnn=sfPmt*12;
-  const totalAnn=basisAnn+sfAnn;
   // Deal DSCR — actual loan from Sources & Uses
   const wcVal5=pn(su?.wc), arVal5=pn(su?.arVal), invVal5=pn(su?.invVal);
   const totalProject5=mp5+reVal+wcVal5+arVal5+invVal5;
@@ -1220,7 +1330,7 @@ const T5 = ({state,set,primeRate}) => {
       )}
       {mp5>0?(
         <div className="mb-4">
-          <div className="text-xs font-semibold mb-1" style={{color:'#1d4ed8'}}>Deal DSCR — Actual Loan @ {fmtD(mp5)}{reVal>0?` (includes ${fmtD(reVal)} RE)`:''}</div>
+          <div className="text-xs font-semibold mb-1" style={{color:'#1d4ed8'}}>Deal DSCR — {priceIsAuto?'Assumed':'Saved'} market price {fmtD(mp5)}{reVal>0?` (includes ${fmtD(reVal)} RE)`:''}. Each year uses SDE before buyer salary.</div>
           {reVal>0&&(loanStructure||'7a')==='504'&&(
             <div className="text-xs text-gray-500 mb-2">{fmtD(dealBizMo)}/mo 7(a) ({loanAmort}yr @ {loanRate}%) + {fmtD(dealREMo)}/mo 504 ({reAmort||25}yr @ {re504Rate||6.5}%){sfAnn>0?` + ${fmtD(sfPmt)}/mo seller note`:''}</div>
           )}
@@ -1232,7 +1342,7 @@ const T5 = ({state,set,primeRate}) => {
             {all.map((yd,i)=>{
               const c=calcSDE(yd), sde=c.sde;
               const dscr=dealAnn>0?sde/dealAnn:0;
-              const mp=maxAt125x(sde);
+              const mp=maxForYear(sde);
               const dc=dcFor(dscr,i), dbg=dbgFor(dscr,i), lbl=labelFor(dscr,i);
               const t=thresholds[i]||thresholds[2];
               return (
@@ -1246,12 +1356,12 @@ const T5 = ({state,set,primeRate}) => {
                     <div><span className="lbl">Deal Annual Debt Service</span><div className="mono text-red-400">{fmtD(dealAnn)}</div></div>
                     {sfAnn>0&&<div><span className="lbl">Incl. Seller Note Annual Service</span><div className="mono text-red-400">{fmtD(sfAnn)}</div></div>}
                     <div className="border-t border-gray-700 pt-2">
-                      <span className="lbl">DSCR ({yd.year} SDE ÷ Deal DS)</span>
+                      <span className="lbl">DSCR ({yd.year} SDE before buyer salary ÷ debt service)</span>
                       <div className={`mono font-bold text-xl ${dc}`}>{dscr>0?dscr.toFixed(2):'—'}</div>
                       <div className={`text-xs ${dc}`}>{lbl}</div>
                       <div className="text-gray-600 mt-1">≥{t.green} on target · ≥{t.yellow} monitor · below minimum</div>
                     </div>
-                    <div><span className="lbl">Max Price @ {dscrMin}× DSCR</span><div className="mono text-blue-400">{sde>0?fmtD(mp):'—'}</div></div>
+                    <div><span className="lbl">Max price @ {dscrMin}× after buyer salary</span><div className="mono text-blue-400">{mp>0?fmtD(mp):'—'}</div></div>
                   </div>
                 </div>
               );
@@ -1262,74 +1372,65 @@ const T5 = ({state,set,primeRate}) => {
         <div className="grid grid-cols-3 gap-3 mb-4">
           {all.map((yd,i)=>{
             const c=calcSDE(yd), sde=c.sde;
-            const dscr=totalAnn>0?sde/totalAnn:0;
-            const mp=maxAt125x(sde);
-            const dc=dcFor(dscr,i), dbg=dbgFor(dscr,i), lbl=labelFor(dscr,i);
+            const mp=maxForYear(sde);
+            const dc=dcFor(0,i), dbg=dbgFor(0,i), lbl=labelFor(0,i);
             const t=thresholds[i]||thresholds[2];
             return (
               <div key={`dscr2-${i}`} className={`card p-4 ${dbg}`}>
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-bold text-white text-base">{yd.year}</span>
-                  <div className="text-right"><div className="text-xs text-gray-400">{yd.year} SDE</div><div className={`mono font-bold ${sde>=0?'text-green-400':'text-red-400'}`}>{fmtD(sde)}</div></div>
+                  <div className="text-right"><div className="text-xs text-gray-400">{yd.year} SDE before salary</div><div className={`mono font-bold ${sde>=0?'text-green-400':'text-red-400'}`}>{fmtD(sde)}</div></div>
                 </div>
                 <div className="space-y-2 text-xs">
-                  <div><span className="lbl">SBA Annual Debt Service</span><div className="mono text-red-400">{fmtD(basisAnn)}</div></div>
-                  {sfAnn>0&&<div><span className="lbl">Seller Note Annual Service</span><div className="mono text-red-400">{fmtD(sfAnn)}</div></div>}
-                  {sfAnn>0&&<div><span className="lbl">Total Annual Debt Service</span><div className="mono font-bold text-red-400">{fmtD(totalAnn)}</div></div>}
                   <div className="border-t border-gray-700 pt-2">
-                    <span className="lbl">DSCR ({yd.year} SDE ÷ {sfAnn>0?'Total':'SBA'} Debt Svc)</span>
-                    <div className={`mono font-bold text-xl ${dc}`}>{dscr>0?dscr.toFixed(2):'—'}</div>
+                    <span className="lbl">DSCR</span>
+                    <div className={`mono font-bold text-xl ${dc}`}>—</div>
                     <div className={`text-xs ${dc}`}>{lbl}</div>
-                    <div className="text-gray-600 mt-1">≥{t.green} on target · ≥{t.yellow} monitor · below minimum</div>
+                    <div className="text-gray-600 mt-1">≥{t.green} on target · ≥{t.yellow} monitor · below minimum. No market price and no SDE, so no debt service is calculated.</div>
                   </div>
-                  <div><span className="lbl">Max Price @ {dscrMin}× DSCR</span><div className="mono text-blue-400">{sde>0?fmtD(mp):'—'}</div></div>
+                  <div><span className="lbl">Max price @ {dscrMin}× after buyer salary</span><div className="mono text-blue-400">{mp>0?fmtD(mp):'—'}</div></div>
                 </div>
               </div>
             );
           })}
         </div>
       )}
-      <div className="card p-3 mb-4" style={{borderColor:'#e8cfc3'}}>
-        <div className="flex items-start justify-between flex-wrap gap-3">
-          <div>
-            <div className="text-xs font-semibold" style={{color:'#C4592F'}}>SDE × 3 Lender Sizing Reference — {(sdeBasis==='weighted'?'Weighted Avg':'Most Recent')} SDE{hasBuyerSalary?' after buyer\'s salary':''}: {fmtD(basisSDE)}</div>
-            <div className="text-xs text-gray-500 mt-0.5">Loan: {fmtD(basisLoan)} · {fmtD(basisMo)}/mo · {fmtD(basisAnn)}/yr{sfAnn>0?` + ${fmtD(sfAnn)}/yr seller note = ${fmtD(totalAnn)}/yr total`:''}</div>
-            <div className="text-xs text-gray-500 mt-0.5">Year ratios = year SDE ÷ that debt service. Strong / Marginal / Below Min update with Required DSCR ({dscrMin}×).</div>
-          </div>
-          <div className="flex gap-5">
-            {all.map((yd,i)=>{
-              const c=calcSDE(yd), sde=c.sde;
-              const dscr=totalAnn>0?sde/totalAnn:0;
-              const dc=dcFor(dscr,i), lbl=labelFor(dscr,i);
-              return (
-                <div key={`dscr-sum-${i}`} className="text-center" style={{minWidth:56}}>
-                  <div className="text-xs text-gray-500">{yd.year}</div>
-                  <div className={`mono font-bold text-base ${dc}`}>{dscr>0?dscr.toFixed(2):'—'}</div>
-                  <div className={`text-xs ${dc}`}>{lbl}</div>
-                </div>
-              );
-            })}
-          </div>
+      <div className="card p-4 mb-4" style={{borderColor:'#e8cfc3'}}>
+        <div className="text-xs font-semibold" style={{color:'#C4592F'}}>
+          Coverage at the market price — {(sdeBasis==='weighted'?'Weighted Avg':'Most Recent')} SDE {fmtD(grossBasis)} before buyer salary
         </div>
+        <div className="text-xs text-gray-500 mt-1" style={{lineHeight:1.45}}>
+          Price is gross SDE × the multiple{priceIsAuto?' (3× until a price is saved)':''}. DSCR and cash left subtract the {fmtD(buyerSalary)} buyer salary, the same way Seller Scenario does. Year-by-year ratios above stay on SDE before salary. Payments here are on price × down-payment, before the guarantee fee and closing costs.
+        </div>
+        {stress.atWorkingPrice&&stress.atWorkingPrice.price>0&&(
+          <div className="az-rent-grid" style={{marginTop:'var(--gap-field)'}}>
+            <div><span className="lbl">Market price</span><div className="mono font-bold">{fmtD(stress.atWorkingPrice.price)}</div></div>
+            <div><span className="lbl">SDE after buyer salary</span><div className="mono font-bold">{fmtD(stress.after)}</div></div>
+            <div><span className="lbl">DSCR after buyer salary</span><div className="mono font-bold">{stress.atWorkingPrice.dscrAfterSalary==null?'—':stress.atWorkingPrice.dscrAfterSalary.toFixed(2)}</div></div>
+            <div><span className="lbl">Cash left after salary, debt, {stress.contingencyPct}% contingency</span><div className="mono font-bold">{fmtD(stress.atWorkingPrice.cashLeft)}</div></div>
+          </div>
+        )}
       </div>
       {years.some(y=>calcSDE(y).sde>0)&&(
-        <div className="card p-4 mt-2">
-          <h3 className="text-sm font-bold text-gray-300 mb-3">DSCR Sensitivity — {(sdeBasis==='weighted'?'Weighted Avg':'Most Recent')} SDE</h3>
+        <div className="card p-4 mt-2" style={{overflowX:'auto'}}>
+          <h3 className="text-sm font-bold text-gray-300 mb-1">DSCR sensitivity — gross SDE × multiple</h3>
+          <p className="text-xs text-gray-500 mb-3" style={{lineHeight:1.45}}>Changing the buyer salary changes coverage and cash left. It does not change these prices.</p>
           <table className="w-full text-xs">
             <thead><tr className="text-gray-500 border-b border-gray-700">
-              <th className="text-left py-1 pr-3">Mult</th><th className="text-right py-1 pr-3">Price</th><th className="text-right py-1 pr-3">Loan</th><th className="text-right py-1 pr-3">Monthly</th><th className="text-right py-1 pr-3">Ann. DS</th><th className="text-right py-1">DSCR</th>
+              <th className="text-left py-1 pr-3">Mult</th><th className="text-right py-1 pr-3">Price</th><th className="text-right py-1 pr-3">Loan</th><th className="text-right py-1 pr-3">Monthly</th><th className="text-right py-1 pr-3">Ann. DS</th><th className="text-right py-1 pr-3">DSCR after salary</th><th className="text-right py-1">Cash left</th>
             </tr></thead>
             <tbody>
-              {[2.0,2.5,3.0,3.5,4.0,4.5,5.0].map(m=>{
-                const price=basisSDE*m, loan=price*(1-dp), mo=pmt(loan), sbaAnn=mo*12, totalAnnRow=sbaAnn+sfAnn, dscr=totalAnnRow>0?basisSDE/totalAnnRow:0;
+              {stress.rows.map(row=>{
+                const dscr=row.dscrAfterSalary||0;
                 return (
-                  <tr key={m} className="border-b border-gray-800">
-                    <td className="py-1.5 pr-3 text-gray-400">{m.toFixed(1)}×</td>
-                    <td className="py-1.5 pr-3 text-right mono">{fmtD(price)}</td>
-                    <td className="py-1.5 pr-3 text-right mono">{fmtD(loan)}</td>
-                    <td className="py-1.5 pr-3 text-right mono text-yellow-400">{fmtD(mo)}</td>
-                    <td className="py-1.5 pr-3 text-right mono text-red-400">{fmtD(totalAnnRow)}</td>
-                    <td className={`py-1.5 text-right mono font-bold ${dcFor(dscr,2)}`}>{dscr.toFixed(2)}</td>
+                  <tr key={row.multiple} className="border-b border-gray-800">
+                    <td className="py-1.5 pr-3 text-gray-400">{row.multiple.toFixed(1)}×</td>
+                    <td className="py-1.5 pr-3 text-right mono">{fmtD(row.price)}</td>
+                    <td className="py-1.5 pr-3 text-right mono">{fmtD(row.loan)}</td>
+                    <td className="py-1.5 pr-3 text-right mono text-yellow-400">{fmtD(row.monthly)}</td>
+                    <td className="py-1.5 pr-3 text-right mono text-red-400">{fmtD(row.annual)}</td>
+                    <td className={`py-1.5 pr-3 text-right mono font-bold ${dcFor(dscr,2)}`}>{dscr?dscr.toFixed(2):'—'}</td>
+                    <td className="py-1.5 text-right mono">{fmtD(row.cashLeft)}</td>
                   </tr>
                 );
               })}
@@ -1422,8 +1523,8 @@ const TIndustry = ({state,set,importIndustryReport}) => {
       cogsPct:s.rev>0?(s.cogs/s.rev)*100:null,
       ebitdaPct:s.rev>0?(s.ebitda/s.rev)*100:null,
       netMarginPct:s.rev>0?(s.noi/s.rev)*100:null,
-      sdeMult:pn(state.su?.marketPrice)>0&&s.sde>0?pn(state.su?.marketPrice)/s.sde:null,
-      ebitdaMult:pn(state.su?.marketPrice)>0&&s.ebitda>0?pn(state.su?.marketPrice)/s.ebitda:null,
+      sdeMult:workingMarketPrice(state)>0&&s.sde>0?workingMarketPrice(state)/s.sde:null,
+      ebitdaMult:workingMarketPrice(state)>0&&s.ebitda>0?workingMarketPrice(state)/s.ebitda:null,
     };
   });
 
@@ -1455,7 +1556,7 @@ const TIndustry = ({state,set,importIndustryReport}) => {
   );
 
   const hasData=ind.name||ind.grossMarginPct||ind.sdeMult;
-  const askPrice=pn(state.su?.marketPrice);
+  const askPrice=workingMarketPrice(state);
   const recSDE=recY?calcSDE(recY).sde:0;
   const recEBITDA=recY?calcSDE(recY).ebitda:0;
 
@@ -1611,7 +1712,7 @@ const TBuyerROI = ({state,set}) => {
   const dp=(dpPct||10)/100;
 
   // Deal amounts from S&U
-  const mp=pn(su?.marketPrice);
+  const mp=workingMarketPrice(state);
   const dpAmt=mp*dp;
   const sfAmt=pn(su?.sellerFin);
   const sbaLoan=Math.max(0,mp*(1-dp)-sfAmt);
@@ -1911,7 +2012,7 @@ const TSeller = ({state, set}) => {
   const reVal = pn(su?.reVal);
 
   // Blended amort based on actual S&U totalProject
-  const mp5S=pn(su?.marketPrice);
+  const mp5S=workingMarketPrice(state);
   const totalProjectS=mp5S+reVal+pn(su?.wc)+pn(su?.arVal)+pn(su?.invVal);
   const blendedAmortS=totalProjectS>0&&reVal>0
     ?Math.min(25,Math.max(10,Math.round((reVal/totalProjectS)*(reAmort||25)+((totalProjectS-reVal)/totalProjectS)*(loanAmort||10))))
@@ -1933,7 +2034,7 @@ const TSeller = ({state, set}) => {
   };
 
   const askingPrice = pn(seller.askingPrice);
-  const advisorPrice = pn(su?.marketPrice);
+  const advisorPrice = workingMarketPrice(state);
   const buyerSalary = pn(state.buyerSalary);
   const contingencyPct = pn(seller.contingencyPct) || 10;
 
@@ -2527,7 +2628,6 @@ const TNarrative = ({state,narrative,setNarrative,narrativeStatus,setNarrativeSt
   // Waterfall steps for most recent year
   const wfSteps=c0?(()=>{
     const idao=c0.int+c0.taxes+c0.dep+c0.amor;
-    const ab=c0.ab+c0.rentAB;
     const steps=[
       {label:'Revenue',val:c0.rev,type:'start'},
       {label:'− COGS',val:-c0.cogs,type:'step'},
@@ -2538,7 +2638,8 @@ const TNarrative = ({state,narrative,setNarrative,narrativeStatus,setNarrativeSt
     if(idao>0) steps.push({label:'+I/T/D&A',val:idao,type:'step'});
     steps.push({label:'EBITDA',val:c0.ebitda,type:'total'});
     if(c0.oc>0) steps.push({label:'+OC',val:c0.oc,type:'step'});
-    if(ab>0) steps.push({label:'+Add-Backs',val:ab,type:'step'});
+    if(c0.ab!==0) steps.push({label:'+Add-Backs',val:c0.ab,type:'step'});
+    if(c0.rentAB!==0) steps.push({label:c0.rentAB<0?'−Rent adj':'+Rent adj',val:c0.rentAB,type:'step'});
     steps.push({label:'SDE',val:c0.sde,type:'total'});
     return steps;
   })():[];
@@ -3384,8 +3485,8 @@ function App() {
     const merged={...initState(),...draft,_net:0};
     return {
       ...merged,
-      years:uniquifyYears(Array.isArray(merged.years)?merged.years:initState().years),
-      ytdData:{...(merged.ytdData||blankYear('YTD')), year:'YTD'},
+      years:uniquifyYears(Array.isArray(merged.years)?merged.years:initState().years).map(preserveRentModel),
+      ytdData:preserveRentModel({...(merged.ytdData||blankYear('YTD')), year:'YTD'}),
       sdeBasis:merged.sdeBasis==='ytd'?'recent':(merged.sdeBasis||'recent'),
     };
   });
@@ -3466,8 +3567,8 @@ function App() {
   const migrateBuyerSalary=d=>{if((d.buyerSalary===undefined||d.buyerSalary==='')&&d.seller?.buyerSalary){d={...d,buyerSalary:d.seller.buyerSalary};}return d;};
   // Repair saved deals: unique tax-year labels, YTD forced to 'YTD', valuation basis never 'ytd'.
   const migrateYears=d=>{
-    const years=uniquifyYears(Array.isArray(d.years)?d.years:initState().years);
-    const ytdData={...(d.ytdData||blankYear('YTD')), year:'YTD'};
+    const years=uniquifyYears(Array.isArray(d.years)?d.years:initState().years).map(preserveRentModel);
+    const ytdData=preserveRentModel({...(d.ytdData||blankYear('YTD')), year:'YTD'});
     const sdeBasis=d.sdeBasis==='ytd'?'recent':(d.sdeBasis||'recent');
     return {...d, years, ytdData, sdeBasis};
   };
@@ -3836,10 +3937,7 @@ function App() {
       }
       const years=[...prev.years];
       const y=years[yi];
-      const newRent=inc.rent!=null?inc.rent:y.rent;
-      const rentVal=pn(newRent);
-      // Auto-set rentAdj to negative rent if rent was extracted (nets to $0 by default)
-      const newRentAdj=inc.rent!=null&&rentVal>0?-rentVal:y.rentAdj;
+      const importedRent=inc.rent!=null?rentFieldsFromImport(inc.rent):null;
       // Auto-add/update owner payroll tax addback if ownerComp was extracted
       let newABs=[...(y.addBacks||[])];
       const newOC=inc.ownerComp??y.ownerComp;
@@ -3862,8 +3960,7 @@ function App() {
         amortization:inc.amortization??y.amortization,
         ownerComp:newOC,
         taxes:inc.taxes??y.taxes,
-        rent:newRent,
-        rentAdj:newRentAdj,
+        ...(importedRent||{rent:y.rent,rentAdj:y.rentAdj}),
         addBacks:newABs,
       };
       return {years:uniquifyYears(years), targetIdx:yi};
